@@ -1,0 +1,2 @@
+class NonExistentGroupError(Exception):
+    pass
