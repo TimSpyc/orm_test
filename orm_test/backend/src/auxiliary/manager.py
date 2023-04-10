@@ -47,10 +47,8 @@ class GeneralManager:
         if use_cache:
             cached_group_obj = cache.get(f"{group_model.__name__}|{group_id}")
         if cached_group_obj:
-            print('cached_group_obj found', f"{group_model.__name__}|{group_id}")
             return cached_group_obj
         else:
-            print('nothing found', f"{group_model.__name__}|{group_id}")
             try:
                 return group_model.objects.get(id=group_id)
             except ObjectDoesNotExist:
@@ -62,10 +60,7 @@ class GeneralManager:
         if use_cache:
             cached_data_obj = cache.get(f"{data_model.__name__}|{group_obj.id}|{date}")
             if cached_data_obj:
-                print('cached_data_obj found', f"{data_model.__name__}|{group_obj.id}|{date}")
                 return cached_data_obj
-        
-        print('data_obj not found', f"{data_model.__name__}|{group_obj.id}|{date}")
         if date is None:
             data_obj = data_model.objects.filter(
                 **{transferToSnakeCase(group_obj.__class__.__name__): group_obj}
