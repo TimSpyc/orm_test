@@ -30,10 +30,11 @@ class ProjectManager(GeneralManager):
         use_cache -- use cached data if available (default True)
         """
         project_group, project = super().__init__(
-            project_group_id,
-            ProjectGroup,
-            Project,
-            date
+            group_id=project_group_id,
+            group_model=ProjectGroup,
+            data_model=Project,
+            date=date,
+            use_cache=use_cache
         )
 
         self.name = project.name

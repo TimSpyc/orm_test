@@ -20,13 +20,14 @@ from manager import GeneralManager
 
 
 class ProjectUserManager(GeneralManager):
-    def __init__(self, project_user_group_id, date=None):
+    def __init__(self, project_user_group_id, date=None, use_cache=True):
 
         project_user_group, project_user = super().__init__(
-            project_user_group_id,
-            ProjectUserGroup,
-            ProjectUser,
-            date
+            group_id=project_user_group_id,
+            group_model=ProjectUserGroup,
+            data_model=ProjectUser,
+            date=date,
+            use_cache=use_cache
         )
 
         self.project_group_id = project_user_group.project_group_id
