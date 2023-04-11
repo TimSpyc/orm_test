@@ -2,6 +2,7 @@ from exceptions import NonExistentGroupError
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
+from backend.models import CacheEntry
 
 def transferToSnakeCase(name):
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
@@ -24,9 +25,23 @@ def createCache(func):
 
 
 class GeneralManager:
-    def __init__(self, group_id, group_model, data_model, date=None, use_cache=True):
-        group_obj = self.__getGroupObject(group_id, group_model, use_cache)
-        data_obj = self.__getDataObject(group_obj, data_model, date, use_cache)
+    def __new__(cls, group_id, group_model, data_model, date=None, use_cache=True):
+        if use_cache:
+            manager_name = cls.__name__
+            if date is None:
+                cached_group_obj = cache.get(f"{manager_name}|{group_id}")
+            cached_instance = CacheEntry.objects.get_cache_data(manager_name, data_model, group_id, date)
+            if cached_instance:
+                return cached_instance
+
+        instance = super().__new__(cls)
+        instance.__init__(group_id, group_model, data_model, date)
+        CacheEntry.objects.set_cache_data(manager_name, group_id, instance, instance.date)
+        return instance
+
+    def __init__(self, group_id, group_model, data_model, date=None):
+        group_obj = self.__getGroupObject(group_id, group_model)
+        data_obj = self.__getDataObject(group_obj, data_model, date)
 
         self.__group_obj = group_obj
         self.__data_obj = data_obj
@@ -42,25 +57,15 @@ class GeneralManager:
         return group_obj, data_obj
 
     @staticmethod
-    def __getGroupObject(group_id, group_model, use_cache):
-        cached_group_obj = None
-        if use_cache:
-            cached_group_obj = cache.get(f"{group_model.__name__}|{group_id}")
-        if cached_group_obj:
-            return cached_group_obj
-        else:
-            try:
-                return group_model.objects.get(id=group_id)
-            except ObjectDoesNotExist:
-                raise NonExistentGroupError(
-                    f"{group_model.__name__} with id {group_id} does not exist")
+    def __getGroupObject(group_id, group_model):
+        try:
+            return group_model.objects.get(id=group_id)
+        except ObjectDoesNotExist:
+            raise NonExistentGroupError(
+                f"{group_model.__name__} with id {group_id} does not exist")
 
     @staticmethod
-    def __getDataObject(group_obj, data_model, date, use_cache):
-        if use_cache:
-            cached_data_obj = cache.get(f"{data_model.__name__}|{group_obj.id}|{date}")
-            if cached_data_obj:
-                return cached_data_obj
+    def __getDataObject(group_obj, data_model, date):
         if date is None:
             data_obj = data_model.objects.filter(
                 **{transferToSnakeCase(group_obj.__class__.__name__): group_obj}
@@ -72,21 +77,11 @@ class GeneralManager:
         
         return data_obj
     
-    @staticmethod
-    def __setDataObjectCache(data_obj, group_obj, date):
-        cache_key = f"{data_obj.__class__.__name__}|{group_obj.id}|{date}"
-        cache.set(cache_key, data_obj)
-
-    @staticmethod
-    def __setGroupObjectCache(group_obj):
-        cache_key = f"{group_obj.__class__.__name__}|{group_obj.id}"
-        cache.set(cache_key, group_obj)
+    def __setManagerObjectDjangoCache(self):
+        cache_key = f"{self.__class__.__name__}|{self.group_id}"
+        cache.set(cache_key, self)
 
     def updateCache(self):
-        self.__setDataObjectCache(
-            self._GeneralManager__data_obj,
-            self._GeneralManager__group_obj,
-            self.search_date
-        )
-
-        self.__setGroupObjectCache(self._GeneralManager__group_obj)
+        if self.search_date is None:
+            self.__setManagerObjectDjangoCache()
+        CacheEntry.objects.set_cache_data(self.__class__.__name__, self.group_id, self, self.date)
