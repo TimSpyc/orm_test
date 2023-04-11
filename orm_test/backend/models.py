@@ -1,5 +1,52 @@
 from django.db import models
-from django.utils import timezone
+from django.db.models import Max, Subquery
+import pickle
+
+class CacheEntry(models.Model):
+    manager_name = models.CharField(max_length=100)
+    group_id = models.IntegerField()
+    date = models.DateTimeField()
+    data = models.BinaryField()
+
+    class Meta:
+        unique_together = ('manager_name', 'group_id', 'date')
+
+    @classmethod
+    def get_cache_data(cls, manager_name, data_model, group_id, date):
+        try:
+            if date is None:
+                latest_dates = data_model.objects.filter(
+                    group_id=group_id
+                ).values('group_id').annotate(latest_date=Max('date'))
+            else:
+                latest_dates = data_model.objects.filter(
+                    date__lt=date,
+                    group_id=group_id
+                ).values('group_id').annotate(latest_date=Max('date'))
+
+            result = cls.objects.filter(
+                manager_name=manager_name,
+                date=Subquery(latest_dates.values('latest_date')[:1]),
+                group_id=input_group_id
+            )
+            if result.exists():
+                entry = result.first()
+                return pickle.loads(entry.data)
+        except cls.DoesNotExist:
+            pass
+        except data_model.DoesNotExist:
+            raise ValueError(f'data_model {data_model} is not valid')
+        return None
+
+    @classmethod
+    def set_cache_data(cls, manager_name, group_id, data, date):
+        entry = cls.objects.get_or_create(
+            manager_name=manager_name,
+            group_id=group_id,
+            date=date
+        )
+        entry.data=pickle.dumps(data)
+        entry.save()
 
 
 class User(models.Model):
@@ -23,7 +70,7 @@ class Project(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateField()
+    date = models.DateTimeField()
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
     active = models.BooleanField()
 
