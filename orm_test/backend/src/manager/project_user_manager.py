@@ -14,7 +14,6 @@ if __name__ == '__main__':
     django.setup()
 
 from backend.models import ProjectUserGroup, ProjectUser, User, ProjectUserRole
-from exceptions import NonExistentGroupError
 from datetime import datetime
 from manager import GeneralManager
 
@@ -45,6 +44,7 @@ class ProjectUserManager(GeneralManager):
         return self._project_manager
 
     @classmethod
+    @createCache
     def create(cls, project_group_id, creator_user_id, creator_creator_user_id, project_user_role_ids):
         project_user_group, created = ProjectUserGroup.objects.get_or_create(
             project_group_id=project_group_id,
@@ -66,10 +66,10 @@ class ProjectUserManager(GeneralManager):
         new_project_user.save()
 
         project_user_manager = cls(project_user_group.id)
-        project_user_manager.updateCache()
         
         return project_user_manager
-
+    
+    @updateCache
     def deactivate(self):
         project_user = ProjectUser.objects.get(id=self.id)
         project_user.active = False
@@ -89,8 +89,8 @@ class ProjectUserManager(GeneralManager):
 
         new_project_user.save()
         self.active = False
-        self.updateCache()
-
+    
+    @updateCache
     def update(self, new_creator_user_id, creator_creator_user_id, project_user_role_ids):
         project_user_group = ProjectUserGroup.objects.get(id=self.group_id)
 
@@ -115,4 +115,3 @@ class ProjectUserManager(GeneralManager):
         self.roles = [{"id": role.id, "name": role.role_name}
                       for role in new_project_user.project_user_roles.all()]
         self.active = new_project_user.active
-        self.updateCache()

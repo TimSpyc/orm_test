@@ -2,6 +2,46 @@ from django.db import models
 from django.db.models import Max, Subquery
 import pickle
 
+class DerivativeConstelliumGroup(models.Model):
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.id}"
+
+
+class DerivativeType(models.Model):
+    name = models.CharField(max_length=255)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class PredictionAccuracy(models.Model):
+    name = models.CharField(max_length=255)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class DerivativeConstellium(models.Model):
+    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    sop_date = models.DateField()
+    eop_date = models.DateField()
+    derivative_type = models.ForeignKey(DerivativeType, on_delete=models.CASCADE)
+    estimated_price = models.FloatField()
+    estimated_weight = models.FloatField()
+    prediction_accuracy = models.ForeignKey(PredictionAccuracy, on_delete=models.CASCADE)
+    date = models.DateTimeField()
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    active = models.BooleanField()
+
+    def __str__(self):
+        return self.name
+
+
 class CacheEntry(models.Model):
     manager_name = models.CharField(max_length=100)
     group_id = models.IntegerField()
