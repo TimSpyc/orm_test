@@ -19,12 +19,13 @@ from manager import GeneralManager
 
 
 class ProjectUserManager(GeneralManager):
+    group_model = ProjectUserGroup
+    data_model = ProjectUser
+
     def __init__(self, project_user_group_id, date=None, use_cache=True):
 
         project_user_group, project_user = super().__init__(
             group_id=project_user_group_id,
-            group_model=ProjectUserGroup,
-            data_model=ProjectUser,
             date=date,
             use_cache=use_cache
         )
@@ -34,14 +35,11 @@ class ProjectUserManager(GeneralManager):
         self.user = project_user_group.user
         self.roles = [{"id": role.id, "name": role.role_name}
                       for role in project_user.project_user_roles.all()]
-        self._project_manager = None
 
     @property
     def project_manager(self):
         from project_manager import ProjectManager
-        if self._project_manager is None:
-            self._project_manager = ProjectManager(self.project_group_id, self.date)
-        return self._project_manager
+        return ProjectManager(self.project_group_id, self.search_date)
 
     @classmethod
     @createCache

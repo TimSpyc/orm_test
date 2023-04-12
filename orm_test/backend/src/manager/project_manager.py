@@ -19,6 +19,9 @@ from datetime import datetime
 from manager import GeneralManager, createCache, updateCache
 
 class ProjectManager(GeneralManager):
+    group_model = ProjectGroup
+    data_model = Project
+
     def __init__(self, project_group_id, date=None, use_cache=True):
         """Initialize a ProjectManager with the given project group ID and optional date.
 
@@ -29,26 +32,21 @@ class ProjectManager(GeneralManager):
         """
         project_group, project = super().__init__(
             group_id=project_group_id,
-            group_model=ProjectGroup,
-            data_model=Project,
             date=date,
             use_cache=use_cache
         )
 
         self.name = project.name
         self.number = project.project_number
-        self._project_users = None
 
     @property
     def project_users(self):
         from project_user_manager import ProjectUserManager
-        if self._project_users is None:
-            project_user_groups = ProjectUserGroup.objects.filter(
-                project_group_id=self.group_id)
-            self._project_users = [
-                ProjectUserManager(project_user_group.id) for project_user_group in project_user_groups
-            ]
-        return self._project_users
+        return ProjectUserManager.getAll(
+            date=self.search_date,
+            project_group_id=self.group_id
+        )
+
 
     @classmethod
     @createCache

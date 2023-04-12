@@ -18,15 +18,16 @@ from datetime import datetime
 from manager import GeneralManager
 
 class DerivativeConstelliumManager(GeneralManager):
+    group_model = DerivativeConstelliumGroup
+    data_model = DerivativeConstellium
+
     def __init__(self, derivative_constellium_group_id, date=None, use_cache=True):
         derivative_constellium_group, derivative_constellium = super().__init__(
             group_id=derivative_constellium_group_id,
-            group_model=DerivativeConstelliumGroup,
-            data_model=DerivativeConstellium,
             date=date,
             use_cache=use_cache
         )
-
+        self.project_group_id = derivative_constellium_group.project_group.id
         self.name = derivative_constellium.name
         self.sop_date = derivative_constellium.sop_date
         self.eop_date = derivative_constellium.eop_date
@@ -36,6 +37,13 @@ class DerivativeConstelliumManager(GeneralManager):
         self.estimated_weight = derivative_constellium.estimated_weight
         self.prediction_accuracy_id = derivative_constellium.prediction_accuracy.id
         self.prediction_accuracy = derivative_constellium.prediction_accuracy.name
+
+    @property
+    def project_manager(self):
+        from project_manager import ProjectManager
+        if self._project_manager is None:
+            self._project_manager = ProjectManager(self.project_group_id, self.search_date)
+        return self._project_manager
 
     @classmethod
     @createCache
@@ -67,7 +75,7 @@ class DerivativeConstelliumManager(GeneralManager):
     @updateCache
     def update(self, creator_user_id, **kwargs):
         current_attributes = {
-            'derivative_constellium_group_id': self.derivative_constellium_group_id,
+            'derivative_constellium_group': self.derivative_constellium_group,
             'name': self.name,
             'sop_date': self.sop_date,
             'eop_date': self.eop_date,
