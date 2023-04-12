@@ -1,3 +1,6 @@
 {
-    "workbench.colorTheme": "Default Dark+"
+    "workbench.colorTheme": "Default Dark+",
+    "cSpell.words": [
+        "Constellium"
+    ]
 }
