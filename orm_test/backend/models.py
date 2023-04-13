@@ -2,44 +2,16 @@ from django.db import models
 from django.db.models import Max, Subquery
 import pickle
 
-class DerivativeConstelliumGroup(models.Model):
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.id}"
-
-
-class DerivativeType(models.Model):
-    name = models.CharField(max_length=255)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-
-class PredictionAccuracy(models.Model):
-    name = models.CharField(max_length=255)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-
-class DerivativeConstellium(models.Model):
-    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    sop_date = models.DateField()
-    eop_date = models.DateField()
-    derivative_type = models.ForeignKey(DerivativeType, on_delete=models.CASCADE)
-    estimated_price = models.FloatField()
-    estimated_weight = models.FloatField()
-    prediction_accuracy = models.ForeignKey(PredictionAccuracy, on_delete=models.CASCADE)
+class DataTable(models.Model):
     date = models.DateTimeField()
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     active = models.BooleanField()
 
-    def __str__(self):
-        return self.name
+class GroupTable(models.Model):
+    pass
+
+class ReferenceTable(models.Model):
+    active = models.BooleanField()
 
 
 class CacheEntry(models.Model):
@@ -89,36 +61,68 @@ class CacheEntry(models.Model):
         entry.save()
 
 
-class User(models.Model):
-    microsoft_id = models.CharField(max_length=255, unique=True)
-    name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.CharField(max_length=255)
-    last_login = models.DateTimeField(null=True)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f'{self.name} {self.last_name}'
-
-
-class ProjectGroup(models.Model):
-
-    def __str__(self):
-        return self.id
-
-class Project(models.Model):
-    name = models.CharField(max_length=255)
-    project_number = models.CharField(max_length=255, unique=False)
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateTimeField()
+class DerivativeConstelliumGroup(GroupTable):
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
-    active = models.BooleanField()
+
+    def __str__(self):
+        return f"{self.id}"
+
+
+class DerivativeType(ReferenceTable):
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
 
 
-class ProjectUserGroup(models.Model):
+class PredictionAccuracy(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class DerivativeConstellium(DataTable):
+    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    sop_date = models.DateField()
+    eop_date = models.DateField()
+    derivative_type = models.ForeignKey(DerivativeType, on_delete=models.CASCADE)
+    estimated_price = models.FloatField()
+    estimated_weight = models.FloatField()
+    prediction_accuracy = models.ForeignKey(PredictionAccuracy, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class User(ReferenceTable):
+    microsoft_id = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    email = models.CharField(max_length=255)
+    last_login = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f'{self.name} {self.last_name}'
+
+
+class ProjectGroup(GroupTable):
+
+    def __str__(self):
+        return self.id
+
+
+class Project(DataTable):
+    name = models.CharField(max_length=255)
+    project_number = models.CharField(max_length=255, unique=False)
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectUserGroup(GroupTable):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
 
@@ -129,18 +133,18 @@ class ProjectUserGroup(models.Model):
         return f"{self.user} - {self.project_group}"
 
 
-class ProjectUserRole(models.Model):
+class ProjectUserRole(ReferenceTable):
     role_name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.role_name
 
 
-class ProjectUser(models.Model):
+class ProjectUser(DataTable):
     date = models.DateTimeField()
     project_user_group = models.ForeignKey(ProjectUserGroup, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
-    project_user_roles = models.ManyToManyField(ProjectUserRole, blank=True)
+    project_user_role = models.ManyToManyField(ProjectUserRole, blank=True)
     active = models.BooleanField(default=True)
 
     def __str__(self):
