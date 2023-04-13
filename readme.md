@@ -1,9 +1,17 @@
 # DB Tables:
 ## Group Table
 Table for topic (e.g. ProjectUser). It contains all unique information to search for the group and unchangeable columns. Unique columns are also unchangeable and need to be labeled as unique. These unique columns are a group definition. This group definition serves as a unique identifier if the group ID is unknown. If there is no unique combination, the group does not contain a unique_together argument.
+GroupTables inherit from GroupTable Class and name ends with "Group"
 ```python
-    class Meta:
-        unique_together = ('user', 'project_group')
+    class ProjectUserGroup(GroupTable):
+        user = models.ForeignKey(User, on_delete=models.CASCADE)
+        project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+
+        class Meta:
+            unique_together = ('user', 'project_group')
+
+        def __str__(self):
+            return f"{self.user} - {self.project_group}"
 ```
 
 ## Data Table
