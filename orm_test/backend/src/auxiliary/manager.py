@@ -4,9 +4,18 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
 from backend.models import CacheEntry
 from datetime import datetime
+from django.db.models import Max, Model
 
 def transferToSnakeCase(name):
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
+def noneValueInNotNullField(not_null_fields, data_dict):
+    data_is_none_list = []
+    for key, data in data_dict:
+        if data is None:
+            data_is_none_list.append(key)
+    
+    return bool(set(not_null_fields).insersection(set(data_dict.keys())))
 
 def updateCache(func):
     def wrapper(self, *args, **kwargs):
@@ -26,6 +35,10 @@ def createCache(func):
 
 
 class GeneralManager:
+
+    group_model = Model
+    data_model = Model
+
     def __new__(cls, group_id, date=None, use_cache=True):
         if use_cache:
             manager_name = cls.__name__
@@ -50,7 +63,7 @@ class GeneralManager:
 
         self.id = data_obj.id
         self.group_id = group_obj.id
-        self.creator_user_id = data_obj.creator.id
+        self.creator_id = data_obj.creator.id
         self.creator = data_obj.creator
         self.active = data_obj.active
         self.date = data_obj.date
@@ -60,7 +73,7 @@ class GeneralManager:
         self.search_date = date
 
         return group_obj, data_obj
-
+    
     @classmethod
     def getAll(cls, date=None, **kwargs):
         """Creates a list of objects based on the given parameters.
@@ -76,10 +89,65 @@ class GeneralManager:
         To create a list of all objects where the 'name' column is equal to 'foo':
             getAll(name='foo')
         """
-        return [
-            cls(group_id, date) for group_id in
-            cls.group_model.objects.get(**kwargs).values_list('id', flat=True)
+
+        group_model_column_list = cls.__getColumnList(cls.group_model)
+        data_model_column_list = cls.__getColumnList(cls.data_model)
+
+        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
+        return cls.__getFilteredManagerList(group_data_dict, data_data_dict)
+
+
+    @classmethod
+    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, **kwargs):
+
+        not_unique_column_names = [
+            column_name for column_name in group_model_column_list
+            if column_name in data_model_column_list
         ]
+        
+        group_data_dict = {}
+        data_data_dict = {}
+        for _db_column, _value in kwargs.items():
+            db_column = _db_column
+            value = _value
+            if _db_column in not_unique_column_names:
+                raise ValueError(
+                    f'''
+                        It's not possible to search for {_db_column} because
+                        the value exists in group and data model.
+                    '''
+                )
+            
+            is_in_group_model, db_column, value = cls.__getValueAndColumnIfExists(db_column, group_model_column_list, cls.group_model, value)
+            is_in_data_model, db_column, value = cls.__getValueAndColumnIfExists(db_column, data_model_column_list, cls.data_model, value)
+            
+            if not is_in_group_model and not is_in_data_model:
+                raise ValueError(
+                    f'''
+                        You can't search data that is not available in DB.
+                        {db_column} has no corresponding db column.
+                    '''
+                )
+
+            elif is_in_group_model:
+                group_data_dict[db_column] = value
+            elif is_in_data_model:
+                data_data_dict[db_column] = value
+        
+        return group_data_dict, data_data_dict
+
+    @classmethod
+    def __getFilteredManagerList(cls, data_search_dict, group_search_dict, date=None):
+        search_date = date
+        if search_date is None:
+            search_date = datetime.now()
+
+        filter_subsubquery = cls.data_model.objects.filter(date__lt=date).values('group_id').annotate(max_date=Max('date')).values('max_date', 'group_id')
+        filter_subquery = cls.data_model.objects.filter(**{**{data_search_dict}, 'date__group_id__in': filter_subsubquery}).values('group_id')
+        group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+
+        return [cls(group_id, date) for group_id in group_id_list]
+
 
     def errorIfNotUpdatable(self):
         latest_db_id = self.data_model.objects.filter(
@@ -94,18 +162,44 @@ class GeneralManager:
                 data. Latest id = {latest_db_id}, your id = {self.id}
                 """
             )
+
     @staticmethod
-    def __checkIfColumnReferencesModel(db_column, available_column_list):
-        db_column_is_id = '_id' == db_column[-3:]
+    def __searchForColumn(column_name, column_list):
+        db_column_exists = False
+
+        column_name, is_reverencing_model = GeneralManager.__checkIfColumnReferencesModel(column_name, column_list)
+        column_name, is_many_to_many = GeneralManager.__checkIfColumnReferencesManyToMany(column_name, column_list)
+
+        if column_name in column_list:
+            db_column_exists = True
+
+        return db_column_exists, column_name, is_reverencing_model, is_many_to_many
+
+    @staticmethod
+    def __checkIfColumnReferencesManyToMany(column_name, available_column_list):
+        db_column_is_id = '_id_list' == column_name[-8:]
+        is_many_to_many = False
+        
+        if db_column_is_id:
+            db_column_model_name = column_name[:-8]
+            if db_column_model_name in available_column_list:
+                column_name = db_column_model_name
+                is_many_to_many = True
+        
+        return column_name, is_many_to_many
+
+    @staticmethod
+    def __checkIfColumnReferencesModel(column_name, available_column_list):
+        db_column_is_id = '_id' == column_name[-3:]
         is_reverencing_model = False
         
         if db_column_is_id:
-            db_column_model_name = db_column[:-3]
+            db_column_model_name = column_name[:-3]
             if db_column_model_name in available_column_list:
-                db_column = db_column_model_name
+                column_name = db_column_model_name
                 is_reverencing_model = True
         
-        return db_column, is_reverencing_model
+        return column_name, is_reverencing_model
     
     @staticmethod
     def __getValueForReverencedModelById(current_model, db_column, id):
@@ -117,6 +211,31 @@ class GeneralManager:
             model_for_db_value.objects.filter(id=id).first()
         )
         return model_obj
+
+    @staticmethod
+    def __getValueForManyToManyByIdList(current_model, db_column, id_list):
+        model_for_db_value = (
+            current_model._meta.get_field(db_column)
+            .remote_field.model
+        )
+        model_obj_list = (
+            model_for_db_value.objects.filter(id__in=list_of_ids)
+        )
+        return model_obj
+
+    @staticmethod
+    def __getValueAndColumnIfExists(db_column, model_column_list, model, value):
+        is_in_model, db_column, is_reverencing_model, is_many_to_many = GeneralManager.__searchForColumn(
+            db_column,
+            model_column_list
+        )
+        if is_reverencing_model:
+            value = GeneralManager.__getValueForReverencedModelById(model, db_column, id = value)
+        
+        if is_many_to_many:
+            value = GeneralManager.__getValueForManyToManyByIdList(model, db_column, id_list = value)
+        
+        return is_in_model, db_column, value
 
     def __checkInputDictForUpdate(self, db_column, value, available_column_list):
 
@@ -142,12 +261,9 @@ class GeneralManager:
     
     def __checkInputDictForCreation(self, db_column, value, available_column_list):
 
-        db_column, is_reverencing_model = self.__checkIfColumnReferencesModel(db_column, available_column_list)
+        is_in_model, db_column, value = self.__getValueAndColumnIfExists(db_column, available_column_list, self.data_model, value)
 
-        if is_reverencing_model:
-            value = self.__getValueForReverencedModelById(self.group_model, db_column, id = value)
-        
-        elif db_column not in available_column_list:
+        if not is_in_model:
             raise ValueError(
                 f'''
                     You can't push data that is not storable in DB.
@@ -155,32 +271,39 @@ class GeneralManager:
 
                 '''
             )
+        
 
         return db_column, value
-
+    
+    @staticmethod
+    def __getColumnList(model):
+        column_list = [field.name for field in model._meta.get_fields()]
+        return column_list
 
     @updateCache
     def update(self, creator_user_id, **kwargs):
         self.errorIfNotUpdatable()
+        data_model_column_list = self.__getColumnList(self.data_model)
+        group_model_column_list = [] #Unchangeable by update
 
-        latest_data = self.data_model.objects.filter(
-            **{self.__group_model_name:self.__group_obj}
-        ).latest('id').values()
-        column_list = list(latest_data.keys())
+        _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
 
+        latest_data = self.data_model.objects.values().latest('id')
 
-        changed_data = {}
-        for _db_column, _value in kwargs.items():
-            db_column, value = self.__checkInputDictForUpdate(_db_column, _value, column_list)
-            changed_data[db_column] = value
+        self.__writeDataData(latest_data, data_data_dict, creator_user_id, self.__group_obj)
+        self.__init__()
 
+    @classmethod
+    def __writeDataData(cls, latest_data, data_data_dict, creator_user_id, group_obj):
+        group_table_name = transferToSnakeCase(group_obj.__class__.__name__)
+        
         new_data = {
             **latest_data,
-            **changed_data,
+            **data_data_dict,
             **{
                 'date': datetime.now(),
                 'creator':User.objects.get(id=creator_user_id),
-                self.__group_model_name: self.group_id
+                group_table_name: group_obj
             }
         }
 
@@ -188,31 +311,80 @@ class GeneralManager:
             **new_data
         )
         new_data_in_model.save()
-        self.__init__()
 
     def deactivate(self, creator_user_id):
         self.update(active=False)
     
-    # @classmethod
-    # @createCache
-    # def create(cls, creator_user_id, **kwarg):
-    #     unique_fields = self.group_model._meta.unique_together
+    @staticmethod
+    def isDataUploadable(data_dict, model, compact=True):
 
-    #     if len(unique_fields) == 0:
-    #         new_group = self.group_model()
-    #         new_group.save()
-    #     else:
-    #         upload_dict = {}
-    #         if len(unique_fields) == len(kwarg.keys()):
-    #             for _db_column, _value in kwarg.items():
-    #                 db_column, value = __checkInputDictForCreation(_db_column, _value, unique_fields)
-    #                 upload_dict[db_column] = value
+        unique_fields = model._meta.unique_together
+        not_null_fields = [field for field in model._meta.get_fields() if not field.null and not field.auto_created]
+        
+        contains_all_unique_fields = set(unique_fields).issubset(set(data_dict.keys()))
+        contains_all_not_null_fields = set(not_null_fields).issubset(set(data_dict.keys()))
+        
+        all_not_null_fields_contain_data = noneValueInNotNullField(not_null_fields, data_dict)
 
-    #     data_model_field_list = [
-    #         {'name': field.name, 'null': field.null}
-    #         for field in self.data_model._meta.get_fields()
-    #     ]
+        if compact:
+            return (
+                contains_all_unique_fields and
+                contains_all_not_null_fields and
+                all_not_null_fields_contain_data
+            )
+        else:
+            return (
+                contains_all_unique_fields,
+                contains_all_not_null_fields,
+                all_not_null_fields_contain_data
+            )
 
+    @classmethod
+    @createCache
+    def create(cls, creator_user_id, **kwargs):
+        data_model_column_list = cls.__getColumnList(cls.data_model)
+        group_model_column_list = cls.__getColumnList(cls.group_model)
+
+        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
+
+        unique_fields = cls.group_model._meta.unique_together
+
+        is_group_data_uploadable = cls.isDataUploadable(group_data_dict, cls.group_model)
+        is_data_data_uploadable = cls.isDataUploadable(data_data_dict, cls.data_model)
+
+        if is_group_data_uploadable and is_data_data_uploadable:
+
+            if len(unique_fields) == 0:
+                new_group_obj = self.group_model(
+                    **group_data_dict
+                )
+            else:
+                new_group_obj = self.group_model.objects.get_or_create(
+                    **group_data_dict
+                )
+            new_group_obj.save()
+
+            cls.__writeDataData([], data_data_dict, creator_user_id, new_group_obj)
+
+            return cls(new_group_obj.id)
+
+        
+        else:
+            is_group_data_uploadable = cls.isDataUploadable(group_data_dict, cls.group_model, compact=False)
+            is_data_data_uploadable = cls.isDataUploadable(data_data_dict, cls.data_model, compact=False)
+            raise ValueError(
+                f'''
+                The given **kwargs are not sufficient.
+                Because group table data:
+                    contains_all_unique_fields: {is_group_data_uploadable[0]}
+                    contains_all_not_null_fields: {is_group_data_uploadable[1]}
+                    all_not_null_fields_contain_data: {is_group_data_uploadable[2]}
+                Because data table data:
+                    contains_all_unique_fields: {is_data_data_uploadable[0]}
+                    contains_all_not_null_fields: {is_data_data_uploadable[1]}
+                    all_not_null_fields_contain_data: {is_data_data_uploadable[2]}
+                '''
+            )
 
     def __getGroupObject(group_id):
         try:
