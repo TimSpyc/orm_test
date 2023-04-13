@@ -34,7 +34,8 @@ Table for data storage of user changeable data. Allways contains the following c
             return self.name
 ```
 
-"ManyToMany" fields should always be specified without "s" at the end. "ForeignKey" and "ManyToMany" fields are always named after the referenced object and written in snake_case."
+"ManyToMany" fields should always be specified without "s" at the end. "ForeignKey" and "ManyToMany" fields are always named after the referenced object and written in snake_case.
+"ForeignKey" and "ManyToMany" fields only reference Reference Table or Group Table.
 
 ```python
     class DerivativeConstellium(models.Model):
