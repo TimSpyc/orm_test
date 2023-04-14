@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -70,6 +71,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'orm_test.wsgi.application'
 
+if 'test' in sys.argv:
+    MIGRATION_MODULES = {'backend': None}
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
