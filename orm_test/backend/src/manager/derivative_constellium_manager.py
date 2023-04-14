@@ -19,13 +19,28 @@ from manager import GeneralManager
 import timeit
 
 class DerivativeConstelliumManager(GeneralManager):
+    """
+    A manager class for handling DerivativeConstellium-related operations, extending the GeneralManager.
+
+    Attributes:
+        group_model (models.Model): The DerivativeConstelliumGroup model.
+        data_model (models.Model): The DerivativeConstellium model.
+    """
     group_model = DerivativeConstelliumGroup
     data_model = DerivativeConstellium
 
-    def __init__(self, derivative_constellium_group_id, date=None, use_cache=True):
+    def __init__(self, derivative_constellium_group_id, search_date=None, use_cache=True):
+        """
+        Initialize a DerivativeConstelliumManager instance.
+
+        Args:
+            derivative_constellium_group_id (int): The ID of the DerivativeConstelliumGroup instance.
+            search_date (datetime.datetime, optional): The date used for filtering data. Defaults to None.
+            use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
+        """
         derivative_constellium_group, derivative_constellium = super().__init__(
             group_id=derivative_constellium_group_id,
-            date=date
+            search_date=search_date
         )
         self.project_group_id = derivative_constellium_group.project_group.id
         self.name = derivative_constellium.name
@@ -40,10 +55,15 @@ class DerivativeConstelliumManager(GeneralManager):
 
     @property
     def project_manager(self):
+        """
+        Get a ProjectManager instance for the current DerivativeConstelliumManager.
+
+        Returns:
+            ProjectManager: An instance of the ProjectManager class.
+        """
         from project_manager import ProjectManager
-        if self._project_manager is None:
-            self._project_manager = ProjectManager(self.project_group_id, self.search_date)
-        return self._project_manager
+        return ProjectManager(self.project_group_id, self.search_date)
+
 
     # @classmethod
     # def create(cls, project_group_id, name, sop_date, eop_date, derivative_type_id, estimated_price, estimated_weight, prediction_accuracy_id, creator_user_id):

@@ -83,13 +83,13 @@ class GeneralManager:
     group_model: Model
     data_model: Model
 
-    def __new__(cls, group_id=None, date=None, use_cache=True):
+    def __new__(cls, group_id=None, search_date=None, use_cache=True):
         """
         Create a new instance of the Manager or return a cached instance if available.
 
         Args:
             group_id (int, optional): The ID of the group object. Defaults to None for caching only.
-            date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
+            search_date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
             use_cache (bool, optional): Whether to use the cache when searching for instances. Defaults to True.
 
         Returns:
@@ -103,28 +103,28 @@ class GeneralManager:
             group_model_name = transferToSnakeCase(cls.group_model.__name__)
             group_model_obj = cls.group_model(group_id)
 
-            if date is None:
+            if search_date is None:
                 cached_group_obj = cache.get(f"{manager_name}|{group_id}")
-            cached_instance = CacheEntry.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, date)
+            cached_instance = CacheEntry.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, search_date)
             if cached_instance:
                 return cached_instance
 
         instance = super().__new__(cls)
-        instance.__init__(group_id, date)
-        CacheEntry.set_cache_data(manager_name, group_id, instance, instance.date)
+        instance.__init__(group_id, search_date)
+        CacheEntry.set_cache_data(manager_name, group_id, instance, instance.search_date)
         return instance
 
-    def __init__(self, group_id, date=None):
+    def __init__(self, group_id, search_date=None):
         """
         Initialize the manager with the given group_id and date. And save all default attributes.
 
         Args:
             group_id (int): The ID of the group object.
-            date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
+            search_date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
         """
         self.__group_model_name = transferToSnakeCase(self.group_model.__name__)
         group_obj = self.__getGroupObject(group_id)
-        data_obj = self.__getDataObject(group_obj, date)
+        data_obj = self.__getDataObject(group_obj, search_date)
 
         self.__group_obj = group_obj
         self.__data_obj = data_obj
@@ -136,18 +136,18 @@ class GeneralManager:
         self.active = data_obj.active
         self.date = data_obj.date
 
-        if date is None:
-            date = datetime.now()
-        self.search_date = date
+        if search_date is None:
+            search_date = datetime.now()
+        self.search_date = search_date
 
         return group_obj, data_obj
     
     @classmethod
-    def getAll(cls, date=None, **kwargs):
+    def getAll(cls, search_date=None, **kwargs):
         """Creates a list of objects based on the given parameters.
 
         Keyword arguments:
-        date (datetime.date, optional) -- An optional argument that specifies the search date for the objects to be created.
+        search_date (datetime.date, optional) -- An optional argument that specifies the search date for the objects to be created.
         **kwargs: A variable that contains key-value pairs of filter conditions for the database query.
 
         Returns:
@@ -220,27 +220,26 @@ class GeneralManager:
         return group_data_dict, data_data_dict
 
     @classmethod
-    def __getFilteredManagerList(cls, data_search_dict, group_search_dict, date=None):
+    def __getFilteredManagerList(cls, data_search_dict, group_search_dict, search_date=None):
         """
         Get a filtered list of manager instances based on the provided search criteria.
 
         Args:
             data_search_dict (dict): A dictionary containing data model search criteria.
             group_search_dict (dict): A dictionary containing group model search criteria.
-            date (datetime, optional): The date to be used for filtering. Defaults to None.
+            search_date (datetime, optional): The date to be used for filtering. Defaults to None.
 
         Returns:
             list: A list of filtered manager instances.
         """
-        search_date = date
         if search_date is None:
             search_date = datetime.now()
 
-        filter_subsubquery = cls.data_model.objects.filter(date__lt=date).values('group_id').annotate(max_date=Max('date')).values('max_date', 'group_id')
+        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values('group_id').annotate(max_date=Max('date')).values('max_date', 'group_id')
         filter_subquery = cls.data_model.objects.filter(**{**{data_search_dict}, 'date__group_id__in': filter_subsubquery}).values('group_id')
         group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
 
-        return [cls(group_id, date) for group_id in group_id_list]
+        return [cls(group_id, search_date) for group_id in group_id_list]
 
 
     def errorIfNotUpdatable(self):
@@ -656,29 +655,29 @@ class GeneralManager:
                 f"{self.group_model.__name__} with id {group_id} does not exist"
             )
     
-    def __getDataObject(self, group_obj, date):
+    def __getDataObject(self, group_obj, search_date):
         """
         Get the data model instance for the given group object and date.
 
         Args:
             group_obj (GroupModel): The group model instance for which the data is to be fetched.
-            date (datetime): The date for which the data is to be fetched.
+            search_date (datetime): The date for which the data is to be fetched.
 
         Returns:
             DataModel: The data model instance for the given group object and date.
         """
         try:
-            if date is None:
+            if search_date is None:
                 data_obj = self.data_model.objects.filter(
                     **{self.__group_model_name: group_obj}
                 ).latest('date')
             else:
                 data_obj = self.data_model.objects.filter(
-                    **{self.__group_model_name: group_obj, 'date__lte': date}
+                    **{self.__group_model_name: group_obj, 'date__lte': search_date}
                 ).latest('date')
         except ObjectDoesNotExist:
             raise NonExistentGroupError(
-                f"{self.data_model.__name__} with group_id {group_id} does not exist at date {date}")
+                f"{self.data_model.__name__} with group_id {group_obj.id} does not exist at date {search_date}")
 
         return data_obj
     
@@ -695,4 +694,4 @@ class GeneralManager:
         """
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
-        CacheEntry.objects.set_cache_data(self.__class__.__name__, self.group_id, self, self.date)
+        CacheEntry.objects.set_cache_data(self.__class__.__name__, self.group_id, self, self.search_date)

@@ -19,14 +19,30 @@ from manager import GeneralManager
 
 
 class ProjectUserManager(GeneralManager):
+    """
+    A manager class for handling ProjectUser-related operations, extending the GeneralManager.
+
+    Attributes:
+        group_model (models.Model): The ProjectUserGroup model.
+        data_model (models.Model): The ProjectUser model.
+    """
+
     group_model = ProjectUserGroup
     data_model = ProjectUser
 
-    def __init__(self, project_user_group_id, date=None, use_cache=True):
+    def __init__(self, project_user_group_id, search_date=None, use_cache=True):
+        """
+        Initialize a ProjectUserManager instance.
+
+        Args:
+            project_user_group_id (int): The ID of the ProjectUserGroup instance.
+            search_date (datetime.datetime, optional): The date used for filtering data. Defaults to None.
+            use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
+        """
 
         project_user_group, project_user = super().__init__(
             group_id=project_user_group_id,
-            date=date,
+            search_date=search_date,
             use_cache=use_cache
         )
 
@@ -38,78 +54,84 @@ class ProjectUserManager(GeneralManager):
 
     @property
     def project_manager(self):
+        """
+        Get a ProjectManager instance for the current ProjectUserManager.
+
+        Returns:
+            ProjectManager: An instance of the ProjectManager class.
+        """
         from project_manager import ProjectManager
         return ProjectManager(self.project_group_id, self.search_date)
 
-    @classmethod
-    @createCache
-    def create(cls, project_group_id, creator_user_id, creator_creator_user_id, project_user_role_ids):
-        project_user_group, created = ProjectUserGroup.objects.get_or_create(
-            project_group_id=project_group_id,
-            user=User.objects.get(id=creator_user_id)
-        )
+    # @classmethod
+    # @createCache
+    # def create(cls, project_group_id, creator_user_id, creator_creator_user_id, project_user_role_ids):
+    #     project_user_group, created = ProjectUserGroup.objects.get_or_create(
+    #         project_group_id=project_group_id,
+    #         user=User.objects.get(id=creator_user_id)
+    #     )
 
-        new_project_user = ProjectUser(
-            date=datetime.now(),
-            project_user_group=project_user_group,
-            creator=User.objects.get(id=creator_creator_user_id),
-            active=True
-        )
-        new_project_user.save()
+    #     new_project_user = ProjectUser(
+    #         date=datetime.now(),
+    #         project_user_group=project_user_group,
+    #         creator=User.objects.get(id=creator_creator_user_id),
+    #         active=True
+    #     )
+    #     new_project_user.save()
 
-        for role_id in project_user_role_ids:
-            role = ProjectUserRole.objects.get(id=role_id)
-            new_project_user.project_user_roles.add(role)
+    #     for role_id in project_user_role_ids:
+    #         role = ProjectUserRole.objects.get(id=role_id)
+    #         new_project_user.project_user_roles.add(role)
 
-        new_project_user.save()
+    #     new_project_user.save()
 
-        project_user_manager = cls(project_user_group.id)
+    #     project_user_manager = cls(project_user_group.id)
         
-        return project_user_manager
+    #     return project_user_manager
     
-    @updateCache
-    def deactivate(self):
-        project_user = ProjectUser.objects.get(id=self.id)
-        project_user.active = False
-        project_user.save()
+    # @updateCache
+    # def deactivate(self):
+    #     project_user = ProjectUser.objects.get(id=self.id)
+    #     project_user.active = False
+    #     project_user.save()
 
-        new_project_user = ProjectUser(
-            date=datetime.now(),
-            project_user_group_id=self.group_id,
-            creator=self.creator_creator_user_id,
-            active=False
-        )
-        new_project_user.save()
+    #     new_project_user = ProjectUser(
+    #         date=datetime.now(),
+    #         project_user_group_id=self.group_id,
+    #         creator=self.creator_creator_user_id,
+    #         active=False
+    #     )
+    #     new_project_user.save()
 
-        for role in self.roles:
-            role_obj = ProjectUserRole.objects.get(id=role["id"])
-            new_project_user.project_user_roles.add(role_obj)
+    #     for role in self.roles:
+    #         role_obj = ProjectUserRole.objects.get(id=role["id"])
+    #         new_project_user.project_user_roles.add(role_obj)
 
-        new_project_user.save()
-        self.active = False
+    #     new_project_user.save()
+    #     self.active = False
     
-    @updateCache
-    def update(self, new_creator_user_id, creator_creator_user_id, project_user_role_ids):
-        project_user_group = ProjectUserGroup.objects.get(id=self.group_id)
+    # @updateCache
+    # def update(self, new_creator_user_id, creator_creator_user_id, project_user_role_ids):
+    #     project_user_group = ProjectUserGroup.objects.get(id=self.group_id)
 
-        new_project_user = ProjectUser(
-            project_user_group=project_user_group,
-            user=User.objects.get(id=new_creator_user_id),
-            date=datetime.now(),
-            creator=User.objects.get(id=creator_creator_user_id),
-            active=True
-        )
-        new_project_user.save()
+    #     new_project_user = ProjectUser(
+    #         project_user_group=project_user_group,
+    #         user=User.objects.get(id=new_creator_user_id),
+    #         date=datetime.now(),
+    #         creator=User.objects.get(id=creator_creator_user_id),
+    #         active=True
+    #     )
+    #     new_project_user.save()
 
-        for role_id in project_user_role_ids:
-            new_project_user.project_user_roles.add(
-                ProjectUserRole.objects.get(id=role_id))
+    #     for role_id in project_user_role_ids:
+    #         new_project_user.project_user_roles.add(
+    #             ProjectUserRole.objects.get(id=role_id))
 
-        new_project_user.save()
+    #     new_project_user.save()
 
-        self.id = new_project_user.id
-        self.date = new_project_user.date
-        self.creator_creator_user_id = new_project_user.creator_user.id
-        self.roles = [{"id": role.id, "name": role.role_name}
-                      for role in new_project_user.project_user_roles.all()]
-        self.active = new_project_user.active
+    #     self.id = new_project_user.id
+    #     self.date = new_project_user.date
+    #     self.creator_creator_user_id = new_project_user.creator_user.id
+    #     self.roles = [{"id": role.id, "name": role.role_name}
+    #                   for role in new_project_user.project_user_roles.all()]
+    #     self.active = new_project_user.active
