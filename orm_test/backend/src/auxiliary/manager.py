@@ -53,23 +53,6 @@ def updateCache(func):
         return result
     return wrapper
 
-def createCache(func):
-    """
-    Decorator function to create cache after executing the wrapped class method.
-
-    Args:
-        func (callable): The class method to be decorated.
-
-    Returns:
-        callable: The wrapped class method with cache creation functionality.
-    """
-    def wrapper(cls, *args, **kwargs):
-        result = func(cls, *args, **kwargs)
-        result.updateCache()
-
-        return result
-    return wrapper
-
 
 class GeneralManager:
     """
@@ -143,7 +126,20 @@ class GeneralManager:
         return group_obj, data_obj
     
     @classmethod
-    def getAll(cls, search_date=None, **kwargs):
+    def all(cls, search_date=None):
+        """
+        Retrieves all objects of the manager's class, optionally filtering by search_date.
+
+        Args:
+            search_date (datetime.date, optional): A date to filter the objects by. If specified, only objects with a date less than or equal to the search_date will be included.
+
+        Returns:
+            list: A list of manager objects, filtered by the optional search_date if provided.
+        """
+        return cls.filter(search_date=None)
+
+    @classmethod
+    def filter(cls, search_date=None, **kwargs):
         """Creates a list of objects based on the given parameters.
 
         Keyword arguments:
@@ -155,7 +151,7 @@ class GeneralManager:
 
         Example:
         To create a list of all manager objects where the 'name' column is equal to 'foo':
-            getAll(name='foo')
+            filter(name='foo')
         """
 
         group_model_column_list = cls.__getColumnList(cls.group_model)
@@ -582,7 +578,7 @@ class GeneralManager:
         )
 
     @classmethod
-    @createCache
+    @updateCache
     def create(cls, creator_user_id, **kwargs):
         """
         Create a new instance of the current class and initialize cache.

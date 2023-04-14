@@ -56,7 +56,7 @@ class ProjectManager(GeneralManager):
             list: A list of ProjectUserManager instances.
         """
         from project_user_manager import ProjectUserManager
-        return ProjectUserManager.getAll(
+        return ProjectUserManager.filter(
             date=self.search_date,
             project_group_id=self.group_id
         )
