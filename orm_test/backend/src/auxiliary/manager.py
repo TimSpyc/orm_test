@@ -16,7 +16,7 @@ def transferToSnakeCase(name):
     Returns:
         str: The output string in snake_case.
     """
-    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+    return re.sub(r'(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])', '_', name).lower()
 
 def noneValueInNotNullField(not_null_fields, data_dict):
     """
@@ -30,11 +30,11 @@ def noneValueInNotNullField(not_null_fields, data_dict):
         bool: True if any None value is found in the NOT NULL fields, False otherwise.
     """
     data_is_none_list = []
-    for key, data in data_dict:
+    for key, data in data_dict.items():
         if data is None:
             data_is_none_list.append(key)
     
-    return bool(set(not_null_fields).insersection(set(data_dict.keys())))
+    return bool(set(not_null_fields).intersection(set(data_is_none_list)))
 
 def updateCache(func):
     """
@@ -238,7 +238,7 @@ class GeneralManager:
         return [cls(group_id, search_date) for group_id in group_id_list]
 
 
-    def errorIfNotUpdatable(self):
+    def __errorIfNotUpdatable(self):
         """
         Raise an error if the current instance is not updatable.
 
@@ -376,7 +376,7 @@ class GeneralManager:
             .remote_field.model
         )
         model_obj_list = (
-            model_for_db_value.objects.filter(id__in=list_of_ids)
+            model_for_db_value.objects.filter(id__in=id_list)
         )
         return model_obj_list
 
@@ -499,7 +499,7 @@ class GeneralManager:
             creator_user_id (int): The ID of the user who is making the update.
             **kwargs: Key-value pairs representing the new data to be updated.
         """
-        self.errorIfNotUpdatable()
+        self.__errorIfNotUpdatable()
         data_model_column_list = self.__getColumnList(self.data_model)
         group_model_column_list = [] #Unchangeable by update
 

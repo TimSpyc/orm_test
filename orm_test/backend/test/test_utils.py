@@ -1,5 +1,5 @@
 from django.test import TestCase
-from your_module import transferToSnakeCase, noneValueInNotNullField, updateCache, createCache
+from backend.src.auxiliary.manager import transferToSnakeCase, noneValueInNotNullField, updateCache
 
 class TestTransferToSnakeCase(TestCase):
     
