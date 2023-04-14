@@ -39,18 +39,24 @@ class GeneralManager:
     group_model = Model
     data_model = Model
 
-    def __new__(cls, group_id, date=None, use_cache=True):
+    def __new__(cls, group_id=None, date=None, use_cache=True):
+        manager_name = cls.__name__
+        
+        if group_id is None:
+            return super().__new__(cls)
         if use_cache:
-            manager_name = cls.__name__
+            group_model_name = transferToSnakeCase(cls.group_model.__name__)
+            group_model_obj = cls.group_model(group_id)
+
             if date is None:
                 cached_group_obj = cache.get(f"{manager_name}|{group_id}")
-            cached_instance = CacheEntry.objects.get_cache_data(manager_name, cls.data_model, group_id, date)
+            cached_instance = CacheEntry.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, date)
             if cached_instance:
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__(group_id, date)
-        CacheEntry.objects.set_cache_data(manager_name, group_id, instance, instance.date)
+        CacheEntry.set_cache_data(manager_name, group_id, instance, instance.date)
         return instance
 
     def __init__(self, group_id, date=None):
@@ -288,7 +294,7 @@ class GeneralManager:
 
         _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
 
-        latest_data = self.data_model.objects.values().latest('id')
+        latest_data = self.data_model.objects.values().latest('date')
 
         self.__writeDataData(latest_data, data_data_dict, creator_user_id, self.__group_obj)
         self.__init__()
@@ -386,28 +392,27 @@ class GeneralManager:
                 '''
             )
 
-    def __getGroupObject(group_id):
+    def __getGroupObject(self, group_id):
         try:
-            return self.group_model.objects.get(id=group_id).first()
+            return self.group_model.objects.get(id=group_id)
         except ObjectDoesNotExist:
             raise NotUpdatableError(
                 f"{self.group_model.__name__} with id {group_id} does not exist"
             )
-
-
-    def __getDataObject(group_obj, date):
+    
+    def __getDataObject(self, group_obj, date):
         try:
             if date is None:
-                data_obj = data_model.objects.filter(
+                data_obj = self.data_model.objects.filter(
                     **{self.__group_model_name: group_obj}
-                ).latest('id')
+                ).latest('date')
             else:
-                data_obj = data_model.objects.filter(
+                data_obj = self.data_model.objects.filter(
                     **{self.__group_model_name: group_obj, 'date__lte': date}
-                ).latest('id')
+                ).latest('date')
         except ObjectDoesNotExist:
             raise NonExistentGroupError(
-                f"{data_model.__name__} with group_id {group_id} does not exist at date {date}")
+                f"{self.data_model.__name__} with group_id {group_id} does not exist at date {date}")
 
         return data_obj
     
