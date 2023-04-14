@@ -2,7 +2,7 @@ from exceptions import NonExistentGroupError, NotUpdatableError
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
-from backend.models import CacheEntry
+from backend.models import CacheEntry, User
 from datetime import datetime
 from django.db.models import Max, Model
 
@@ -53,6 +53,23 @@ def updateCache(func):
         return result
     return wrapper
 
+def createCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(cls, *args, **kwargs):
+        result = func(cls, *args, **kwargs)
+        cls.updateCache(result)
+
+        return result
+    return wrapper
+
 
 class GeneralManager:
     """
@@ -87,7 +104,9 @@ class GeneralManager:
             group_model_obj = cls.group_model(group_id)
 
             if search_date is None:
-                cached_group_obj = cache.get(f"{manager_name}|{group_id}")
+                cached_instance = cache.get(f"{manager_name}|{group_id}")
+                if cached_instance is not None:
+                    return cached_instance
             cached_instance = CacheEntry.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, search_date)
             if cached_instance:
                 return cached_instance
@@ -157,12 +176,12 @@ class GeneralManager:
         group_model_column_list = cls.__getColumnList(cls.group_model)
         data_model_column_list = cls.__getColumnList(cls.data_model)
 
-        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
+        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs)
         return cls.__getFilteredManagerList(group_data_dict, data_data_dict)
 
 
-    @classmethod
-    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, **kwargs):
+    @staticmethod
+    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs):
         """
         Separate the input data into group and data dictionaries based on the provided column lists.
 
@@ -246,8 +265,8 @@ class GeneralManager:
             NotUpdatableError: If the current instance is not the latest data in the database.
         """
         latest_db_id = self.data_model.objects.filter(
-            **{transferToSnakeCase(self.group_model.__name__): group_obj}
-        ).values('id')
+            **{transferToSnakeCase(self.group_model.__name__): self.__group_obj}
+        ).values('id').latest('date')['id']
 
         is_latest = self.id == latest_db_id
         if not is_latest:
@@ -503,12 +522,17 @@ class GeneralManager:
         data_model_column_list = self.__getColumnList(self.data_model)
         group_model_column_list = [] #Unchangeable by update
 
-        _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
+        _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(self, data_model_column_list, group_model_column_list, kwargs)
 
-        latest_data = self.data_model.objects.values().latest('date')
+        group_model_name = transferToSnakeCase(self.group_model.__name__)
+        group_model_obj = self.group_model(self.group_id)
+
+        latest_data = self.data_model.objects.filter(**{group_model_name: group_model_obj}).values().latest('date')
+        if latest_data == []:
+            latest_data = {}
 
         self.__writeDataData(latest_data, data_data_dict, creator_user_id, self.__group_obj)
-        self.__init__()
+        self.__init__(self.group_id)
 
     @classmethod
     def __writeDataData(cls, latest_data, data_data_dict, creator_user_id, group_obj):
@@ -532,8 +556,12 @@ class GeneralManager:
                 group_table_name: group_obj
             }
         }
+        try:
+            del new_data['id']
+        except KeyError:
+            pass
 
-        new_data_in_model = self.data_model(
+        new_data_in_model = cls.data_model(
             **new_data
         )
         new_data_in_model.save()
@@ -545,10 +573,10 @@ class GeneralManager:
         Args:
             creator_user_id (int): The ID of the user who is deactivating the instance.
         """
-        self.update(active=False)
+        self.update(creator_user_id, active=False)
     
-    @staticmethod
-    def isDataUploadable(data_dict, model):
+    @classmethod
+    def isDataUploadable(cls, data_dict, model):
         """
         Check if the data provided in the dictionary can be uploaded to the specified model.
 
@@ -563,12 +591,15 @@ class GeneralManager:
                 3. Whether all not_null fields in the data_dict contain data (no None values).
         """
         unique_fields = model._meta.unique_together
-        not_null_fields = [field for field in model._meta.get_fields() if not field.null and not field.auto_created]
+        not_null_fields = [field.name for field in model._meta.get_fields() if not field.null and not field.auto_created]
+
+        data_dict_extended_list = list(data_dict.keys())
+        data_dict_extended_list.extend(['date', 'creator', 'active', transferToSnakeCase(cls.group_model.__name__)])
+
+        contains_all_unique_fields = set(unique_fields).issubset(set(data_dict_extended_list))
+        contains_all_not_null_fields = set(not_null_fields).issubset(set(data_dict_extended_list))
         
-        contains_all_unique_fields = set(unique_fields).issubset(set(data_dict.keys()))
-        contains_all_not_null_fields = set(not_null_fields).issubset(set(data_dict.keys()))
-        
-        all_not_null_fields_contain_data = noneValueInNotNullField(not_null_fields, data_dict)
+        all_not_null_fields_contain_data = not noneValueInNotNullField(not_null_fields, data_dict)
 
 
         return (
@@ -578,7 +609,7 @@ class GeneralManager:
         )
 
     @classmethod
-    @updateCache
+    @createCache
     def create(cls, creator_user_id, **kwargs):
         """
         Create a new instance of the current class and initialize cache.
@@ -593,7 +624,7 @@ class GeneralManager:
         data_model_column_list = cls.__getColumnList(cls.data_model)
         group_model_column_list = cls.__getColumnList(cls.group_model)
 
-        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(data_model_column_list, group_model_column_list, kwargs)
+        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs)
 
         unique_fields = cls.group_model._meta.unique_together
 
@@ -603,7 +634,7 @@ class GeneralManager:
         if is_group_data_uploadable and is_data_data_uploadable:
 
             if len(unique_fields) == 0:
-                new_group_obj = self.group_model(
+                new_group_obj = cls.group_model(
                     **group_data_dict
                 )
             else:
@@ -612,7 +643,7 @@ class GeneralManager:
                 )
             new_group_obj.save()
 
-            cls.__writeDataData([], data_data_dict, creator_user_id, new_group_obj)
+            cls.__writeDataData({}, data_data_dict, creator_user_id, new_group_obj)
 
             return cls(new_group_obj.id)
 
@@ -690,4 +721,4 @@ class GeneralManager:
         """
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
-        CacheEntry.objects.set_cache_data(self.__class__.__name__, self.group_id, self, self.search_date)
+        CacheEntry.set_cache_data(self.__class__.__name__, self.group_id, self, self.search_date)
