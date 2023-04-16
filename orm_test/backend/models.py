@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Max, Subquery
+from django.core.validators import MinValueValidator, MaxValueValidator
 import pickle
 
 
@@ -218,3 +219,88 @@ class DerivativeConstellium(DataTable):
 
     def __str__(self):
         return self.name
+
+class Customer(ReferenceTable):
+    company_name = models.CharField(max_length=255)
+    group_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.company_name} ({self.group_name})"
+
+class CustomerPlant(ReferenceTable):
+    name = models.CharField(max_length=255)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.name} - {self.customer}"
+
+class RevisionLMC(ReferenceTable):
+    revision_date = models.DateField()
+
+    def __str__(self):
+        return self.revision_date.strftime('%Y-%m-%d')
+
+class DerivativeGroupLMC(GroupTable):
+    lmc_full_code = models.CharField(max_length=255, unique=True)
+    lmc_model_code = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ('lmc_full_code', 'lmc_model_code')
+
+    def __str__(self):
+        return f"{self.lmc_full_code} - {self.lmc_model_code}"
+
+class LMCDerivative(DataTable):
+    derivative_group_lmc = models.ForeignKey(DerivativeGroupLMC, on_delete=models.CASCADE)
+    revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
+    region = models.CharField(max_length=255)
+    trade_region = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    sales_group = models.ForeignKey(Customer, related_name='sales_groups', on_delete=models.CASCADE)
+    manufacturer = models.ForeignKey(Customer, related_name='manufacturers', on_delete=models.CASCADE)
+    local_make = models.ForeignKey(Customer, related_name='local_makes', on_delete=models.CASCADE)
+    local_model_line = models.CharField(max_length=255)
+    local_program_code = models.CharField(max_length=255)
+    local_production_model = models.CharField(max_length=255)
+    global_make = models.ForeignKey(Customer, related_name='global_makes', on_delete=models.CASCADE)
+    global_production_model = models.CharField(max_length=255)
+    gvw = models.CharField(max_length=255)
+    platform = models.CharField(max_length=255)
+    plant = models.ForeignKey(CustomerPlant, on_delete=models.CASCADE)
+    production_type = models.CharField(max_length=255)
+    vehicle_type = models.CharField(max_length=255, db_column='type')
+    regional_size = models.CharField(max_length=255)
+    regional_body_type = models.CharField(max_length=255)
+    regional_status = models.CharField(max_length=255)
+    global_size = models.CharField(max_length=255)
+    global_body_type = models.CharField(max_length=255)
+    global_status = models.CharField(max_length=255)
+    sop_date = models.DateField()
+    eop_date = models.DateField()
+    next_facelift = models.DateField()
+    last_actual = models.DateField()
+    design_lead = models.ForeignKey(Customer, related_name='design_leads', on_delete=models.CASCADE)
+    design_lead_location = models.CharField(max_length=255)
+    design_lead_country = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.lmc_derivative_group} - {self.local_make} {self.local_model_line}"
+
+class DerivativeVolumeGroupLMC(GroupTable):
+    derivative_group = models.ForeignKey(DerivativeGroupLMC, on_delete=models.CASCADE)
+    year = models.PositiveIntegerField(validators=[MinValueValidator(1900), MaxValueValidator(2100)])
+    month = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
+
+    class Meta:
+        unique_together = ('derivative_group', 'year', 'month')
+
+    def __str__(self):
+        return f"Derivative Volume Group {self.id}: {self.derivative_group.lmc_full_code} - {self.year}-{self.month}"
+
+class DerivativeVolumeLMC(DataTable):
+    volume_group = models.ForeignKey(DerivativeVolumeGroupLMC, on_delete=models.CASCADE)
+    lmc_revision = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
+    volume = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"LMC Derivative Volume {self.id}: {self.volume_group.derivative_group.lmc_full_code} - {self.lmc_revision.revision_date} - {self.volume}"

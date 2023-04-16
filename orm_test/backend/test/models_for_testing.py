@@ -1,7 +1,7 @@
 from backend.models import GroupTable, DataTable, ReferenceTable
 from django.db import models
 
-class TestProjectGroup(GroupTable):
+class TestProjectGroup(models.Model):
     """
     A Django model representing a TestProject group.
     """
@@ -11,7 +11,7 @@ class TestProjectGroup(GroupTable):
     class Meta:
         app_label = 'backend'
 
-class TestProject(DataTable):
+class TestProject(models.Model):
     """
     A Django model representing a TestProject, including its name, TestProject number, and associated TestProject group.
     """
@@ -25,7 +25,7 @@ class TestProject(DataTable):
     class Meta:
         app_label = 'backend'
 
-class TestProjectUserGroup(GroupTable):
+class TestProjectUserGroup(models.Model):
     """
     A Django model representing a TestProject user group, which associates a user with a TestProject group.
     """
@@ -36,7 +36,7 @@ class TestProjectUserGroup(GroupTable):
         app_label = 'backend'
 
 
-class TestProjectUserRole(ReferenceTable):
+class TestProjectUserRole(models.Model):
     """
     A Django model representing a TestProject user role, which includes a role name.
     """
@@ -49,7 +49,7 @@ class TestProjectUserRole(ReferenceTable):
         app_label = 'backend'
 
 
-class TestProjectUser(DataTable):
+class TestProjectUser(models.Model):
     """
     A Django model representing a TestProject user, including their TestProject user group and TestProject user roles.
     """

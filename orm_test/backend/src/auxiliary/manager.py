@@ -390,6 +390,7 @@ class GeneralManager:
         Returns:
             QuerySet: A queryset of related model objects.
         """
+        
         model_for_db_value = (
             current_model._meta.get_field(db_column)
             .remote_field.model
@@ -398,6 +399,7 @@ class GeneralManager:
             model_for_db_value.objects.filter(id__in=id_list)
         )
         return model_obj_list
+
 
     @staticmethod
     def __getValueAndColumnIfExists(db_column, model_column_list, model, value):
