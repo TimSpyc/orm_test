@@ -43,7 +43,7 @@ class DataTable(models.Model):
     class Meta:
         abstract = True
 
-class CacheEntry(models.Model):
+class CacheManager(models.Model):
     """
     A Django model representing cache entries, which store the manager name, group ID, date, and pickled data.
     """
@@ -118,6 +118,103 @@ class CacheEntry(models.Model):
         entry.data=pickle.dumps(data)
         entry.save()
 
+class ScenarioGroup(GroupTable):
+    """
+    A Django model representing a scenario group.
+    """
+    user = models.ForeignKey('User', on_delete=CASCADE)
+
+    def __str__(self):
+        return self.id
+
+
+class Scenario(DataTable):
+    """
+    A Django model representing a scenario, including its name, data, and associated scenario group.
+    """
+    name = models.CharField(max_length=255)
+    data = models.JSONField()
+
+    def __str__(self):
+        return self.name
+
+class CacheIntermediate(models.Model):
+    """
+    A Django model representing cache entries, which store the manager name, group ID, date, and pickled data.
+    """
+    intermediate_name = models.CharField(max_length=100)
+    group_id = models.IntegerField()
+    date = models.DateTimeField()
+    intermediate_dependencies = models.ManyToManyField('self', blank=True, symmetrical=False)
+    manager_dependencies = model.ManyToManyField('CacheManager', blank=True, symmetrical=False)
+    data = models.BinaryField()
+    scenario_group = models.ForeignKey(ScenarioGroup, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('intermediate_name', 'group_id', 'date')
+
+    # @classmethod
+    # def get_cache_data(cls, manager_name, group_model_obj, group_model_name, data_model, input_group_id, date):
+    #     """
+    #     Retrieve cached data for a given manager name, group model object, group model name, data model, input group ID, and date.
+        
+    #     Args:
+    #         manager_name (str): The name of the manager.
+    #         group_model_obj (models.Model): The group model object.
+    #         group_model_name (str): The name of the group model.
+    #         data_model (models.Model): The data model.
+    #         input_group_id (int): The input group ID.
+    #         date (datetime.datetime): The date used for filtering the cached data. If set to None, the latest date will be used.
+
+    #     Returns:
+    #         object: The cached data as a Python object, or None if no cache entry is found.
+    #     """
+    #     try:
+    #         if date is None:
+    #             latest_dates = data_model.objects.filter(
+    #                 **{group_model_name: group_model_obj}
+    #             ).values(group_model_name).annotate(latest_date=Max('date'))
+    #         else:
+    #             latest_dates = data_model.objects.filter(
+    #                 date__lt=date,
+    #                 group_model_name=group_model_obj
+    #             ).values(group_model_name).annotate(latest_date=Max('date'))
+
+    #         result = cls.objects.filter(
+    #             manager_name=manager_name,
+    #             date=latest_dates.values('latest_date')[:1],
+    #             group_id=input_group_id
+    #         )
+    #         if result.exists():
+    #             entry = result.first()
+    #             return pickle.loads(entry.data)
+    #     except cls.DoesNotExist:
+    #         pass
+    #     except data_model.DoesNotExist:
+    #         raise ValueError(f'data_model {data_model} is not valid')
+    #     return None
+
+    # @classmethod
+    # def set_cache_data(cls, manager_name, group_id, data, date):
+    #     """
+    #     Store data in the cache for a given manager name, group ID, data, and date.
+
+    #     Args:
+    #         manager_name (str): The name of the manager.
+    #         group_id (int): The group ID.
+    #         data (object): The data to be stored in the cache as a Python object.
+    #         date (datetime.datetime): The date for the cache entry.
+
+    #     Returns:
+    #         None
+    #     """
+    #     entry, newly_created = cls.objects.get_or_create(
+    #         manager_name=manager_name,
+    #         group_id=group_id,
+    #         date=date
+    #     )
+    #     entry.data=pickle.dumps(data)
+    #     entry.save()
 
 class ProjectGroup(GroupTable):
     """

@@ -2,7 +2,7 @@ from exceptions import NonExistentGroupError, NotUpdatableError
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
-from backend.models import CacheEntry, User
+from backend.models import CacheManager, User
 from datetime import datetime
 from django.db.models import Max, Model
 import timeit
@@ -132,7 +132,7 @@ class GeneralManager:
                 cached_instance = cache.get(f"{manager_name}|{group_id}")
                 if cached_instance is not None:
                     return cached_instance
-            cached_instance = CacheEntry.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, search_date)
+            cached_instance = CacheManager.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, search_date)
             if cached_instance:
                 cls.updateCache(cached_instance)
                 return cached_instance
@@ -750,4 +750,4 @@ class GeneralManager:
         """
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
-        CacheEntry.set_cache_data(self.__class__.__name__, self.group_id, self, self.date)
+        CacheManager.set_cache_data(self.__class__.__name__, self.group_id, self, self.date)

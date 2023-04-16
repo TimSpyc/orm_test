@@ -84,7 +84,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='CacheEntry',
+            name='CacheManager',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('manager_name', models.CharField(max_length=100)),
