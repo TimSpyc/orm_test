@@ -13,12 +13,12 @@ if __name__ == '__main__':
     import django
     django.setup()
 
-from backend.models import DerivativeGroupLMC, DerivativeLMC
+from backend.models import DerivativeLMCGroup, DerivativeLMC
 from manager import GeneralManager
 
 
 class DerivativeLmcManager(GeneralManager):
-    group_model = DerivativeGroupLMC
+    group_model = DerivativeLMCGroup
     data_model = DerivativeLMC
 
     def __init__(self, derivative_group_id, search_date=None, use_cache=True):

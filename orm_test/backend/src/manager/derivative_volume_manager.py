@@ -20,22 +20,40 @@ class DerivativeLmcVolumeManager(GeneralManager):
     group_model = DerivativeVolumeGroupLMC
     data_model = DerivativeVolumeLMC
 
-    def __init__(self, derivative_volume_group_id, search_date=None, use_cache=True):
+    def __init__(
+        self,
+        derivative_volume_group_id,
+        search_date=None,
+        use_cache=True
+    ):
         derivative_volume_group, derivative_volume = super().__init__(
             group_id=derivative_volume_group_id,
             search_date=search_date
         )
 
-        self.derivative_group = derivative_volume.volume_group.derivative_group
+        self.derivative_lmc_group = (
+            derivative_volume_group.derivative_lmc_group
+        )
         self.year = derivative_volume.volume_group.year
         self.month = derivative_volume.volume_group.month
         self.lmc_revision = derivative_volume.lmc_revision
         self.volume = derivative_volume.volume
 
-    @property
-    def derivative_list(self):
-        from derivative_lmc_manager import DerivativeLmcManager
-        return DerivativeLmcManager.filter(
-            date=self.search_date,
-            derivative_group_id=self.group_id
-        )
+    @classmethod
+    def getObjectByLmcRevisionAndDerivativeLmcGroupId(
+        lmc_rev,
+        derivative_lmc_volume_group_id,
+        use_cache=True
+    ):
+        search_date = cls.data_model.objects.filter(
+            **{
+                cls.__group_model_name: group_model(
+                    derivative_lmc_volume_group_id
+                ),
+                'revision_lmc': RevisionLMC.objects.filter(
+                    revision_date = lmc_rev
+                )
+            }
+        ).latest('date').values('date').first()
+
+        return cls(derivative_lmc_volume_group_id, search_date, use_cache)

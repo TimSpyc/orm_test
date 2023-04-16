@@ -16,7 +16,7 @@ if __name__ == '__main__':
 from backend.models import DerivativeConstelliumGroup, DerivativeConstellium, User
 from datetime import datetime
 from manager import GeneralManager
-import timeit
+
 
 class DerivativeConstelliumManager(GeneralManager):
     """

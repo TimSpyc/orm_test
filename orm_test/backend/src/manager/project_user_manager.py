@@ -16,7 +16,7 @@ if __name__ == '__main__':
 from backend.models import ProjectUserGroup, ProjectUser, User, ProjectUserRole
 from datetime import datetime
 from manager import GeneralManager
-
+import timeit
 
 class ProjectUserManager(GeneralManager):
     """
@@ -42,15 +42,14 @@ class ProjectUserManager(GeneralManager):
 
         project_user_group, project_user = super().__init__(
             group_id=project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
+            search_date=search_date
         )
 
         self.project_group_id = project_user_group.project_group_id
         self.user_id = project_user_group.user_id
         self.user = project_user_group.user
         self.roles = [{"id": role.id, "name": role.role_name}
-                      for role in project_user.project_user_roles.all()]
+                      for role in project_user.project_user_role.all()]
 
     @property
     def project_manager(self):
@@ -62,3 +61,9 @@ class ProjectUserManager(GeneralManager):
         """
         from project_manager import ProjectManager
         return ProjectManager(self.project_group_id, self.search_date)
+
+
+t1 = timeit.timeit(lambda: ProjectUserManager(1), number=10000)
+t2 = timeit.timeit(lambda: ProjectUserManager(1, use_cache=False), number=10000)
+
+print(t1, t2, f"speed multiplier {round(t2/t1, 2)}x")

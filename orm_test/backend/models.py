@@ -240,7 +240,7 @@ class RevisionLMC(ReferenceTable):
     def __str__(self):
         return self.revision_date.strftime('%Y-%m-%d')
 
-class DerivativeGroupLMC(GroupTable):
+class DerivativeLMCGroup(GroupTable):
     lmc_full_code = models.CharField(max_length=255, unique=True)
     lmc_model_code = models.CharField(max_length=255)
 
@@ -250,8 +250,8 @@ class DerivativeGroupLMC(GroupTable):
     def __str__(self):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
 
-class LMCDerivative(DataTable):
-    derivative_group_lmc = models.ForeignKey(DerivativeGroupLMC, on_delete=models.CASCADE)
+class DerivativeLMC(DataTable):
+    derivative_group_lmc = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
     revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
     region = models.CharField(max_length=255)
     trade_region = models.CharField(max_length=255)
@@ -284,23 +284,44 @@ class LMCDerivative(DataTable):
     design_lead_country = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.lmc_derivative_group} - {self.local_make} {self.local_model_line}"
+        return f"{self.derivative_group_lmc} - {self.local_make} {self.local_model_line}"
 
-class DerivativeVolumeGroupLMC(GroupTable):
-    derivative_group = models.ForeignKey(DerivativeGroupLMC, on_delete=models.CASCADE)
+class DerivativeVolumeLMCGroup(GroupTable):
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
     year = models.PositiveIntegerField(validators=[MinValueValidator(1900), MaxValueValidator(2100)])
     month = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
 
     class Meta:
-        unique_together = ('derivative_group', 'year', 'month')
+        unique_together = ('derivative_lmc_group', 'year', 'month')
 
     def __str__(self):
         return f"Derivative Volume Group {self.id}: {self.derivative_group.lmc_full_code} - {self.year}-{self.month}"
 
 class DerivativeVolumeLMC(DataTable):
-    volume_group = models.ForeignKey(DerivativeVolumeGroupLMC, on_delete=models.CASCADE)
-    lmc_revision = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
+    derivative_lmc_volume_group = models.ForeignKey(DerivativeVolumeLMCGroup, on_delete=models.CASCADE)
+    revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
     volume = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"LMC Derivative Volume {self.id}: {self.volume_group.derivative_group.lmc_full_code} - {self.lmc_revision.revision_date} - {self.volume}"
+        return f"LMC Derivative Volume {self.id}: {self.volume_group.derivative_group.lmc_full_code} - {self.revision_lmc.revision_date} - {self.volume}"
+
+
+class DerivativeVolumeLMCDerivativeConstelliumConnectionGroup(GroupTable):
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
+    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('derivative_lmc_group', 'derivative_constellium_group')
+
+    def __str__(self):
+        return f"Derivative Volume Group {self.id}: {self.derivative_lmc_group.lmc_full_code} - {self.derivative_constellium_group.id}"
+
+class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
+    derivative_volume_lmc_derivative_constellium_connection_group = models.ForeignKey(DerivativeVolumeLMCDerivativeConstelliumConnectionGroup, on_delete=models.CASCADE)
+    take_rate = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])
+
+    def __str__(self):
+        group = self.derivative_volume_lmc_derivative_constellium_connection_group
+        return f"LMC Derivative Volume connection: {group.derivative_lmc_group.lmc_full_code} - {group.derivative_constellium_group.id} - take_rate: {self.take_rate}"
+
+

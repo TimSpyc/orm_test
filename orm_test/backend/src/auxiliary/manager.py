@@ -5,6 +5,31 @@ from django.core.cache import cache
 from backend.models import CacheEntry, User
 from datetime import datetime
 from django.db.models import Max, Model
+import timeit
+
+def timing(func):
+    """
+    A Python decorator that measures the execution time of a function and prints it.
+
+    Args:
+        func: The function whose execution time is to be measured.
+
+    Returns:
+        A new function that wraps the passed function and measures its execution time.
+
+    Example:
+        @timing
+        def my_function():
+            # Code for your function goes here
+            pass
+
+    The `timing` function measures the execution time of the passed function and prints it in seconds.
+    """
+    def wrapper(*args, **kwargs):
+        execution_time = timeit.timeit(lambda: func(*args, **kwargs), number=1)
+        print(f"The function {func.__name__} was run in {execution_time} seconds.")
+        return result
+    return wrapper
 
 def transferToSnakeCase(name):
     """
@@ -109,11 +134,13 @@ class GeneralManager:
                     return cached_instance
             cached_instance = CacheEntry.get_cache_data(manager_name, group_model_obj, group_model_name, cls.data_model, group_id, search_date)
             if cached_instance:
+                cls.updateCache(cached_instance)
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        CacheEntry.set_cache_data(manager_name, group_id, instance, instance.search_date)
+        if use_cache:
+            cls.updateCache(instance)
         return instance
 
     def __init__(self, group_id, search_date=None):
@@ -138,8 +165,8 @@ class GeneralManager:
         self.active = data_obj.active
         self.date = data_obj.date
 
-        if search_date is None:
-            search_date = datetime.now()
+        # if search_date is None:
+        #     search_date = datetime.now()
         self.search_date = search_date
 
         return group_obj, data_obj
@@ -723,4 +750,4 @@ class GeneralManager:
         """
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
-        CacheEntry.set_cache_data(self.__class__.__name__, self.group_id, self, self.search_date)
+        CacheEntry.set_cache_data(self.__class__.__name__, self.group_id, self, self.date)
