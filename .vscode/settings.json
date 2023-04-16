@@ -1,3 +1,22 @@
 {
-    "workbench.colorTheme": "Visual Studio Dark"
+    "workbench.colorTheme": "Default Dark+",
+    "cSpell.words": [
+        "Constellium"
+    ],
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "variable.other.readwrite.python",
+                "settings": {
+                    "foreground": "#6A5ACD"
+                }
+            },
+            {
+                "scope": "invalid.illegal.unrecognized-variable.python",
+                "settings": {
+                    "foreground": "#FF0000"
+                }
+            }
+        ]
+    }
 }
