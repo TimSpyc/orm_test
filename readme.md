@@ -46,7 +46,7 @@ Table for data storage of user changeable data. Allways contains the following c
 ```
 
 ## Reverence Table
-Table for reverence data (not user changeable data). It uneditable by user and allways contains a active column.
+Table for reverence data (not user changeable data). It uneditable by user and always contains a active column.
 ```python
 class ProjectUserRole(models.Model):
     role_name = models.CharField(max_length=255)
