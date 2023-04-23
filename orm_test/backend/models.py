@@ -143,15 +143,12 @@ class CacheIntermediate(models.Model):
     A Django model representing cache entries, which store the manager name, group ID, date, and pickled data.
     """
     intermediate_name = models.CharField(max_length=100)
-    group_id = models.IntegerField()
-    date = models.DateTimeField()
-    intermediate_dependencies = models.ManyToManyField('self', blank=True, symmetrical=False)
-    manager_dependencies = model.ManyToManyField('CacheManager', blank=True, symmetrical=False)
+    dependencies = models.JSONField()
+    relevant_scenario_dict = models.JSONField()
     data = models.BinaryField()
-    scenario_group = models.ForeignKey(ScenarioGroup, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('intermediate_name', 'group_id', 'date')
+        unique_together = ('intermediate_name', 'dependencies', 'relevant_scenario_dict')
 
     # @classmethod
     # def get_cache_data(cls, manager_name, group_model_obj, group_model_name, data_model, input_group_id, date):
@@ -348,7 +345,7 @@ class DerivativeLMCGroup(GroupTable):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
 
 class DerivativeLMC(DataTable):
-    derivative_group_lmc = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
     revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
     region = models.CharField(max_length=255)
     trade_region = models.CharField(max_length=255)

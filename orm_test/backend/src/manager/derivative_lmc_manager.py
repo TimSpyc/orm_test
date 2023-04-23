@@ -14,7 +14,6 @@ if __name__ == '__main__':
     django.setup()
 
 from backend.models import DerivativeLMCGroup, DerivativeLMC
-from manager import GeneralManager
 
 
 class DerivativeLmcManager(GeneralManager):
