@@ -151,7 +151,7 @@ class CacheIntermediate(models.Model):
         unique_together = ('intermediate_name', 'dependencies', 'relevant_scenario_dict')
 
     # @classmethod
-    # def get_cache_data(cls, manager_name, group_model_obj, group_model_name, data_model, input_group_id, date):
+    # def get_cache_data(cls, intermediate_name, group_model_obj, input_group_id, date):
     #     """
     #     Retrieve cached data for a given manager name, group model object, group model name, data model, input group ID, and date.
         
