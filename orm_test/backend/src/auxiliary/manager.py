@@ -165,8 +165,6 @@ class GeneralManager:
         self.active = data_obj.active
         self.date = data_obj.date
 
-        # if search_date is None:
-        #     search_date = datetime.now()
         self.search_date = search_date
 
         return group_obj, data_obj
