@@ -1,0 +1,15 @@
+{
+  "name": "Python 3.10 Dev Container",
+  "image": "python:3.10",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash",
+    "python.pythonPath": "/usr/local/bin/python",
+    "python.autoComplete.extraPaths": ["/workspace"],
+    "python.envFile": "/workspace/.env"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-python.gremlins"
+  ],
+  "postCreateCommand": "pip install -r /workspace/requirements.txt && echo 'export DJANGO_SETTINGS_MODULE=orm_test.settings' >> /workspace/.env"
+}
