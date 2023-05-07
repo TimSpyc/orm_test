@@ -14,5 +14,5 @@
     "streetsidesoftware.code-spell-checker",
     "arturock.notepadpluspluskeybindings"
   ],
-  "postCreateCommand": "pip install -r /workspaces/orm_test/requirements.txt && cp /workspaces/orm_test/project.pth $(python -c 'import site; print(site.getsitepackages()[0])') && echo 'export DJANGO_SETTINGS_MODULE=orm_test.orm_test.settings' >> ~/.bashrc"
+  "postCreateCommand": "pip install -r /workspaces/orm_test/requirements.txt && cp /workspaces/orm_test/project.pth $(python -c 'import site; print(site.getsitepackages()[0])') && echo 'export DJANGO_SETTINGS_MODULE=orm_test.settings' >> ~/.bashrc"
 }
