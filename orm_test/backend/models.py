@@ -122,7 +122,7 @@ class ScenarioGroup(GroupTable):
     """
     A Django model representing a scenario group.
     """
-    user = models.ForeignKey('User', on_delete=CASCADE)
+    user = models.ForeignKey('User', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.id

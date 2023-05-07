@@ -2,22 +2,17 @@ if __name__ == '__main__':
     import sys
     import os
 
-    sys.path.append(r'C:\Users\Spyc\Django_ORM')
     sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\orm_test')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\backend\src\manager')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\backend\src\auxiliary')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\backend')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
 
     import django
     django.setup()
 
-from backend.models import DerivativeVolumeGroupLMC, DerivativeVolumeLMC
-from manager import GeneralManager
+from backend.models import DerivativeVolumeLMCGroup, DerivativeVolumeLMC
+from backend.src.auxiliary.manager import GeneralManager
 
 class DerivativeLmcVolumeManager(GeneralManager):
-    group_model = DerivativeVolumeGroupLMC
+    group_model = DerivativeVolumeLMCGroup
     data_model = DerivativeVolumeLMC
 
     def __init__(

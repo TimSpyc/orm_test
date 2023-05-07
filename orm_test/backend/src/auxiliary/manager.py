@@ -1,4 +1,4 @@
-from exceptions import NonExistentGroupError, NotUpdatableError
+from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache

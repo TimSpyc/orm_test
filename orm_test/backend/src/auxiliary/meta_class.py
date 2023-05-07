@@ -1,5 +1,5 @@
 
-class UpdateCacheFunktionCallMeta(type):
+class UpdateCacheAttributeCallMeta(type):
     """
     A meta-class that automatically calls the `updateCache` method when a method
     of the class is called. The `updateCache` method should be defined in the class
@@ -12,9 +12,9 @@ class UpdateCacheFunktionCallMeta(type):
                     self.updateCache()
                     return attr_value(self, *args, **kwargs)
                 dct[attr_name] = new_method
-        return super(UpdateCacheMeta, cls).__new__(cls, name, bases, dct)
+        return super(UpdateCacheAttributeCallMeta, cls).__new__(cls, name, bases, dct)
 
-class UpdateCacheAttrubuteChangeMeta(type):
+class UpdateCacheAttributeChangeMeta(type):
     """
     A meta-class that automatically calls the `updateCache` method when an attribute
     of the class is changed. The `updateCache` method should be defined in the class
@@ -26,5 +26,5 @@ class UpdateCacheAttrubuteChangeMeta(type):
             self.updateCache()
 
         dct['__setattr__'] = new_setattr
-        return super(UpdateCacheMeta, cls).__new__(cls, name, bases, dct)
+        return super(UpdateCacheAttributeChangeMeta, cls).__new__(cls, name, bases, dct)
 
