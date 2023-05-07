@@ -10,9 +10,12 @@
   },
   "extensions": [
     "ms-python.python",
-    "nickdemayo.vscode-gremlins",
+    "nhoizey.gremlins",
     "streetsidesoftware.code-spell-checker",
-    "arturock.notepadpluspluskeybindings"
+    "ms-vscode.notepadplusplus-keybindings",
+    "ms-toolsai.jupyter",
+    "visualstudioexptteam.vscodeintelli",
+    "esbenp.prettier-vscode"
   ],
   "postCreateCommand": "pip install -r /workspaces/orm_test/requirements.txt && cp /workspaces/orm_test/project.pth $(python -c 'import site; print(site.getsitepackages()[0])') && echo 'export DJANGO_SETTINGS_MODULE=orm_test.settings' >> ~/.bashrc"
 }
