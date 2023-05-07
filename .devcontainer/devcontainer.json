@@ -5,7 +5,8 @@
     "terminal.integrated.shell.linux": "/bin/bash",
     "python.pythonPath": "/usr/local/bin/python",
     "python.autoComplete.extraPaths": ["/workspace", "/workspace/orm_test"],
-    "python.envFile": "/workspace/.env"
+    "python.envFile": "/workspace/.env",
+    "locale": "en"
   },
   "extensions": [
     "ms-python.python",
