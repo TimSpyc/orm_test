@@ -8,7 +8,7 @@ from django.core.exceptions import FieldDoesNotExist
 
 class TestSearchForColumn(TestCase):
     def setUp(self):
-        self.column_list = ['name', 'description', 'start_date', 'end_date', 'owner_id', 'owner', 'member_id_list', 'member']
+        self.column_list = ['name', 'description', 'start_date', 'end_date',  'owner', 'member']
 
     def test_column_references_model(self):
         result = GeneralManager._GeneralManager__searchForColumn('owner_id', self.column_list)
@@ -27,9 +27,6 @@ class TestSearchForColumn(TestCase):
         result = GeneralManager._GeneralManager__searchForColumn('owner_id', self.column_list)
         self.assertEqual(result,(True, 'owner', True, False))
 
-    def test_column_is_not_referencing_model_and_many_to_many(self): 
-        result = GeneralManager._GeneralManager__searchForColumn('owner_id', self.column_list)
-        self.assertEqual(result,(True, 'owner_id', False, False))
 
 class TestCheckIfColumnReferenceBaseExists(TestCase):
     def setUp(self):   

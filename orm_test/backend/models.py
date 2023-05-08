@@ -420,98 +420,98 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
         return f"LMC Derivative Volume connection: {group.derivative_lmc_group.lmc_full_code} - {group.derivative_constellium_group.id} - take_rate: {self.take_rate}"
 
 
-#Dummy for PartGroup
-class PartGroup(GroupTable):
-    pass
-#Dummy for FileGroup
-class FileGroup(GroupTable):
-    pass
+# #Dummy for PartGroup
+# class PartGroup(GroupTable):
+#     pass
+# #Dummy for FileGroup
+# class FileGroup(GroupTable):
+#     pass
 
-class ChangeRequestGroup(GroupTable):
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
-    change_request_no = models.IntegerField()
+# class ChangeRequestGroup(GroupTable):
+#     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+#     change_request_no = models.IntegerField()
 
-    class Meta:
-        unique_together = ('project_group', 'change_request_no')
+#     class Meta:
+#         unique_together = ('project_group', 'change_request_no')
 
-    def __str__(self):
-        return f"ChangeRequestGroup {self.id}"
-
-
-class ChangeRequest(DataTable):
-    change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
-    customer_part_number = models.CharField(max_length=255)
-    description = models.TextField()
-    ECR_number = models.CharField(max_length=255)
-    customer_approval = models.BooleanField(default=False)
-    internal_approval = models.BooleanField(default=False)
-    part_group_before_change = models.ForeignKey(PartGroup, on_delete=models.CASCADE)
-    file_before_change = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
-    part_group_after_change = models.ForeignKey(PartGroup, on_delete=models.CASCADE)
-    file_after_change = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
-    file_for_description = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
+#     def __str__(self):
+#         return f"ChangeRequestGroup {self.id}"
 
 
-class ChangeRequestFeasibilityGroup(GroupTable):
-    change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-    project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('project_user_role', 'change_request_group')
-
-    def __str__(self):
-        return f"ChangeRequestFeasibilityGroup {self.id}: {self.change_request_group.id}; {self.project_user_role.role_name}"
-
-
-class ChangeRequestFeasibility(DataTable):
-    change_request_feasibility_group = models.ForeignKey(ChangeRequestFeasibilityGroup, on_delete=models.CASCADE)
-    confirmed = models.BooleanField(null=True)
-    description = models.TextField()
+# class ChangeRequest(DataTable):
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
+#     derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+#     customer_part_number = models.CharField(max_length=255)
+#     description = models.TextField()
+#     ECR_number = models.CharField(max_length=255)
+#     customer_approval = models.BooleanField(default=False)
+#     internal_approval = models.BooleanField(default=False)
+#     part_group_before_change = models.ForeignKey(PartGroup, on_delete=models.CASCADE)
+#     file_before_change = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
+#     part_group_after_change = models.ForeignKey(PartGroup, on_delete=models.CASCADE)
+#     file_after_change = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
+#     file_for_description = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
 
 
-class ChangeRequestCostGroup(GroupTable):
-    change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-    project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
+# class ChangeRequestFeasibilityGroup(GroupTable):
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
+#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = ('change_request_group', 'project_user_role')
+#     class Meta:
+#         unique_together = ('project_user_role', 'change_request_group')
 
-    def __str__(self):
-        return f"ChangeRequestCostGroup {self.id}: {self.change_request_group.id}; {self.project_user_role.role_name}"
-
-
-class ChangeRequestCost(DataTable):
-    change_request_cost_group = models.ForeignKey(ChangeRequestCostGroup, on_delete=models.CASCADE)
-    description = models.TextField(null=True)
-    cost_estimation = models.IntegerField(null=True)
+#     def __str__(self):
+#         return f"ChangeRequestFeasibilityGroup {self.id}: {self.change_request_group.id}; {self.project_user_role.role_name}"
 
 
-class ChangeRequestRiskGroup(GroupTable):
-    change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-    project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"ChangeRequestRiskGroup {self.id}: {self.change_request_group.id}; {self.user.first_name} {self.user.last_name}"
+# class ChangeRequestFeasibility(DataTable):
+#     change_request_feasibility_group = models.ForeignKey(ChangeRequestFeasibilityGroup, on_delete=models.CASCADE)
+#     confirmed = models.BooleanField(null=True)
+#     description = models.TextField()
 
 
-class ChangeRequestRiskProbability(ReferenceTable):
-    name = models.CharField(max_length=255)
-    faktor = models.IntegerField()
+# class ChangeRequestCostGroup(GroupTable):
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
+#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
+
+#     class Meta:
+#         unique_together = ('change_request_group', 'project_user_role')
+
+#     def __str__(self):
+#         return f"ChangeRequestCostGroup {self.id}: {self.change_request_group.id}; {self.project_user_role.role_name}"
 
 
-class ChangeRequestRiskImpact(ReferenceTable):
-    name = models.CharField(max_length=255)
-    faktor = models.IntegerField()
+# class ChangeRequestCost(DataTable):
+#     change_request_cost_group = models.ForeignKey(ChangeRequestCostGroup, on_delete=models.CASCADE)
+#     description = models.TextField(null=True)
+#     cost_estimation = models.IntegerField(null=True)
 
 
-class ChangeRequestRisk(DataTable):
-    change_request_risk_group = models.ForeignKey(ChangeRequestRiskGroup, on_delete=models.CASCADE)
-    change_request_risk_probability = models.ForeignKey(ChangeRequestRiskProbability, on_delete=models.CASCADE)
-    change_request_risk_impact = models.ForeignKey(ChangeRequestRiskImpact, on_delete=models.CASCADE)
-    description = models.TextField()
-    feedback = models.TextField()
-    next_step = models.TextField()
+# class ChangeRequestRiskGroup(GroupTable):
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
+#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
+
+#     def __str__(self):
+#         return f"ChangeRequestRiskGroup {self.id}: {self.change_request_group.id}; {self.user.first_name} {self.user.last_name}"
+
+
+# class ChangeRequestRiskProbability(ReferenceTable):
+#     name = models.CharField(max_length=255)
+#     faktor = models.IntegerField()
+
+
+# class ChangeRequestRiskImpact(ReferenceTable):
+#     name = models.CharField(max_length=255)
+#     faktor = models.IntegerField()
+
+
+# class ChangeRequestRisk(DataTable):
+#     change_request_risk_group = models.ForeignKey(ChangeRequestRiskGroup, on_delete=models.CASCADE)
+#     change_request_risk_probability = models.ForeignKey(ChangeRequestRiskProbability, on_delete=models.CASCADE)
+#     change_request_risk_impact = models.ForeignKey(ChangeRequestRiskImpact, on_delete=models.CASCADE)
+#     description = models.TextField()
+#     feedback = models.TextField()
+#     next_step = models.TextField()
 
 
 class ProjectStaffCostTask(ReferenceTable):
