@@ -329,6 +329,34 @@ class GeneralManager:
         return db_column_exists, column_name, is_reverencing_model, is_many_to_many
 
     @staticmethod
+    def __checkIfColumnReferenceBaseExists(column_name, available_column_list, string_to_compare):
+        """
+        Check if the given column name references a model in the provided column list.
+        Reference relationship columns must end with '_id' or '_id_list.
+
+        Args:
+            column_name (str): The name of the column to check.
+            available_column_list (list): A list of available column names.
+            string_to_compare (str) : The name of the column ending
+            length_to_cut (int) : The length to cut
+
+        Returns:
+            column_name and boolean if is_referencing_model
+        """
+        
+        negative_length_to_cut = - len(string_to_compare)
+        db_column_contains_string_to_compare = string_to_compare == column_name[negative_length_to_cut:]
+        is_reverencing_model = False
+        
+        if db_column_contains_string_to_compare:
+            db_column_model_name = column_name[:negative_length_to_cut]
+            if db_column_model_name in available_column_list:
+                column_name = db_column_model_name
+                is_reverencing_model = True
+        
+        return column_name, is_reverencing_model
+
+    @staticmethod
     def __checkIfColumnReferencesManyToMany(column_name, available_column_list):
         """
         Check if the given column name references a many-to-many relationship in the provided column list.
@@ -339,20 +367,9 @@ class GeneralManager:
             available_column_list (list): A list of available column names.
 
         Returns:
-            tuple: A tuple containing:
-                - str: The updated column name if it references a many-to-many relationship or the original column name.
-                - bool: Whether the column references a many-to-many relationship.
+            checkIfColumnReferenceBaseExists() -> column_name and True/False
         """
-        db_column_is_id = '_id_list' == column_name[-8:]
-        is_many_to_many = False
-        
-        if db_column_is_id:
-            db_column_model_name = column_name[:-8]
-            if db_column_model_name in available_column_list:
-                column_name = db_column_model_name
-                is_many_to_many = True
-        
-        return column_name, is_many_to_many
+        return  GeneralManager.__checkIfColumnReferenceBaseExists(column_name, available_column_list, "_id_list")
 
     @staticmethod
     def __checkIfColumnReferencesModel(column_name, available_column_list):
@@ -365,21 +382,10 @@ class GeneralManager:
             available_column_list (list): A list of available column names.
 
         Returns:
-            tuple: A tuple containing:
-                - str: The updated column name if it references a model or the original column name
-                - bool: Whether the column references a model.
-        """
-        db_column_is_id = '_id' == column_name[-3:]
-        is_reverencing_model = False
-        
-        if db_column_is_id:
-            db_column_model_name = column_name[:-3]
-            if db_column_model_name in available_column_list:
-                column_name = db_column_model_name
-                is_reverencing_model = True
-        
-        return column_name, is_reverencing_model
-    
+            checkIfColumnReferenceBaseExists() -> column_name and True/False
+        """        
+        return  GeneralManager.__checkIfColumnReferenceBaseExists(column_name, available_column_list, "_id")
+
     @staticmethod
     def __getValueForReverencedModelById(current_model, db_column, id):
         """
