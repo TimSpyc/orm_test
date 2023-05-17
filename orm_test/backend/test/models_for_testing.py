@@ -53,8 +53,8 @@ class TestProjectUser(models.Model):
     """
     A Django model representing a TestProject user, including their TestProject user group and TestProject user roles.
     """
-    project_user_group = models.ForeignKey(TestProjectUserGroup, on_delete=models.CASCADE)
-    project_user_role = models.ManyToManyField(TestProjectUserRole, blank=False)
+    test_project_user_group = models.ForeignKey(TestProjectUserGroup, on_delete=models.CASCADE)
+    test_project_user_role = models.ManyToManyField(TestProjectUserRole, blank=False)
 
     def __str__(self):
         return f'TestProjectUser {self.id}'
