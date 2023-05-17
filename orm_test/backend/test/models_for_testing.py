@@ -17,7 +17,7 @@ class TestProject(models.Model):
     """
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
-    project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

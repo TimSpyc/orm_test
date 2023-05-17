@@ -151,7 +151,7 @@ class GeneralManager:
             group_id (int): The ID of the group object.
             search_date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
         """
-        self.__group_model_name = transferToSnakeCase(self.group_model.__name__)
+        self.__group_model_name = self.__getGroupModelName()
         group_obj = self.__getGroupObject(group_id)
         data_obj = self.__getDataObject(group_obj, search_date)
 
@@ -168,7 +168,22 @@ class GeneralManager:
         self.search_date = search_date
 
         return group_obj, data_obj
-    
+
+    @classmethod
+    def __getGroupModelName(cls):
+        """
+        Get group model name. Raises value error if group model name is not in data model columns!
+        """
+
+        column_list = cls.__getColumnList(cls.data_model)
+        group_model_name = transferToSnakeCase(cls.group_model.__name__)
+        db_column_exists, *_ = cls.__searchForColumn(group_model_name, column_list)
+        
+        if not db_column_exists:
+            raise ValueError (f'the column {group_model_name} does not exist in your data model ({cls.data_model})!')
+        
+        return group_model_name
+
     @classmethod
     def all(cls, search_date=None):
         """
@@ -275,9 +290,12 @@ class GeneralManager:
         if search_date is None:
             search_date = datetime.now()
 
-        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values('group_id').annotate(max_date=Max('date')).values('max_date', 'group_id')
-        filter_subquery = cls.data_model.objects.filter(**{**{data_search_dict}, 'date__group_id__in': filter_subsubquery}).values('group_id')
-        group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        group_model_name = cls.__getGroupModelName()
+
+        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values(group_model_name).annotate(max_date=Max('date')).values('max_date', group_model_name)
+        group_model_object_query_list = cls.data_model.objects.filter(**{**{data_search_dict}, f'date__{group_model_name}__in': filter_subsubquery}).values(group_model_name)
+        #group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        group_id_list = group_model_object_query_list.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
 
         return [cls(group_id, search_date) for group_id in group_id_list]
 
