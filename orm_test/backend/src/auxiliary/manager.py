@@ -1,4 +1,5 @@
-from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError
+from backend import models
+from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
@@ -6,6 +7,8 @@ from backend.models import CacheManager, User
 from datetime import datetime
 from django.db.models import Max, Model
 import timeit
+from django.db import models
+
 
 def timing(func):
     """
@@ -206,7 +209,7 @@ class GeneralManager:
 
 
     @staticmethod
-    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs):
+    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, **kwargs):
         """
         Separate the input data into group and data dictionaries based on the provided column lists.
 
@@ -277,7 +280,7 @@ class GeneralManager:
 
         filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values('group_id').annotate(max_date=Max('date')).values('max_date', 'group_id')
         filter_subquery = cls.data_model.objects.filter(**{**{data_search_dict}, 'date__group_id__in': filter_subsubquery}).values('group_id')
-        group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True) 
 
         return [cls(group_id, search_date) for group_id in group_id_list]
 
@@ -387,7 +390,7 @@ class GeneralManager:
         return  GeneralManager.__checkIfColumnReferenceBaseExists(column_name, available_column_list, "_id")
 
     @staticmethod
-    def __getValueForReverencedModelById(current_model, db_column, id):
+    def __getValueForReverencedModelById(current_model: models.Model, db_column: str, id: int) -> models.Model:
         """
         Retrieve the value of a referenced model by its ID.
 
@@ -398,7 +401,10 @@ class GeneralManager:
 
         Returns:
             Model: The referenced model object.
+        Raises:
+        NotValidIdError: If ID does not exist in the database.
         """
+
         model_for_db_value = (
             current_model._meta.get_field(db_column)
             .remote_field.model
@@ -406,10 +412,12 @@ class GeneralManager:
         model_obj = (
             model_for_db_value.objects.filter(id=id).first()
         )
+        if model_obj is None:
+            raise NotValidIdError(f"{model_for_db_value} with id {id} does not exist.")
         return model_obj
 
     @staticmethod
-    def __getValueForManyToManyByIdList(current_model, db_column, id_list):
+    def __getValueForManyToManyByIdList (current_model: models.Model, db_column: str, id_list: list | set | tuple) -> models.QuerySet: #(current_model, db_column, id_list):
         """
         Retrieve a list of values for a many-to-many relationship by a list of IDs.
 
@@ -420,14 +428,23 @@ class GeneralManager:
 
         Returns:
             QuerySet: A queryset of related model objects.
+        
+        Raises:
+        NotValidIdError: If one or more IDs in the list do not exist in the database.
         """
         
+        id_set = set(id_list) #Konvertieren der ID-Liste in ein set
         model_for_db_value = (
             current_model._meta.get_field(db_column)
             .remote_field.model
         )
-        model_obj_list = (
-            model_for_db_value.objects.filter(id__in=id_list)
+        existing_ids = model_for_db_value.objects.filter(id__in = id_set).values_list('id', flat=True)  #values_list(flat=True) returns ValuesListQuerySet, not list -> QuerySet.values():
+        not_existing_ids = id_set - set(existing_ids)       
+        if not_existing_ids:
+             raise NotValidIdError(f"One or more IDs in the list do not exist in the database: {not_existing_ids}")                                                           
+        
+        model_obj_list = (                                                                   
+            model_for_db_value.objects.filter(id__in=id_set)
         )
         return model_obj_list
 
@@ -457,7 +474,7 @@ class GeneralManager:
             value = GeneralManager.__getValueForReverencedModelById(model, db_column, id = value)
         
         if is_many_to_many:
-            value = GeneralManager.__getValueForManyToManyByIdList(model, db_column, id_list = value)
+            value = GeneralManager.__getValueForManyToManyByIdList(model, db_column, id_list = value) 
         
         return is_in_model, db_column, value
 
@@ -468,7 +485,7 @@ class GeneralManager:
         Args:
             db_column (str): The name of the database column.
             value: The value associated with the database column.
-            available_column_list (list): A list of available column names in the model.
+            available_column_list (list): A list of available column names in the model. 
 
         Returns:
             tuple: A tuple containing:
@@ -516,7 +533,7 @@ class GeneralManager:
         """
         is_in_model, db_column, value = self.__getValueAndColumnIfExists(db_column, available_column_list, self.data_model, value)
 
-        if not is_in_model:
+        if not is_in_model: 
             raise ValueError(
                 f'''
                     You can't push data that is not storable in DB.
@@ -566,6 +583,7 @@ class GeneralManager:
 
         self.__writeDataData(latest_data, data_data_dict, creator_user_id, self.__group_obj)
         self.__init__(self.group_id)
+        
 
     @classmethod
     def __writeDataData(cls, latest_data, data_data_dict, creator_user_id, group_obj):

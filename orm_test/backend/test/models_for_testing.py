@@ -1,4 +1,3 @@
-from backend.models import GroupTable, DataTable, ReferenceTable
 from django.db import models
 
 class TestProjectGroup(models.Model):
@@ -11,6 +10,7 @@ class TestProjectGroup(models.Model):
     class Meta:
         app_label = 'backend'
 
+
 class TestProject(models.Model):
     """
     A Django model representing a TestProject, including its name, TestProject number, and associated TestProject group.
@@ -18,6 +18,7 @@ class TestProject(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
     project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    date =  models.DateTimeField(null = True)
 
     def __str__(self):
         return self.name
