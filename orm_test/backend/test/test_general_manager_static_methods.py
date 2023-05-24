@@ -8,7 +8,7 @@ from django.core.exceptions import FieldDoesNotExist
 
 class TestSearchForColumn(TestCase):
     def setUp(self):
-        self.column_list = ['name', 'description', 'start_date', 'end_date', 'owner_id', 'owner', 'member_id_list', 'member']
+        self.column_list = ['name', 'description', 'start_date', 'end_date',  'owner', 'member']
 
     def test_column_references_model(self):
         result = GeneralManager._GeneralManager__searchForColumn('owner_id', self.column_list)
@@ -23,9 +23,39 @@ class TestSearchForColumn(TestCase):
         result = GeneralManager._GeneralManager__searchForColumn('nonexistent_column', self.column_list)
         self.assertEqual(result, (False, 'nonexistent_column', False, False))
 
+    def test_column_does_not_reference_many_to_many(self):
+        result = GeneralManager._GeneralManager__searchForColumn('owner_id', self.column_list)
+        self.assertEqual(result,(True, 'owner', True, False))
+
+
+class TestCheckIfColumnReferenceBaseExists(TestCase):
+    def setUp(self):   
+        self.column_list = ['name', 'description', 'start_date', 'end_date', 'owner_id', 'owner', 'member_id_list', 'member', 'memberabc123']
+
+    def test_with_exisiting_column_and_reference(self):                                      
+        result = GeneralManager._GeneralManager__checkIfColumnReferenceBaseExists('memberabc123', self.column_list, 'abc123')
+        self.assertEqual(result,('member',True))
+
+    def test_with_non_existing_reference(self):                                      
+        result = GeneralManager._GeneralManager__checkIfColumnReferenceBaseExists('start_date', self.column_list, 'xyzfagadhaergad')
+        self.assertEqual(result,('start_date',False))
+
+    def test_column_ends_with_id_list_but_searches_for_id(self):                                      
+        result = GeneralManager._GeneralManager__checkIfColumnReferenceBaseExists('member_id_list', self.column_list, '_id')
+        self.assertEqual(result,('member_id_list',False))
+
+    def test_with_non_existing_column(self):                                      
+        result = GeneralManager._GeneralManager__checkIfColumnReferenceBaseExists('nonexistent_column', self.column_list, '1231asdae')
+        self.assertEqual(result,('nonexistent_column',False))    
+
+    def test_with_non_existing_column_and_existing_search_word(self):                                      
+        result = GeneralManager._GeneralManager__checkIfColumnReferenceBaseExists('nonexistent_column_id', self.column_list, '_id')
+        self.assertEqual(result,('nonexistent_column_id',False))  
+
 class TestCheckIfColumnReferencesManyToMany(TestCase):
     def setUp(self):
-        self.column_list = ['name', 'description', 'start_date', 'end_date', 'owner_id', 'owner', 'member_id_list', 'member']
+        self.column_list = ['name', 'description', 'start_date', 'end_date', 'owner_id', 'owner', 'member']
+        self.column_list_without_given_column_model_name = ['name', 'description', 'start_date', 'end_date', 'owner_id', 'owner', 'member_id_list']
 
     def test_column_references_many_to_many(self):
         result = GeneralManager._GeneralManager__checkIfColumnReferencesManyToMany('member_id_list', self.column_list)
@@ -38,6 +68,10 @@ class TestCheckIfColumnReferencesManyToMany(TestCase):
     def test_column_references_non_existent_many_to_many(self):
         result = GeneralManager._GeneralManager__checkIfColumnReferencesManyToMany('nonexistent_column', self.column_list)
         self.assertEqual(result, ('nonexistent_column', False))
+
+    def test_columnName_not_in_list(self):
+        result = GeneralManager._GeneralManager__checkIfColumnReferencesManyToMany('member_id_list', self.column_list_without_given_column_model_name)   
+        self.assertEqual(result,('member_id_list', False))
 
 class TestCheckIfColumnReferencesModel(TestCase):
     def setUp(self):

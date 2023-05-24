@@ -151,7 +151,7 @@ class GeneralManager:
             group_id (int): The ID of the group object.
             search_date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
         """
-        self.__group_model_name = transferToSnakeCase(self.group_model.__name__)
+        self.__group_model_name = self.__getGroupModelName()
         group_obj = self.__getGroupObject(group_id)
         data_obj = self.__getDataObject(group_obj, search_date)
 
@@ -168,7 +168,22 @@ class GeneralManager:
         self.search_date = search_date
 
         return group_obj, data_obj
-    
+
+    @classmethod
+    def __getGroupModelName(cls):
+        """
+        Get group model name. Raises value error if group model name is not in data model columns!
+        """
+
+        column_list = cls.__getColumnList(cls.data_model)
+        group_model_name = transferToSnakeCase(cls.group_model.__name__)
+        db_column_exists, *_ = cls.__searchForColumn(group_model_name, column_list)
+        
+        if not db_column_exists:
+            raise ValueError (f'the column {group_model_name} does not exist in your data model ({cls.data_model})!')
+        
+        return group_model_name
+
     @classmethod
     def all(cls, search_date=None):
         """
@@ -275,9 +290,12 @@ class GeneralManager:
         if search_date is None:
             search_date = datetime.now()
 
-        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values('group_id').annotate(max_date=Max('date')).values('max_date', 'group_id')
-        filter_subquery = cls.data_model.objects.filter(**{**{data_search_dict}, 'date__group_id__in': filter_subsubquery}).values('group_id')
-        group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        group_model_name = cls.__getGroupModelName()
+
+        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values(group_model_name).annotate(max_date=Max('date')).values('max_date', group_model_name)
+        group_model_object_query_list = cls.data_model.objects.filter(**{**{data_search_dict}, f'date__{group_model_name}__in': filter_subsubquery}).values(group_model_name)
+        #group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        group_id_list = group_model_object_query_list.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
 
         return [cls(group_id, search_date) for group_id in group_id_list]
 
@@ -329,6 +347,34 @@ class GeneralManager:
         return db_column_exists, column_name, is_reverencing_model, is_many_to_many
 
     @staticmethod
+    def __checkIfColumnReferenceBaseExists(column_name, available_column_list, string_to_compare):
+        """
+        Check if the given column name references a model in the provided column list.
+        Reference relationship columns must end with '_id' or '_id_list.
+
+        Args:
+            column_name (str): The name of the column to check.
+            available_column_list (list): A list of available column names.
+            string_to_compare (str) : The name of the column ending
+            length_to_cut (int) : The length to cut
+
+        Returns:
+            column_name and boolean if is_referencing_model
+        """
+        
+        negative_length_to_cut = - len(string_to_compare)
+        db_column_contains_string_to_compare = string_to_compare == column_name[negative_length_to_cut:]
+        is_reverencing_model = False
+        
+        if db_column_contains_string_to_compare:
+            db_column_model_name = column_name[:negative_length_to_cut]
+            if db_column_model_name in available_column_list:
+                column_name = db_column_model_name
+                is_reverencing_model = True
+        
+        return column_name, is_reverencing_model
+
+    @staticmethod
     def __checkIfColumnReferencesManyToMany(column_name, available_column_list):
         """
         Check if the given column name references a many-to-many relationship in the provided column list.
@@ -339,20 +385,9 @@ class GeneralManager:
             available_column_list (list): A list of available column names.
 
         Returns:
-            tuple: A tuple containing:
-                - str: The updated column name if it references a many-to-many relationship or the original column name.
-                - bool: Whether the column references a many-to-many relationship.
+            checkIfColumnReferenceBaseExists() -> column_name and True/False
         """
-        db_column_is_id = '_id_list' == column_name[-8:]
-        is_many_to_many = False
-        
-        if db_column_is_id:
-            db_column_model_name = column_name[:-8]
-            if db_column_model_name in available_column_list:
-                column_name = db_column_model_name
-                is_many_to_many = True
-        
-        return column_name, is_many_to_many
+        return  GeneralManager.__checkIfColumnReferenceBaseExists(column_name, available_column_list, "_id_list")
 
     @staticmethod
     def __checkIfColumnReferencesModel(column_name, available_column_list):
@@ -365,21 +400,10 @@ class GeneralManager:
             available_column_list (list): A list of available column names.
 
         Returns:
-            tuple: A tuple containing:
-                - str: The updated column name if it references a model or the original column name
-                - bool: Whether the column references a model.
-        """
-        db_column_is_id = '_id' == column_name[-3:]
-        is_reverencing_model = False
-        
-        if db_column_is_id:
-            db_column_model_name = column_name[:-3]
-            if db_column_model_name in available_column_list:
-                column_name = db_column_model_name
-                is_reverencing_model = True
-        
-        return column_name, is_reverencing_model
-    
+            checkIfColumnReferenceBaseExists() -> column_name and True/False
+        """        
+        return  GeneralManager.__checkIfColumnReferenceBaseExists(column_name, available_column_list, "_id")
+
     @staticmethod
     def __getValueForReverencedModelById(current_model, db_column, id):
         """

@@ -512,3 +512,32 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 #     description = models.TextField()
 #     feedback = models.TextField()
 #     next_step = models.TextField()
+
+
+class ProjectStaffCostTask(ReferenceTable):
+    name = models.CharField(max_length=30)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectStaffCostGroup(GroupTable):
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    project_staff_cost_task = models.ForeignKey(ProjectStaffCostTask, on_delete=models.CASCADE)
+    work_date = models.BigIntegerField()
+
+    class Meta:
+       unique_together = ('project_group','user','project_staff_cost_task','work_date')
+
+    def __str__(self):
+        return f'Project_staff_cost_group {self.id}'
+    
+
+class ProjectStaffCost(DataTable): 
+    project_staff_cost_group = models.ForeignKey(ProjectStaffCostGroup, on_delete=models.CASCADE)
+    hours = models.FloatField()
+
+    def __str__(self):
+        return f'Project_staff_cost {self.id}'
