@@ -18,6 +18,9 @@ class TestProject(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
     project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    date = models.DateTimeField()
+    active = models.BooleanField(default=True)
+    user_id = models.IntegerField
 
     def __str__(self):
         return self.name
