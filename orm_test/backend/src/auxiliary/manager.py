@@ -172,6 +172,7 @@ class GeneralManager:
 
         return group_obj, data_obj
 
+
     @classmethod
     def __getGroupModelName(cls):
         """
@@ -220,7 +221,8 @@ class GeneralManager:
         data_model_column_list = cls.__getColumnList(cls.data_model)
 
         group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs)
-        return cls.__getFilteredManagerList(group_data_dict, data_data_dict)
+        found_group_id_date_combination_dict_list =  cls.__getFilteredManagerList(group_data_dict, data_data_dict)
+        return cls.__createManagerObjectsFromDictList(found_group_id_date_combination_dict_list)
 
 
     @staticmethod
@@ -294,13 +296,33 @@ class GeneralManager:
             search_date = datetime.now()
 
         group_model_name = cls.__getGroupModelName()
+        data_table_name = cls.data_model._meta.db_table
 
-        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values(group_model_name).annotate(max_date=Max('date')).values('max_date', group_model_name)
-        group_model_object_query_list = cls.data_model.objects.filter(**{**{data_search_dict}, f'date__{group_model_name}__in': filter_subsubquery}).values(group_model_name)
-        #group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
-        group_id_list = group_model_object_query_list.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        newest_data_table_entries = cls.data_model.objects.raw(f'''
+            SELECT
+                id
+            FROM
+                {data_table_name}
+            WHERE
+                ({group_model_name}_id, date) in (
+                    SELECT
+                        {group_model_name}_id, max(date)
+                    FROM
+                        {data_table_name}
+                    WHERE
+                        date <= '{search_date}'
+                    GROUP BY
+                        {group_model_name}_id
+                )
+        ''')
 
-        return [cls(group_id, search_date) for group_id in group_id_list]
+        group_model_ids = cls.data_model.objects.filter(**{**data_search_dict, 'id__in': [data_obj.id for data_obj in newest_data_table_entries]}).values(f'{group_model_name}_id')
+        group_id_list = cls.group_model.objects.filter(**{**group_search_dict, 'id__in': group_model_ids}).values_list('id', flat=True)
+        return [{f'{group_model_name}_id': group_id, 'search_date': search_date} for group_id in group_id_list]
+
+    @classmethod
+    def __createManagerObjectsFromDictList(cls, creation_dict_list):
+        return [cls(**data) for data in creation_dict_list] 
 
 
     def __errorIfNotUpdatable(self):
