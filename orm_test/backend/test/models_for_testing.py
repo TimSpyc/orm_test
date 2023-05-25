@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 
 class TestProjectGroup(models.Model):
@@ -18,6 +19,12 @@ class TestProject(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
     test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    date = models.DateTimeField(null=False)
+
+    def save(self,*args,**kwargs):
+        if not self.date:
+            self.date = datetime.now() 
+        super().save(*args,**kwargs)    
 
     def __str__(self):
         return self.name
