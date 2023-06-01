@@ -15,7 +15,7 @@ GroupTables inherit from GroupTable Class and name ends with "Group"
 ```
 
 ## Data Table
-Table for data storage of user changeable data. Allways contains the following columns: date, creator, active. There is only ONE Data Table for each Topic.
+Table for data storage of user changeable data. Always contains the following columns: date, creator, active. There is only ONE Data Table for each Topic.
 ```python
     class DerivativeConstellium(models.Model):
         derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
