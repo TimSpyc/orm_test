@@ -1,5 +1,6 @@
-from backend.models import GroupTable, DataTable, ReferenceTable
+from datetime import datetime
 from django.db import models
+from backend.models import User
 
 class TestProjectGroup(models.Model):
     """
@@ -18,16 +19,34 @@ class TestProject(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
     test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
-    date = models.DateTimeField()
-    active = models.BooleanField(default=True)
-    user_id = models.IntegerField
-
-
-    def __str__(self):
-        return self.name
+    date = models.DateTimeField(null=False, default=datetime.now())
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
+    active = models.BooleanField(default = True)
 
     class Meta:
-        app_label = 'backend'
+        unique_together = ('project_number', 'test_project_group')
+        app_label = 'backend'           
+
+    def __str__(self):
+        return self.name   
+    
+
+    
+    
+class TestProject2(models.Model):
+    name = models.CharField(max_length=255)
+    project_number = models.CharField(max_length=255, unique=False)
+    test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    date = models.DateTimeField(null=False, default=datetime.now())
+    ap_no =models.IntegerField(null=True)
+
+    class Meta:
+        unique_together = ('project_number', 'ap_no')
+        app_label = 'backend'           
+
+    def __str__(self):
+        return self.name   
+
 
 class TestProjectUserGroup(models.Model):
     """
@@ -65,3 +84,15 @@ class TestProjectUser(models.Model):
 
     class Meta:
         app_label = 'backend'
+
+
+class TestUser(models.Model):
+    
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+            return self.name   
+
+    class Meta:
+        app_label = 'backend'
+ 

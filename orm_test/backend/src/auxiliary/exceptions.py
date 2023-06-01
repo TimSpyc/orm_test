@@ -5,3 +5,6 @@ class NonExistentGroupError(Exception):
 class NotUpdatableError(Exception):
     pass
 
+class NotValidIdError(Exception):
+    pass
+

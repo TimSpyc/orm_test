@@ -1,4 +1,5 @@
-from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError
+from backend import models
+from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
@@ -6,6 +7,8 @@ from backend.models import CacheManager, User
 from datetime import datetime
 from django.db.models import Max, Model
 import timeit
+from django.db import models
+
 
 def timing(func):
     """
@@ -108,7 +111,7 @@ class GeneralManager:
     group_model: Model
     data_model: Model
 
-    def __new__(cls, group_id=None, search_date=None, use_cache=True):
+    def __new__(cls, group_id=None, search_date=None, use_cache=True, **kwargs):
         """
         Create a new instance of the Manager or return a cached instance if available.
 
@@ -120,7 +123,13 @@ class GeneralManager:
         Returns:
             manager: A new or cached instance of the manager.
         """
+
         manager_name = cls.__name__
+
+        if hasattr(cls, 'group_model'):
+            group_table_id_name = f'{transferToSnakeCase(cls.group_model.__name__)}_id'
+            if group_table_id_name in kwargs:
+                group_id = kwargs[group_table_id_name]
         
         if group_id is None:
             return super().__new__(cls)
@@ -169,6 +178,13 @@ class GeneralManager:
 
         return group_obj, data_obj
 
+    def __eq__(self,other):
+        return (
+            isinstance(other, self.__class__) and
+            self.group_id == other.group_id and
+            self.date == other.date
+        )
+
     @classmethod
     def __getGroupModelName(cls):
         """
@@ -212,16 +228,19 @@ class GeneralManager:
         To create a list of all manager objects where the 'name' column is equal to 'foo':
             filter(name='foo')
         """
+        if search_date is None:
+            search_date = datetime.now()
 
         group_model_column_list = cls.__getColumnList(cls.group_model)
         data_model_column_list = cls.__getColumnList(cls.data_model)
 
-        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs)
-        return cls.__getFilteredManagerList(group_data_dict, data_data_dict)
+        group_data_dict, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, **kwargs)
+        found_group_id_date_combination_dict_list =  cls.__getFilteredManagerList(group_data_dict, data_data_dict, search_date)
+        return cls.__createManagerObjectsFromDictList(found_group_id_date_combination_dict_list)
 
 
     @staticmethod
-    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, kwargs):
+    def __getDataForGroupAndDataTableByKwargs(cls, data_model_column_list, group_model_column_list, **kwargs):
         """
         Separate the input data into group and data dictionaries based on the provided column lists.
 
@@ -275,7 +294,7 @@ class GeneralManager:
         return group_data_dict, data_data_dict
 
     @classmethod
-    def __getFilteredManagerList(cls, data_search_dict, group_search_dict, search_date=None):
+    def __getFilteredManagerList(cls, data_search_dict, group_search_dict, search_date):
         """
         Get a filtered list of manager instances based on the provided search criteria.
 
@@ -287,18 +306,35 @@ class GeneralManager:
         Returns:
             list: A list of filtered manager instances.
         """
-        if search_date is None:
-            search_date = datetime.now()
 
         group_model_name = cls.__getGroupModelName()
+        data_table_name = cls.data_model._meta.db_table
 
-        filter_subsubquery = cls.data_model.objects.filter(date__lt=search_date).values(group_model_name).annotate(max_date=Max('date')).values('max_date', group_model_name)
-        group_model_object_query_list = cls.data_model.objects.filter(**{**{data_search_dict}, f'date__{group_model_name}__in': filter_subsubquery}).values(group_model_name)
-        #group_id_list = cls.group_model.objects.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
-        group_id_list = group_model_object_query_list.filter(**{**{group_search_dict}, 'id__in': filter_subquery}).values_list('id', flat=True)
+        newest_data_table_entries = cls.data_model.objects.raw(f'''
+            SELECT
+                id
+            FROM
+                {data_table_name}
+            WHERE
+                ({group_model_name}_id, date) in (
+                    SELECT
+                        {group_model_name}_id, max(date)
+                    FROM
+                        {data_table_name}
+                    WHERE
+                        date <= '{search_date}'
+                    GROUP BY
+                        {group_model_name}_id
+                )
+        ''')
 
-        return [cls(group_id, search_date) for group_id in group_id_list]
+        group_model_ids = cls.data_model.objects.filter(**{**data_search_dict, 'id__in': [data_obj.id for data_obj in newest_data_table_entries]}).values(f'{group_model_name}_id')
+        group_id_list = cls.group_model.objects.filter(**{**group_search_dict, 'id__in': group_model_ids}).values_list('id', flat=True)
+        return [{f'{group_model_name}_id': group_id, 'search_date': search_date} for group_id in group_id_list]
 
+    @classmethod
+    def __createManagerObjectsFromDictList(cls, creation_dict_list):
+        return [cls(**data) for data in creation_dict_list] 
 
     def __errorIfNotUpdatable(self):
         """
@@ -405,7 +441,7 @@ class GeneralManager:
         return  GeneralManager.__checkIfColumnReferenceBaseExists(column_name, available_column_list, "_id")
 
     @staticmethod
-    def __getValueForReverencedModelById(current_model, db_column, id):
+    def __getValueForReverencedModelById(current_model: models.Model, db_column: str, id: int) -> models.Model:
         """
         Retrieve the value of a referenced model by its ID.
 
@@ -416,7 +452,10 @@ class GeneralManager:
 
         Returns:
             Model: The referenced model object.
+        Raises:
+        NotValidIdError: If ID does not exist in the database.
         """
+
         model_for_db_value = (
             current_model._meta.get_field(db_column)
             .remote_field.model
@@ -424,10 +463,12 @@ class GeneralManager:
         model_obj = (
             model_for_db_value.objects.filter(id=id).first()
         )
+        if model_obj is None:
+            raise NotValidIdError(f"{model_for_db_value} with id {id} does not exist.")
         return model_obj
 
     @staticmethod
-    def __getValueForManyToManyByIdList(current_model, db_column, id_list):
+    def __getValueForManyToManyByIdList (current_model: models.Model, db_column: str, id_list: list | set | tuple) -> models.QuerySet:
         """
         Retrieve a list of values for a many-to-many relationship by a list of IDs.
 
@@ -438,14 +479,23 @@ class GeneralManager:
 
         Returns:
             QuerySet: A queryset of related model objects.
+        
+        Raises:
+        NotValidIdError: If one or more IDs in the list do not exist in the database.
         """
         
+        id_set = set(id_list)
         model_for_db_value = (
             current_model._meta.get_field(db_column)
             .remote_field.model
         )
-        model_obj_list = (
-            model_for_db_value.objects.filter(id__in=id_list)
+        existing_ids = model_for_db_value.objects.filter(id__in = id_set).values_list('id', flat=True)
+        not_existing_ids = id_set - set(existing_ids)       
+        if not_existing_ids:
+             raise NotValidIdError(f"One or more IDs in the list do not exist in the database: {not_existing_ids}")                                                           
+        
+        model_obj_list = (                                                                   
+            model_for_db_value.objects.filter(id__in=id_set)
         )
         return model_obj_list
 
@@ -475,7 +525,7 @@ class GeneralManager:
             value = GeneralManager.__getValueForReverencedModelById(model, db_column, id = value)
         
         if is_many_to_many:
-            value = GeneralManager.__getValueForManyToManyByIdList(model, db_column, id_list = value)
+            value = GeneralManager.__getValueForManyToManyByIdList(model, db_column, id_list = value) 
         
         return is_in_model, db_column, value
 
@@ -486,7 +536,7 @@ class GeneralManager:
         Args:
             db_column (str): The name of the database column.
             value: The value associated with the database column.
-            available_column_list (list): A list of available column names in the model.
+            available_column_list (list): A list of available column names in the model. 
 
         Returns:
             tuple: A tuple containing:
@@ -534,7 +584,7 @@ class GeneralManager:
         """
         is_in_model, db_column, value = self.__getValueAndColumnIfExists(db_column, available_column_list, self.data_model, value)
 
-        if not is_in_model:
+        if not is_in_model: 
             raise ValueError(
                 f'''
                     You can't push data that is not storable in DB.
@@ -584,6 +634,7 @@ class GeneralManager:
 
         self.__writeDataData(latest_data, data_data_dict, creator_user_id, self.__group_obj)
         self.__init__(self.group_id)
+        
 
     @classmethod
     def __writeDataData(cls, latest_data, data_data_dict, creator_user_id, group_obj):
@@ -627,7 +678,7 @@ class GeneralManager:
         self.update(creator_user_id, active=False)
     
     @classmethod
-    def isDataUploadable(cls, data_dict, model):
+    def __isDataUploadable(cls, data_dict, model):
         """
         Check if the data provided in the dictionary can be uploaded to the specified model.
 
@@ -641,17 +692,17 @@ class GeneralManager:
                 2. Whether all not_null fields are present in the data_dict.
                 3. Whether all not_null fields in the data_dict contain data (no None values).
         """
-        unique_fields = model._meta.unique_together
+        unique_fields = []
+        for unique_field_tuple in model._meta.unique_together:
+            unique_fields = [*unique_field_tuple, *unique_fields]
         not_null_fields = [field.name for field in model._meta.get_fields() if not field.null and not field.auto_created]
 
         data_dict_extended_list = list(data_dict.keys())
         data_dict_extended_list.extend(['date', 'creator', 'active', transferToSnakeCase(cls.group_model.__name__)])
-
+        
         contains_all_unique_fields = set(unique_fields).issubset(set(data_dict_extended_list))
         contains_all_not_null_fields = set(not_null_fields).issubset(set(data_dict_extended_list))
-        
         all_not_null_fields_contain_data = not noneValueInNotNullField(not_null_fields, data_dict)
-
 
         return (
             contains_all_unique_fields,
@@ -679,8 +730,8 @@ class GeneralManager:
 
         unique_fields = cls.group_model._meta.unique_together
 
-        is_group_data_uploadable = all(cls.isDataUploadable(group_data_dict, cls.group_model))
-        is_data_data_uploadable = all(cls.isDataUploadable(data_data_dict, cls.data_model))
+        is_group_data_uploadable = all(cls.__isDataUploadable(group_data_dict, cls.group_model))
+        is_data_data_uploadable = all(cls.__isDataUploadable(data_data_dict, cls.data_model))
 
         if is_group_data_uploadable and is_data_data_uploadable:
 
@@ -689,7 +740,7 @@ class GeneralManager:
                     **group_data_dict
                 )
             else:
-                new_group_obj = self.group_model.objects.get_or_create(
+                new_group_obj = cls.group_model.objects.get_or_create(
                     **group_data_dict
                 )
             new_group_obj.save()
@@ -758,7 +809,7 @@ class GeneralManager:
                 f"{self.data_model.__name__} with group_id {group_obj.id} does not exist at date {search_date}")
 
         return data_obj
-    
+
     def __setManagerObjectDjangoCache(self):
         """
         Set the current manager object in the Django cache.

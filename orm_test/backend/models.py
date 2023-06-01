@@ -30,7 +30,7 @@ class User(ReferenceTable):
     last_login = models.DateTimeField(null=True)
 
     def __str__(self):
-        return f'{self.name} {self.last_name}'
+        return f'{self.first_name} {self.last_name}'
 
 
 class DataTable(models.Model):
@@ -78,8 +78,7 @@ class CacheManager(models.Model):
                 ).values(group_model_name).annotate(latest_date=Max('date'))
             else:
                 latest_dates = data_model.objects.filter(
-                    date__lt=date,
-                    group_model_name=group_model_obj
+                    **{'date__lt': date, group_model_name:group_model_obj}
                 ).values(group_model_name).annotate(latest_date=Max('date'))
 
             result = cls.objects.filter(
