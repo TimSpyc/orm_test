@@ -106,19 +106,23 @@ class CacheHandler:
         
         return self.watch_dict[identification]
 
-    @classmethod
-    def __startUpCacheHandler(cls) -> None:
+    def __startUpCacheHandler(self) -> None:
         """
         Start the CacheHandler by adding all CacheIntermediate objects without end date.
         """
-        cache_handler_obj = cls()
         to_handle = CacheIntermediate.objects.filter(end_date__isnull=True)
 
         for data in to_handle:
             intermediate_obj = pickle.loads(data)
-            cache_handler_obj.add(intermediate_obj)
+            self.add(intermediate_obj)
 
     @staticmethod
     def removeWatcher(identification: str) -> None:
+        """
+        Remove a watcher from the CacheHandler based on its identification.
+
+        Args:
+            identification (str): The identification of the watcher to be removed.
+        """
         self = CacheHandler()
         self.watch_dict.pop(identification, None)
