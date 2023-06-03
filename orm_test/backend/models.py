@@ -140,15 +140,16 @@ class Scenario(DataTable):
 
 class CacheIntermediate(models.Model):
     """
-    A Django model representing cache entries, which store the manager name, group ID, date, and pickled data.
+    A Django model representing cache entries, which store the intermediate name, scenario, date, and pickled data.
     """
     intermediate_name = models.CharField(max_length=100)
-    dependencies = models.JSONField()
     relevant_scenario_dict = models.JSONField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True)
     data = models.BinaryField()
 
     class Meta:
-        unique_together = ('intermediate_name', 'dependencies', 'relevant_scenario_dict')
+        unique_together = ('intermediate_name', 'relevant_scenario_dict', 'start_date', 'end_date')
 
     # @classmethod
     # def get_cache_data(cls, intermediate_name, group_model_obj, input_group_id, date):
@@ -497,12 +498,12 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 
 # class ChangeRequestRiskProbability(ReferenceTable):
 #     name = models.CharField(max_length=255)
-#     faktor = models.IntegerField()
+#     factor = models.IntegerField()
 
 
 # class ChangeRequestRiskImpact(ReferenceTable):
 #     name = models.CharField(max_length=255)
-#     faktor = models.IntegerField()
+#     factor = models.IntegerField()
 
 
 # class ChangeRequestRisk(DataTable):
