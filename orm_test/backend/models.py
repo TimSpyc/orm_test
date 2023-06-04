@@ -248,7 +248,8 @@ class ProjectGroup(GroupTable):
 
 class Project(DataTable):
     """
-    A Django model representing a project, including its name, project number, and associated project group.
+    A Django model representing a project, including its name, project number,
+    and associated project group.
     """
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
@@ -260,7 +261,8 @@ class Project(DataTable):
 
 class ProjectUserGroup(GroupTable):
     """
-    A Django model representing a project user group, which associates a user with a project group.
+    A Django model representing a project user group, which associates a
+    user with a project group.
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
@@ -274,7 +276,8 @@ class ProjectUserGroup(GroupTable):
 
 class ProjectUserRole(ReferenceTable):
     """
-    A Django model representing a project user role, which includes a role name.
+    A Django model representing a project user role, which includes a role
+    name.
     """
     role_name = models.CharField(max_length=255)
 
@@ -284,9 +287,13 @@ class ProjectUserRole(ReferenceTable):
 
 class ProjectUser(DataTable):
     """
-    A Django model representing a project user, including their project user group and project user roles.
+    A Django model representing a project user, including their project user
+    group and project user roles.
     """
-    project_user_group = models.ForeignKey(ProjectUserGroup, on_delete=models.CASCADE)
+    project_user_group = models.ForeignKey(
+        ProjectUserGroup,
+        on_delete=models.CASCADE
+    )
     project_user_role = models.ManyToManyField(ProjectUserRole, blank=False)
 
     def __str__(self):
@@ -295,7 +302,8 @@ class ProjectUser(DataTable):
 
 class DerivativeConstelliumGroup(GroupTable):
     """
-    A Django model representing a derivative Constellium group, which associates a derivative Constellium group with a project group.
+    A Django model representing a derivative Constellium group, which
+    associates a derivative Constellium group with a project group.
     """
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
 
@@ -325,16 +333,27 @@ class PredictionAccuracy(ReferenceTable):
 
 class DerivativeConstellium(DataTable):
     """
-    A Django model representing a derivative Constellium, including its name, start and end dates, derivative type, estimated price, estimated weight, and prediction accuracy.
+    A Django model representing a derivative Constellium, including its name,
+    start and end dates, derivative type, estimated price, estimated weight,
+    and prediction accuracy.
     """
-    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+    derivative_constellium_group = models.ForeignKey(
+        DerivativeConstelliumGroup,
+        on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=255)
     sop_date = models.DateField()
     eop_date = models.DateField()
-    derivative_type = models.ForeignKey(DerivativeType, on_delete=models.CASCADE)
+    derivative_type = models.ForeignKey(
+        DerivativeType,
+        on_delete=models.CASCADE
+    )
     estimated_price = models.FloatField()
     estimated_weight = models.FloatField()
-    prediction_accuracy = models.ForeignKey(PredictionAccuracy, on_delete=models.CASCADE)
+    prediction_accuracy = models.ForeignKey(
+        PredictionAccuracy,
+        on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return self.name
