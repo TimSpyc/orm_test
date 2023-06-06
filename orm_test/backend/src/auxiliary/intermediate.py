@@ -5,8 +5,25 @@ from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
 
 class GeneralIntermediate:
+    """
+    A general class representing an intermediate data object, which stores
+    its dependencies and their respective start and end dates.
 
+    The class uses caching to retrieve and store instances, and provides
+    methods for comparing instances and verifying their dependencies.
+    """
     def __new__(cls, *args: list, **kwargs: dict) -> object:
+        """
+        Overload the __new__ method to allow for cache retrieval of instances.
+
+        Args:
+            args (list): The positional arguments for the __init__ method.
+            kwargs (dict): The keyword arguments for the __init__ method.
+
+        Returns:
+            object: An instance of the class, either retrieved from cache or
+            newly created.
+        """
         # Get the names of the arguments in __init__
         init_params = inspect.signature(cls.__init__).parameters
         
@@ -34,6 +51,16 @@ class GeneralIntermediate:
         return instance
 
     def __init__(self, search_date: datetime | None, **kwargs: dict) -> None:
+        """
+        Initialize an instance of the class with the given search date and
+        keyword arguments.
+
+        Args:
+            search_date (datetime | None): The date to use when searching
+                the cache.
+            kwargs (dict): Additional keyword arguments to use when
+                initializing the instance.
+        """
         self.identification_dict: dict
         self.dependencies: list
         self.search_date = search_date
@@ -43,6 +70,17 @@ class GeneralIntermediate:
         self.end_date = self.__getEndDate()
 
     def __eq__(self, other: object) -> bool:
+        """
+        Overload the __eq__ method to allow for comparing instances based
+        on their identification string.
+
+        Args:
+            other (object): The other object to compare with.
+
+        Returns:
+            bool: True if the two instances have the same identification
+                string, False otherwise.
+        """
         own_id_string = CacheIntermediate.getIdString(self.identification_dict)
         other_id_string = CacheIntermediate.getIdString(self.other)
         return (
@@ -51,13 +89,26 @@ class GeneralIntermediate:
         )
     
     def __getStartDate(self) -> datetime:
+        """
+        Get the earliest start date among the dependencies of the instance.
+
+        Returns:
+            datetime: The earliest start date.
+        """
         start_date_list = [
             dependency.start_date for dependency in self.dependencies
             if dependency.start_date is not None
         ]
         return min(start_date_list)
         
-    def __getEndDate(self) -> datetime:
+    def __getEndDate(self) -> datetime | None:
+        """
+        Get the earliest end date among the dependencies of the instance.
+
+        Returns:
+            datetime: The earliest end date, or None if no end dates are
+                present.
+        """
         end_date_list = [
             dependency.start_date for dependency in self.dependencies
             if dependency.start_date is not None
@@ -67,6 +118,14 @@ class GeneralIntermediate:
         return min(end_date_list)
     
     def __checkIfDependenciesAreFilled(self):
+        """
+        Check if the dependencies of the instance are properly set.
+
+        Raises:
+            MissingAttributeError: If the dependencies attribute is not set.
+            TypeError: If the dependencies attribute is not of type list.
+            ValueError: If the dependencies attribute is empty.
+        """
         if not hasattr(self, 'dependencies'):
             raise MissingAttributeError(
                 '''
