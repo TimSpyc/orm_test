@@ -172,7 +172,9 @@ class GeneralManager:
         self.creator_id = data_obj.creator.id
         self.creator = data_obj.creator
         self.active = data_obj.active
-        self.date = data_obj.date
+        self.start_date = data_obj.date
+        self.end_date = self.__getEndDate()
+
 
         self.search_date = search_date
 
@@ -182,7 +184,7 @@ class GeneralManager:
         return (
             isinstance(other, self.__class__) and
             self.group_id == other.group_id and
-            self.date == other.date
+            self.start_date == other.start_date
         )
 
     @classmethod
@@ -823,4 +825,15 @@ class GeneralManager:
         """
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
-        CacheManager.set_cache_data(self.__class__.__name__, self.group_id, self, self.date)
+        CacheManager.set_cache_data(self.__class__.__name__, self.group_id, self, self.start_date)
+
+    def __getEndDate(self):
+        data_obj = self.data_model.objects.filter(
+            **{
+                self.__group_model_name: self.__group_obj,
+                'date__gt': self.start_date
+            }
+        ).order_by('creation_date').latest()
+        if data_obj:
+            return data_obj.date
+        return None

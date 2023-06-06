@@ -1,10 +1,11 @@
 import inspect
 from backend.models import CacheIntermediate
 from django.core.cache import cache
+import json
 
 class GeneralIntermediate:
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: list, **kwargs: dict) -> object:
         # Get the names of the arguments in __init__
         init_params = inspect.signature(cls.__init__).parameters
         
@@ -31,11 +32,17 @@ class GeneralIntermediate:
         instance.identification_dict = identification_dict
         return instance
 
-    def __init__(self, search_date, **kwargs):
+    def __init__(self, search_date: int | None, **kwargs: dict) -> None:
         self.identification_dict = None
         self.search_date = search_date
 
-    def __eq__(self, other):
+        self.start_date = 
+        self.end_date =
+
+    def __eq__(self, other: object) -> bool:
+        own_id_string = CacheIntermediate.getIdString(self.identification_dict)
+        other_id_string = CacheIntermediate.getIdString(self.other)
         return (
-            isinstance(other, self.__class__)
+            isinstance(other, self.__class__) and
+            own_id_string == other_id_string
         )
