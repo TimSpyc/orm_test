@@ -16,7 +16,7 @@ class Watcher:
     def __repr__(self):
         return f'watcher object: {self.identification}'
 
-    def addDependentObject(self, obj):
+    def addDependentObject(self, obj: object) -> None:
         """
         Add a dependent object to the watcher's list.
 
@@ -25,7 +25,7 @@ class Watcher:
         """
         self.dependent_object_list.append(obj)
 
-    def inform(self):
+    def inform(self) -> None:
         """
         Inform all dependent objects of the current time by setting their end dates, then destroy this watcher.
         This will update the end_date for the dependent_objects cache.
@@ -37,7 +37,7 @@ class Watcher:
         
         self.destroy()
 
-    def destroy(self):
+    def destroy(self) -> None:
         """
         Remove this watcher from the CacheHandler.
         """
