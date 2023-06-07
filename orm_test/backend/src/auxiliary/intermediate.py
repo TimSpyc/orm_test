@@ -110,8 +110,8 @@ class GeneralIntermediate:
                 present.
         """
         end_date_list = [
-            dependency.start_date for dependency in self.dependencies
-            if dependency.start_date is not None
+            dependency.end_date for dependency in self.dependencies
+            if dependency.end_date is not None
         ]
         if len(end_date_list) == 0:
             return None
