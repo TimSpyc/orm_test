@@ -5,7 +5,11 @@ from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
 from copy import deepcopy
 
-def mergeTwoDicts(dict_1: dict, dict_2: dict, path=None) -> dict:
+def mergeTwoDicts(
+    dict_1: dict,
+    dict_2: dict,
+    path: None | list = None
+) -> dict:
     output_dict = deepcopy(dict_1)
     if path is None: path = []
     for key in dict_2:
