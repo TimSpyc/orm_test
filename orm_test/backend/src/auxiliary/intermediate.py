@@ -1,32 +1,8 @@
 import inspect
 from backend.models import CacheIntermediate
-from django.core.cache import cache
 from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
-from copy import deepcopy
-
-def mergeTwoDicts(
-    dict_1: dict,
-    dict_2: dict,
-    path: None | list = None
-) -> dict:
-    output_dict = deepcopy(dict_1)
-    if path is None: path = []
-    for key in dict_2:
-        if key in output_dict:
-            if (
-                isinstance(output_dict[key], dict) and
-                isinstance(dict_2[key], dict)
-            ):
-                mergeTwoDicts(output_dict[key], dict_2[key], path + [str(key)])
-            elif output_dict[key] == dict_2[key]:
-                pass # same leaf value
-            else:
-                raise Exception(f'Conflict at {key}')
-        else:
-            output_dict[key] = dict_2[key]
-    return output_dict
-
+from backend.src.auxiliary.scenario_handler import ScenarioHandler
 
 class GeneralIntermediate:
     """
@@ -37,7 +13,7 @@ class GeneralIntermediate:
     methods for comparing instances and verifying their dependencies.
     """
     relevant_scenario_keys: list
-
+    
     def __new__(cls, *args: list, **kwargs: dict) -> object:
         """
         Overload the __new__ method to allow for cache retrieval of instances.
@@ -55,17 +31,23 @@ class GeneralIntermediate:
         
         # Map the positional arguments to their names
         kwargs.update(dict(zip(init_params, args)))
+        if kwargs == {}:
+            return super().__new__(cls)
 
-        input_dict = cls.__cleanKwargsForIdentificationDict(kwargs)
-        identification_dict = input_dict['identification_dict']
-        use_cache = input_dict['use_cache']
-        search_date = input_dict['search_date']
+        search_date = kwargs.pop('search_date', None)
+        use_cache = kwargs.pop('use_cache', None)
+        scenario_dict = kwargs.pop('scenario_dict', None)
+
+        scenario_handler = ScenarioHandler(scenario_dict)
+        relevant_scenarios = scenario_handler.\
+            getRelevantScenarioDict(cls.relevant_scenario_keys)
+        kwargs['relevant_scenarios'] = relevant_scenarios
         intermediate_name = cls.__name__
 
         if use_cache:
             cached_instance = CacheIntermediate.get_cache_data(
                 intermediate_name=intermediate_name,
-                identification_dict=identification_dict,
+                identification_dict=kwargs,
                 date=search_date
             )
             if cached_instance:
@@ -73,7 +55,8 @@ class GeneralIntermediate:
 
         instance = super().__new__(cls)
         instance.__init__({**kwargs, 'search_date': search_date})
-        instance.identification_dict = identification_dict
+        instance.identification_dict = kwargs
+        instance.scenario_handler = scenario_handler
         return instance
 
     def __init__(self, search_date: datetime | None, **kwargs: dict) -> None:
@@ -88,6 +71,7 @@ class GeneralIntermediate:
                 initializing the instance.
         """
         self.identification_dict: dict
+        self.scenario_handler : ScenarioHandler
         self.dependencies: list
         self.search_date = search_date
         self.__checkIfDependenciesAreFilled()
@@ -175,86 +159,3 @@ class GeneralIntermediate:
                 dependencies is not possible.
                 '''
             )
-    
-    @staticmethod
-    def __checkIfScenarioDictIsFilled(relevant_scenario_keys: list) -> None:
-        """
-        Check if the dependencies of the instance are properly set.
-
-        Raises:
-            MissingAttributeError: If the dependencies attribute is not set.
-            TypeError: If the dependencies attribute is not of type list.
-            ValueError: If the dependencies attribute is empty.
-        """
-        if type(relevant_scenario_keys) != list:
-            raise TypeError(
-                f'''
-                The attribute "relevant_scenario_keys" needs to be of type list
-                not {type(relevant_scenario_keys)}.
-                '''
-            )
-
-        for scenario_key in relevant_scenario_keys:
-            if type(scenario_key) != tuple:
-                raise TypeError(
-                    f'''
-                    Each entry in relevant_scenario_keys needs to be of type
-                    tuple not {type(scenario_key)}. 
-                    (E.g. relevant_scenario_keys= [
-                        ('volume', 'project'),
-                        ('derivative',)
-                    ])
-                    '''
-                )
-    
-    @classmethod        
-    def getRelevantScenarios(
-        cls,
-        scenario_dict: dict
-    ) -> dict:
-        def __isKeyChainInDict(to_check_dict: dict, key_chain: tuple, output_dict: dict) -> bool:
-            if len(key_chain) == 0:
-                return True
-            if key_chain[0] not in to_check_dict.keys():
-                return False
-
-            return __isKeyChainInDict(to_check_dict[key_chain[0]], key_chain[1:])
-
-        cls.__checkIfScenarioDictIsFilled(cls.relevant_scenario_keys)
-
-        def __addValuesToDict(key_chain_list: list, to_add_dict: dict, output_dict: dict) -> dict:
-            if len(key_chain_list) == 0:
-                return to_add_dict
-            key = key_chain_list.pop(0)
-            
-            output_dict[key] = __addValuesToDict(key_chain_list, to_add_dict[key], {})
-            return output_dict
-
-        relevant_scenarios = {}
-        for key_chain in cls.relevant_scenario_keys:
-            if not __isKeyChainInDict(scenario_dict, key_chain):
-                continue
-
-            key_chain_list = list(key_chain)
-            to_add_dict = __addValuesToDict(key_chain_list, scenario_dict, {})
-            relevant_scenarios = mergeTwoDicts(relevant_scenarios, to_add_dict)
-        return relevant_scenarios
-
-    @classmethod
-    def __cleanKwargsForIdentificationDict(cls, kwargs: dict) -> dict:
-
-        search_date = kwargs.pop('search_date', None)
-        use_cache = kwargs.pop('use_cache', None)
-        scenario_dict = kwargs.pop('scenario_dict', None)
-        
-
-        relevant_scenarios = cls.getRelevantScenarios(scenario_dict)
-        kwargs['relevant_scenarios'] = relevant_scenarios
-
-        identification_dict = kwargs
-
-        return {
-            "use_cache":use_cache,
-            "identification_dict": identification_dict,
-            "search_date": search_date
-        }
