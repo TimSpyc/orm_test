@@ -149,7 +149,6 @@ class ScenarioHandler:
     def __addValuesToDict(
         key_chain: list,
         to_add_dict: dict,
-        output_dict: dict
     ) -> dict:
         """
         Add values to a dictionary based on a key chain.
@@ -157,19 +156,19 @@ class ScenarioHandler:
         Args:
             key_chain (list): The key chain determining which values to add.
             to_add_dict (dict): The dictionary from which to get the values.
-            output_dict (dict): The dictionary to which to add the values.
 
         Returns:
             dict: The output dictionary with added values.
         """
+        output_dict = None
+
+        if output_dict is None:
+            output_dict = {}
 
         if len(key_chain) == 0:
             return to_add_dict
+
         key = key_chain.pop(0)
-        
-        output_dict[key] = ScenarioHandler.__addValuesToDict(
-            key_chain,
-            to_add_dict[key],
-            output_dict
-        )
+        output_dict[key] = ScenarioHandler.__addValuesToDict(key_chain, to_add_dict[key])
+
         return output_dict

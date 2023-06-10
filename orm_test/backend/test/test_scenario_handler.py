@@ -86,7 +86,7 @@ class TestAddValuesToDict(TestCase):
             'test': 123
         }
         key_chain = ['test',]
-        result = ScenarioHandler._ScenarioHandler__addValuesToDict(key_chain, scenario_dict, {})
+        result = ScenarioHandler._ScenarioHandler__addValuesToDict(key_chain, scenario_dict)
         self.assertEqual(result, scenario_dict)
 
     def test_single_value_length_2(self):
@@ -95,14 +95,14 @@ class TestAddValuesToDict(TestCase):
             'hallo': 123,
         }
         key_chain = ['test',]
-        result = ScenarioHandler._ScenarioHandler__addValuesToDict(key_chain, scenario_dict, {})
+        result = ScenarioHandler._ScenarioHandler__addValuesToDict(key_chain, scenario_dict)
         self.assertEqual(result, {'test': 123,})
 
-    # def test_single_value_length_3(self):
-    #     scenario_dict = {
-    #         'test': 123,
-    #         'hallo': {'how': {'are': {'you': '?'}}},
-    #     }
-    #     key_chain = ['hallo', 'how']
-    #     result = ScenarioHandler._ScenarioHandler__addValuesToDict(key_chain, scenario_dict, {})
-    #     self.assertEqual(result, {'hallo': {'how': {'are': {'you': '?'}}}})
+    def test_single_value_length_3(self):
+        scenario_dict = {
+            'test': 123,
+            'hallo': {'how': {'are': {'you': '?'}}},
+        }
+        key_chain = ['hallo', 'how']
+        result = ScenarioHandler._ScenarioHandler__addValuesToDict(key_chain, scenario_dict)
+        self.assertEqual(result, {'hallo': {'how': {'are': {'you': '?'}}}})
