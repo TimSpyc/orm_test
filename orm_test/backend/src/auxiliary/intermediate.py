@@ -26,22 +26,18 @@ class GeneralIntermediate:
             object: An instance of the class, either retrieved from cache or
             newly created.
         """
-        # Get the names of the arguments in __init__
-        init_params = inspect.signature(cls.__init__).parameters
-        
-        # Map the positional arguments to their names
-        kwargs.update(dict(zip(init_params, args)))
-        if kwargs == {}:
+        if kwargs == {} and args == []:
             return super().__new__(cls)
+
+        kwargs = cls.__makeArgsToKwargs(args, kwargs)
 
         search_date = kwargs.pop('search_date', None)
         use_cache = kwargs.pop('use_cache', None)
-        scenario_dict = kwargs.pop('scenario_dict', None)
+        scenario_dict = kwargs.pop('scenario_dict', {})
 
-        scenario_handler = ScenarioHandler(scenario_dict)
-        relevant_scenarios = scenario_handler.\
-            getRelevantScenarioDict(cls.relevant_scenario_keys)
-        kwargs['relevant_scenarios'] = relevant_scenarios
+        rel_scenario, scenario_handler = cls.__cleanScenarioDict(scenario_dict)
+
+        kwargs['relevant_scenarios'] = rel_scenario
         intermediate_name = cls.__name__
 
         if use_cache:
@@ -159,3 +155,58 @@ class GeneralIntermediate:
                 dependencies is not possible.
                 '''
             )
+    
+    @classmethod
+    def __makeArgsToKwargs(cls, args: list, kwargs: dict) -> dict:
+        """
+        This method takes the arguments and keywords arguments of the class
+        constructor, maps the positional arguments to their respective
+        parameter names, and returns a dictionary that represents all arguments
+        as keyword arguments.
+
+        Args:
+            args (list): The positional arguments provided to the class
+                constructor.
+            kwargs (dict): The keyword arguments provided to the class
+                constructor.
+
+        Returns:
+            dict: A dictionary containing all arguments as keyword arguments.
+        """
+        extended_kwargs = {**kwargs}
+        # Get the names of the arguments in __init__
+        init_params = inspect.signature(cls.__init__).parameters
+        
+        # Map the positional arguments to their names
+        extended_kwargs.update(dict(zip(init_params, args)))
+        
+        return extended_kwargs
+
+    @classmethod
+    def __cleanScenarioDict(
+        cls,
+        scenario_dict: dict
+    ) -> tuple(dict, ScenarioHandler):
+        """
+        This method takes a scenario dictionary, uses a ScenarioHandler to
+        extract the relevant scenarios (defined by cls.relevant_scenario_keys),
+        and returns both the relevant scenarios and the ScenarioHandler
+        instance.
+
+        Args:
+            scenario_dict (dict): The scenario dictionary to be cleaned.
+
+        Returns:
+            tuple(dict, ScenarioHandler): A tuple containing the cleaned
+                scenario dictionary and the ScenarioHandler instance used for
+                the cleaning.
+        """
+
+        scenario_handler = ScenarioHandler(scenario_dict)
+        relevant_scenarios = scenario_handler.\
+            getRelevantScenarioDict(cls.relevant_scenario_keys)
+
+        return relevant_scenarios, scenario_handler
+
+
+
