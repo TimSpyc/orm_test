@@ -61,7 +61,7 @@ Manager classes inherit from GeneralManger. There are meant to interact with the
 Each value in these tables is stored inside attributes of the manager class. If there is a foreign or many-to-many relation to another data or group table the corresponding manager is linked with a @property decorator. The connected manager is not stored inside an attribute because it can change over time.
 E.g.:
 
-```
+```python
 class ProjectManager(GeneralManager):
     """
     A manager class for handling Project-related operations, extending the GeneralManager.
@@ -100,7 +100,7 @@ class ProjectManager(GeneralManager):
         """
         from project_user_manager import ProjectUserManager
         return ProjectUserManager.filter(
-            date=self.search_date,
+            search_date=self.search_date,
             project_group_id=self.group_id
         )
 
@@ -109,7 +109,9 @@ class ProjectManager(GeneralManager):
 Each manager needs the class variables group_model and data_model that link to django orm models (db tables).
 
 ## General functionality
+```python
 all(search_date=None)
+    """
     Retrieves all objects of the manager's class, optionally filtering by search_date.
 
     Args:
@@ -117,9 +119,10 @@ all(search_date=None)
 
     Returns:
         list: A list of manager objects, filtered by the optional search_date if provided.
-
+    """
 
 filter(search_date=None, **kwargs)
+    """
     Creates a list of objects based on the given parameters.
 
     Keyword arguments:
@@ -132,24 +135,27 @@ filter(search_date=None, **kwargs)
     Example:
     To create a list of all manager objects where the 'name' column is equal to 'foo':
         filter(name='foo')
-
+    """
 
 update(creator_user_id, **kwargs)
+    """
     Update the current instance with new data, uploads to db and refresh the cache.
 
     Args:
         creator_user_id (int): The ID of the user who is making the update.
         **kwargs: Key-value pairs representing the new data to be updated.
-
+    """
 
 deactivate(creator_user_id)
+    """
     Deactivate the current instance and set active=False in db.
 
     Args:
         creator_user_id (int): The ID of the user who is deactivating the instance.
-
+    """
 
 create(creator_user_id, **kwargs)
+    """
     Create a new instance of the current class and initialize cache.
 
     Args:
@@ -158,7 +164,8 @@ create(creator_user_id, **kwargs)
 
     Returns:
         cls: A new instance of the current manager class.
-
+    """
+```
 
 # Intermediate Classes:
 ## Basics
@@ -168,7 +175,7 @@ Intermediate classes inherit from GeneralIntermediate. There are meant to combin
 - scenario_dict is used to apply scenarios (e.g +5% volume for BMW). It can always contain all scenarios. The relevant_scenarios for this intermediate will be extracted out of the dict.
 ## Configuration
 To extract the relevant_scenarios you need to assign a class variable named relevant_scenario_keys. It's a list of tuples with key chains. E.g.:
-```
+```python
 relevant_scenario_keys = [('volume', 'project'), ('volume', 'derivative')]
 scenario_dict = {
     'other_category': ...
@@ -178,7 +185,7 @@ scenario_dict = {
 }
 ```
 results in: 
-```
+```python
 relevant_scenarios = {
         'volume': {
         'project': {'id': 1, 'value': 1.15}
@@ -186,7 +193,7 @@ relevant_scenarios = {
 }
 ```
 All dependencies must be initialized inside the dependencies attribute (list) before calling 
-```
+```python
 super().__init__()
 ```
 This is because of cache handling. Even if you don't want to use cache, it's necessary. You can only have manager and intermediate dependencies.
