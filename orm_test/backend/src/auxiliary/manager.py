@@ -213,7 +213,7 @@ class GeneralManager:
         Returns:
             list: A list of manager objects, filtered by the optional search_date if provided.
         """
-        return cls.filter(search_date=None)
+        return cls.filter(search_date=search_date)
 
     @classmethod
     def filter(cls, search_date=None, **kwargs):

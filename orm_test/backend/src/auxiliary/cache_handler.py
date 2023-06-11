@@ -7,13 +7,14 @@ class Watcher:
     def __init__(self, dependency: object) -> None:
         """
         Args:
-            dependency (object): The dependency object this Watcher is responsible for.
+            dependency (object): The dependency object this Watcher is
+                responsible for.
         """
         self.dependency = dependency
         self.identification = json.dumps(dependency.identification_dict)
         self.dependent_object_list = []
 
-    def __repr__(self):
+    def __repr__(self) -> None:
         return f'watcher object: {self.identification}'
 
     def addDependentObject(self, obj: object) -> None:
@@ -27,8 +28,9 @@ class Watcher:
 
     def inform(self) -> None:
         """
-        Inform all dependent objects of the current time by setting their end dates, then destroy this watcher.
-        This will update the end_date for the dependent_objects cache.
+        Inform all dependent objects of the current time by setting their end
+        dates, then destroy this watcher. This will update the end_date
+        for the dependent_objects cache if it's None.
         """
         date = datetime.now()
 
@@ -51,7 +53,7 @@ class CacheHandler:
     __instance = None
     watch_dict = {}
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: list, **kwargs: dict) -> object:
         """
         Create a new instance of CacheHandler if one does not already exist.
         """
@@ -59,12 +61,12 @@ class CacheHandler:
             cls.__instance = super().__new__(cls, *args, **kwargs)
         return cls.__instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not self.watch_dict:
             self.__startUpCacheHandler()
 
     @staticmethod
-    def add(object):
+    def add(object: object) -> None:
         """
         Add an object to the CacheHandler.
 
@@ -72,13 +74,13 @@ class CacheHandler:
             object (object): The object to be added.
         """
         self = CacheHandler()
-        dependencies = object.dependencies
+        dependencies: list = object.dependencies
         for dependency in dependencies:
-            watcher_obj = self.__getOrCreateWatcher(dependency)
+            watcher_obj = self._getOrCreateWatcher(dependency)
             watcher_obj.addDependentObject(object)
     
     @staticmethod
-    def update(object):
+    def update(object: object) -> None:
         """
         Inform all dependent objects to update their cache
 
@@ -86,10 +88,10 @@ class CacheHandler:
             object (object): The object to be updated.
         """
         self = CacheHandler()
-        watcher_obj = self.__getOrCreateWatcher(object)
+        watcher_obj = self._getOrCreateWatcher(object)
         watcher_obj.inform()
 
-    def __getOrCreateWatcher(self, dependency: object) -> Watcher:
+    def _getOrCreateWatcher(self, dependency: object) -> Watcher:
         """
         Retrieve the watcher for a given dependency, creating one if it does not exist.
 
