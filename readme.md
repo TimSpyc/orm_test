@@ -112,13 +112,17 @@ Each manager needs the class variables group_model and data_model that link to d
 ```python
 all(search_date=None)
     """
-    Retrieves all objects of the manager's class, optionally filtering by search_date.
+    Retrieves all objects of the manager's class, optionally filtering by
+    search_date.
 
     Args:
-        search_date (datetime.date, optional): A date to filter the objects by. If specified, only objects with a date less than or equal to the search_date will be included.
+        search_date (datetime.date, optional): A date to filter the objects by.
+            If specified, only objects with a date less than or equal to the
+            search_date will be included.
 
     Returns:
-        list: A list of manager objects, filtered by the optional search_date if provided.
+        list: A list of manager objects, filtered by the optional search_date
+            if provided.
     """
 
 filter(search_date=None, **kwargs)
@@ -126,20 +130,23 @@ filter(search_date=None, **kwargs)
     Creates a list of objects based on the given parameters.
 
     Keyword arguments:
-    search_date (datetime.date, optional) -- An optional argument that specifies the search date for the objects to be created.
-    **kwargs: A variable that contains key-value pairs of filter conditions for the database query.
+    search_date (datetime.date, optional) -- An optional argument that
+        specifies the search date for the objects to be created.
+    **kwargs: A variable that contains key-value pairs of filter
+        conditions for the database query.
 
     Returns:
     list -- A list of manager objects that match the filter conditions.
 
     Example:
-    To create a list of all manager objects where the 'name' column is equal to 'foo':
-        filter(name='foo')
+    To create a list of all manager objects where the 'name' column is equal
+        to 'foo': .filter(name='foo')
     """
 
 update(creator_user_id, **kwargs)
     """
-    Update the current instance with new data, uploads to db and refresh the cache.
+    Update the current instance with new data, uploads to db and refresh the
+    cache.
 
     Args:
         creator_user_id (int): The ID of the user who is making the update.
@@ -151,7 +158,8 @@ deactivate(creator_user_id)
     Deactivate the current instance and set active=False in db.
 
     Args:
-        creator_user_id (int): The ID of the user who is deactivating the instance.
+        creator_user_id (int): The ID of the user who is deactivating the
+            instance.
     """
 
 create(creator_user_id, **kwargs)
@@ -159,8 +167,10 @@ create(creator_user_id, **kwargs)
     Create a new instance of the current class and initialize cache.
 
     Args:
-        creator_user_id (int): The ID of the user who is creating the new instance.
-        **kwargs: Key-value pairs representing the data to be used for creating the new instance.
+        creator_user_id (int): The ID of the user who is creating the new
+            instance.
+        **kwargs: Key-value pairs representing the data to be used for creating
+            the new instance.
 
     Returns:
         cls: A new instance of the current manager class.
