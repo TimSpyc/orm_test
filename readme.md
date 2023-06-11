@@ -105,6 +105,8 @@ class ProjectManager(GeneralManager):
         )
 
 ```
+## Configuration
+Each manager needs the class variables group_model and data_model that link to django orm models (db tables).
 
 ## General functionality
 all(search_date=None)
@@ -156,3 +158,35 @@ create(creator_user_id, **kwargs)
 
     Returns:
         cls: A new instance of the current manager class.
+
+
+# Intermediate Classes:
+## Basics
+Intermediate classes inherit from GeneralIntermediate. There are meant to combine data from multiple managers and other intermediates. Each intermediate has its own dependencies und functionality and is called with its own, not standardized arguments. But there must always be three arguments: use_cache, search_date and scenario_dict:
+- use_cache=True enables using cached entries.
+- search_date is necessary to get the right dependency objects.
+- scenario_dict is used to apply scenarios (e.g +5% volume for BMW). It can always contain all scenarios. The relevant_scenarios for this intermediate will be extracted out of the dict.
+## Configuration
+To extract the relevant_scenarios you need to assign a class variable named relevant_scenario_keys. It's a list of tuples with key chains. E.g.:
+```
+relevant_scenario_keys = [('volume', 'project'), ('volume', 'derivative')]
+scenario_dict = {
+    'other_category': ...
+    'volume': {
+        'project': {'id': 1, 'value': 1.15}
+    }
+}
+```
+results in: 
+```
+relevant_scenarios = {
+        'volume': {
+        'project': {'id': 1, 'value': 1.15}
+    }
+}
+```
+All dependencies must be initialized inside the dependencies attribute (list) before calling 
+```
+super().__init__()
+```
+This is because of cache handling. Even if you don't want to use cache, it's necessary. You can only have manager and intermediate dependencies.

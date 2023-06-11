@@ -4,6 +4,7 @@ from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
 from backend.src.auxiliary.scenario_handler import ScenarioHandler
 from backend.src.auxiliary.cache_handler import CacheHandler
+from backend.src.auxiliary.manager import GeneralManager
 
 class GeneralIntermediate:
     """
@@ -157,6 +158,18 @@ class GeneralIntermediate:
                 dependencies is not possible.
                 '''
             )
+        for dependency in self.dependencies:
+            if (
+                not isinstance(dependency, GeneralIntermediate) or 
+                not isinstance(dependency, GeneralManager)
+            ):
+                raise TypeError(
+                    f'''
+                    All list items of "dependencies" need to be of type 
+                    GeneralIntermediate or GeneralManager not of type 
+                    {type(dependency)}
+                    '''
+                )
     
     @classmethod
     def __makeArgsToKwargs(cls, args: list, kwargs: dict) -> dict:
