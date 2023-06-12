@@ -1,8 +1,5 @@
 if __name__ == '__main__':
-    import sys
     import os
-
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
 
     import django
@@ -16,9 +13,9 @@ class DerivativeLmcManager(GeneralManager):
     group_model = DerivativeLMCGroup
     data_model = DerivativeLMC
 
-    def __init__(self, derivative_group_id, search_date=None, use_cache=True):
+    def __init__(self, derivative_lmc_group_id: int, search_date=None, use_cache=True):
         derivative_group, derivative = super().__init__(
-            group_id=derivative_group_id,
+            group_id=derivative_lmc_group_id,
             search_date=search_date
         )
 
@@ -54,10 +51,12 @@ class DerivativeLmcManager(GeneralManager):
         self.design_lead_location = derivative.design_lead_location
         self.design_lead_country = derivative.design_lead_country
 
-    @property
-    def derivative_volume_list(self):
-        from derivative_volume_manager import DerivativeVolumeLmcManager
-        return DerivativeVolumeLmcManager.filter(
-            date=self.search_date,
-            derivative_group_id=self.group_id
-        )
+    # @property
+    # def derivative_volume_list(self):
+    #     from derivative_volume_manager import DerivativeVolumeLmcManager
+    #     return DerivativeVolumeLmcManager.filter(
+    #         date=self.search_date,
+    #         derivative_group_id=self.group_id
+    #     )
+
+DerivativeLmcManager(1)

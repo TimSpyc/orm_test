@@ -252,7 +252,7 @@ class Project(DataTable):
     and associated project group.
     """
     name = models.CharField(max_length=255)
-    project_number = models.CharField(max_length=255, unique=False)
+    project_number = models.CharField(max_length=255, unique=False, null=True)
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -366,7 +366,12 @@ class Customer(ReferenceTable):
         return f"{self.company_name} ({self.group_name})"
 
 class CustomerPlant(ReferenceTable):
-    name = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+    postcode = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    latitude = models.CharField(max_length=255)
+    longitude = models.CharField(max_length=255)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -376,7 +381,7 @@ class RevisionLMC(ReferenceTable):
     revision_date = models.DateField()
 
     def __str__(self):
-        return self.revision_date.strftime('%Y-%m-%d')
+        return self.revision_date.strftime('%Y-%m')
 
 class DerivativeLMCGroup(GroupTable):
     lmc_full_code = models.CharField(max_length=255, unique=True)

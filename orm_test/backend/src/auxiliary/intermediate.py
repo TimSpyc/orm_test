@@ -37,7 +37,7 @@ class GeneralIntermediate:
         use_cache = kwargs.pop('use_cache', None)
         scenario_dict = kwargs.pop('scenario_dict', {})
 
-        rel_scenario, scenario_handler = cls.__cleanScenarioDict(scenario_dict)
+        rel_scenario, _ = cls.__cleanScenarioDict(scenario_dict)
 
         kwargs['relevant_scenarios'] = rel_scenario
         intermediate_name = cls.__name__
@@ -54,10 +54,15 @@ class GeneralIntermediate:
         instance = super().__new__(cls)
         instance.__init__({**kwargs, 'search_date': search_date})
         instance.identification_dict = kwargs
-        instance.scenario_handler = scenario_handler
+
         return instance
 
-    def __init__(self, search_date: datetime | None, **kwargs: dict) -> None:
+    def __init__(
+        self,
+        search_date: datetime | None,
+        scenario_dict: dict,
+        dependencies: list
+    ) -> None:
         """
         Initialize an instance of the class with the given search date and
         keyword arguments.
@@ -69,8 +74,8 @@ class GeneralIntermediate:
                 initializing the instance.
         """
         self.identification_dict: dict
-        self.scenario_handler : ScenarioHandler
-        self.dependencies: list
+        self.scenario_handler : ScenarioHandler(scenario_dict)
+        self.dependencies = dependencies
         self.search_date = search_date
         self.__checkIfDependenciesAreFilled()
         
@@ -90,8 +95,16 @@ class GeneralIntermediate:
             bool: True if the two instances have the same identification
                 string, False otherwise.
         """
-        own_id_string = CacheIntermediate.getIdString(self.identification_dict)
-        other_id_string = CacheIntermediate.getIdString(other.identification_dict)
+        if not isinstance(other, GeneralIntermediate):
+            return False
+
+        own_id_string = CacheIntermediate.getIdString(
+            self.identification_dict
+        )
+        other_id_string = CacheIntermediate.getIdString(
+            other.identification_dict
+        )
+        
         return (
             isinstance(other, self.__class__) and
             own_id_string == other_id_string
@@ -201,7 +214,7 @@ class GeneralIntermediate:
     def __cleanScenarioDict(
         cls,
         scenario_dict: dict
-    ) -> tuple(dict, ScenarioHandler):
+    ) -> tuple[dict, ScenarioHandler]:
         """
         This method takes a scenario dictionary, uses a ScenarioHandler to
         extract the relevant scenarios (defined by cls.relevant_scenario_keys),
@@ -232,7 +245,7 @@ class GeneralIntermediate:
             end_date=self.end_date
         )
 
-    def setEndDate(self, end_date):
+    def setEndDate(self, end_date: datetime):
         if self.end_date is None:
             self.end_date = end_date
             self.updateCache()
