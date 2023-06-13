@@ -46,13 +46,13 @@ def createFakeCustomerPlant():
 
 
 def createFakeDerivativeLmc():
-    def get_lmc_data():
-        local_make = getRandomReference(Customer),
+    def get_lmc_data(lmc_rev_date):
+        local_make = getRandomReference(Customer)
         production_model = fake.bs()
         sop_date = getRandomDateTime(t_delta_days=10*365)
         eop_date = fake.date_time_between_dates(
             datetime_start=sop_date,
-            datetime_end=date(2035)
+            datetime_end=date(2035, 12, 31)
         )
         facelift = fake.date_time_between_dates(
             datetime_start=sop_date,
@@ -89,7 +89,9 @@ def createFakeDerivativeLmc():
             "last_actual": getRandomDateTime(),
             "design_lead": getRandomReference(Customer),
             "design_lead_location": fake.city(),
-            "design_lead_country": fake.country()
+            "design_lead_country": fake.country(),
+            "date": lmc_rev_date.revision_date,
+            "creator_id": 1
         }
 
     lmc_model_code = fake.uuid4()
@@ -99,13 +101,17 @@ def createFakeDerivativeLmc():
     )
     der_lmc_group.save()
 
-    all_lmc_revisions = RevisionLMC.objects.values_list('revision_date', flat=True)
+    all_lmc_revisions = RevisionLMC.objects.all()
     for lmc_rev_date in all_lmc_revisions:
         der_lmc = None
         if random.choice([True]+4*[False]):
-            lmc_data = get_lmc_data()
-            DerivativeLMC(**modelCreationDict(lmc_data, DerivativeLMC, der_lmc_group, chance_for_no_change=0.9)).save()
+            lmc_data = get_lmc_data(lmc_rev_date)
+            der_lmc = DerivativeLMC(**modelCreationDict(lmc_data, DerivativeLMC, der_lmc_group, chance_for_no_change=0.9)).save()
 
     if der_lmc is None:
-        lmc_data = get_lmc_data()
+        lmc_data = get_lmc_data(lmc_rev_date)
         DerivativeLMC(**modelCreationDict(lmc_data, DerivativeLMC, der_lmc_group)).save()
+
+
+def createLmcVolume(derivative_lmc_group_model):
+    DerivativeVolumeLMC()

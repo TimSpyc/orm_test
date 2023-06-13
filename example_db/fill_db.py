@@ -6,6 +6,7 @@ if __name__ == '__main__':
     django.setup()
 
 from backend.src.auxiliary import db
+from datetime import date
 import random
 import user
 import project
@@ -19,11 +20,14 @@ for _ in range(random.randint(5, 500)):
     user.createFakeUser()
 print("Done with Fake User")
 
-for _ in range(random.randint(50, 2000)):
+for _ in range(random.randint(50, 200)):
     project.createFakeProjectWithHistory()
 
 print("Done with Fake Project")
-derivative_lmc.createFakeRevisionsLmc()
+derivative_lmc.createFakeRevisionsLmc(
+    start_year=2019,
+    end_year=2023
+)
 
 for _ in range(random.randint(10, 50)):
     derivative_lmc.createFakeCustomer()

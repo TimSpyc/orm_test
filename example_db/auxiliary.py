@@ -35,7 +35,7 @@ def prevOrNewData(
     chance_for_no_change: float = 0.7
 ) -> any:
     group_name = transferToSnakeCase(group_obj.__class__.__name__)
-    if len(model.objects.all()):
+    if len(model.objects.all()) and model.objects.filter(**{group_name: group_obj}):
         last_entry = model.objects.filter(**{group_name: group_obj}).latest('date')
 
         if column == 'date' or not randomChoice(chance_for_no_change):
