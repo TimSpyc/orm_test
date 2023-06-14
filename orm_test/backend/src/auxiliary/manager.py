@@ -115,12 +115,16 @@ class GeneralManager:
 
     def __new__(cls,group_id=None, search_date=None, use_cache=True, **kwargs):
         """
-        Create a new instance of the Manager or return a cached instance if available.
+        Create a new instance of the Manager or 
+        return a cached instance if available.
 
         Args:
-            group_id (int, optional): The ID of the group object. Defaults to None for caching only.
-            search_date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
-            use_cache (bool, optional): Whether to use the cache when searching for instances. Defaults to True.
+            group_id (int, optional): The ID of the group object. 
+                Defaults to None for caching only.
+            search_date (datetime, optional): The date for which to 
+                search the data object. Defaults to None (latest data).
+            use_cache (bool, optional): Whether to use the cache when 
+                searching for instances. Defaults to True.
 
         Returns:
             manager: A new or cached instance of the manager.
@@ -129,8 +133,9 @@ class GeneralManager:
         manager_name = cls.__name__
 
         if hasattr(cls, 'group_model'):
-            group_table_id_name = f'{transferToSnakeCase(
-                cls.group_model.__name__)}_id'
+            group_table_id_name = f'''
+                {transferToSnakeCase(cls.group_model.__name__)}_id
+            '''
             if group_table_id_name in kwargs:
                 group_id = kwargs[group_table_id_name]
         
@@ -164,11 +169,13 @@ class GeneralManager:
 
     def __init__(self, group_id: int, search_date=None):
         """
-        Initialize the manager with the given group_id and date. And save all default attributes.
+        Initialize the manager with the given group_id and date.
+        And save all default attributes.
 
         Args:
             group_id (int): The ID of the group object.
-            search_date (datetime, optional): The date for which to search the data object. Defaults to None (latest data).
+            search_date (datetime, optional): The date for which to search
+                the data object. Defaults to None (latest data).
         """
         self.__group_model_name = self.__getGroupModelName()
         group_obj = self.__getGroupObject(group_id)
@@ -200,7 +207,10 @@ class GeneralManager:
     @classmethod
     def __getGroupModelName(cls):
         """
-        Get group model name. Raises value error if group model name is not in data model columns!
+        Get group model name. Raises value error if group model name 
+        is not in data model columns!
+        Returns:
+            group_model_name
         """
         column_list = cls.__getColumnList(cls.data_model)
         group_model_name = transferToSnakeCase(cls.group_model.__name__)
@@ -208,22 +218,26 @@ class GeneralManager:
         __searchForColumn(group_model_name, column_list)
         
         if not db_column_exists:
-            raise ValueError 
-        (f'the column {group_model_name} does not exist \
-         in your data model ({cls.data_model})!')
+            raise ValueError (
+                f'''the column {group_model_name} does not exist 
+                in your data model ({cls.data_model})!''')
         
         return group_model_name
 
     @classmethod
     def all(cls, search_date=None) -> list:
         """
-        Retrieves all objects of the manager's class, optionally filtering by search_date.
+        Retrieves all objects of the manager's class, 
+        optionally filtering by search_date.
 
         Args:
-            search_date (datetime.date, optional): A date to filter the objects by. If specified, only objects with a date less than or equal to the search_date will be included.
+            search_date (datetime.date, optional): A date to filter 
+                the objects by. If specified, only objects with a date 
+                less than or equal to the search_date will be included.
 
         Returns:
-            list: A list of manager objects, filtered by the optional search_date if provided.
+            list: A list of manager objects, 
+                filtered by the optional search_date if provided.
         """
         return cls.filter(search_date=search_date)
 
@@ -232,15 +246,17 @@ class GeneralManager:
         """Creates a list of objects based on the given parameters.
 
         Keyword arguments:
-        search_date (datetime.date, optional) -- An optional argument that specifies the search date for the objects to be created.
-        **kwargs: A variable that contains key-value pairs of filter conditions for the database query.
+        search_date (datetime.date, optional) -- An optional argument 
+            that specifies the search date for the objects to be created.
+        **kwargs: A variable that contains key-value pairs of filter conditions
+            for the database query.
 
         Returns:
         list -- A list of manager objects that match the filter conditions.
 
         Example:
-        To create a list of all manager objects where the 'name' column is equal to 'foo':
-            filter(name='foo')
+        To create a list of all manager objects where the 'name' column 
+        is equal to 'foo': filter(name='foo')
         """
         if search_date is None:
             search_date = datetime.now()
@@ -270,14 +286,18 @@ class GeneralManager:
         data_model_column_list: list, 
         group_model_column_list: list, 
         **kwargs: any
-        ) -> tuple[dict,dict]:
+    ) -> tuple[dict,dict]:
         """
-        Separate the input data into group and data dictionaries based on the provided column lists.
+        Separate the input data into group and data dictionaries 
+        based on the provided column lists.
 
         Args:
-            data_model_column_list (list): A list of available column names in the data model.
-            group_model_column_list (list): A list of available column names in the group model.
-            **kwargs: A dictionary of key-value pairs to be searched in the models.
+            data_model_column_list (list): 
+                A list of available column names in the data model.
+            group_model_column_list (list): 
+                A list of available column names in the group model.
+            **kwargs: 
+                A dictionary of key-value pairs to be searched in the models.
 
         Returns:
             tuple: A tuple containing:
@@ -285,7 +305,9 @@ class GeneralManager:
                 - dict: A dictionary containing data model data.
 
         Raises:
-            ValueError: If the database column is not unique or has no corresponding column in the models.
+            ValueError: 
+                If the database column is not unique or 
+                has no corresponding column in the models.
         """
         not_unique_column_names = [
             column_name for column_name in group_model_column_list
@@ -304,7 +326,6 @@ class GeneralManager:
                         the value exists in group and data model.
                     '''
                 )
-            
             is_in_group_model,db_column,value=cls.__getValueAndColumnIfExists(
                 db_column, 
                 group_model_column_list, 
@@ -338,14 +359,18 @@ class GeneralManager:
         data_search_dict: dict, 
         group_search_dict: dict, 
         search_date: datetime
-        ) -> list:
+    ) -> list:
         """
-        Get a filtered list of manager instances based on the provided search criteria.
+        Get a filtered list of manager instances based 
+        on the provided search criteria.
 
         Args:
-            data_search_dict (dict): A dictionary containing data model search criteria.
-            group_search_dict (dict): A dictionary containing group model search criteria.
-            search_date (datetime): The date to be used for filtering. Defaults to None.
+            data_search_dict (dict): 
+                A dictionary containing data model search criteria.
+            group_search_dict (dict): 
+                A dictionary containing group model search criteria.
+            search_date (datetime): 
+                The date to be used for filtering. Defaults to None.
 
         Returns:
             list: A list of filtered manager instances.
@@ -387,24 +412,29 @@ class GeneralManager:
     def __createManagerObjectsFromDictList(
         cls, 
         creation_dict_list: list
-        ) -> list:
+    ) -> list:
         """
         Creates a list of manager objects from a list of dictionaries.
 
         Args:
-            creation_dict_list (list): A list of dictionaries representing the data for manager object creation.
+            creation_dict_list (list): 
+                A list of dictionaries representing the data 
+                for manager object creation.
 
         Returns:
-            list: A list of manager objects created from the provided dictionary data.
+            list: 
+                A list of manager objects created 
+                from the provided dictionary data.
         """
         return [cls(**data) for data in creation_dict_list] 
 
-    def __errorIfNotUpdatable(self):
+    def __errorIfNotUpdatable(self) -> None:
         """
         Raise an error if the current instance is not updatable.
 
         Raises:
-            NotUpdatableError: If the current instance is not the latest data in the database.
+            NotUpdatableError: 
+                If the current instance is not the latest data in the database.
         """
         latest_db_id = self.data_model.objects.filter(
             **{transferToSnakeCase(
@@ -424,9 +454,10 @@ class GeneralManager:
     def __searchForColumn(
         column_name: str, 
         column_list: list
-        ) -> tuple[bool,str,bool,bool]:
+    ) -> tuple[bool,str,bool,bool]:
         """
-        Search for a given column name in the provided column list and determine if it references a model or many-to-many relationship.
+        Search for a given column name in the provided column list and 
+        determine if it references a model or many-to-many relationship.
 
         Args:
             column_name (str): The name of the column to search for.
@@ -435,18 +466,23 @@ class GeneralManager:
         Returns:
             tuple: A tuple containing:
                 - bool: Whether the column exists in the column list.
-                - str: The updated column name if it references a model or many-to-many relationship or the original column name.
+                - str: The updated column name if it references a model or 
+                    many-to-many relationship or the original column name.
                 - bool: Whether the column references a model.
                 - bool: Whether the column references a many-to-many relationship.
         """
         db_column_exists = False
 
-        column_name, is_reverencing_model = GeneralManager.__checkIfColumnReferencesModel(
+        column_name, is_reverencing_model = GeneralManager.\
+            __checkIfColumnReferencesModel(
             column_name, 
-            column_list)
-        column_name, is_many_to_many = GeneralManager.__checkIfColumnReferencesManyToMany(
+            column_list
+            )
+        column_name, is_many_to_many = GeneralManager.\
+            __checkIfColumnReferencesManyToMany(
             column_name, 
-            column_list)
+            column_list
+            )
 
         if column_name in column_list:
             db_column_exists = True
@@ -459,18 +495,21 @@ class GeneralManager:
         column_name: str, 
         available_column_list: list, 
         string_to_compare: str
-        ) ->tuple[str, bool]:
+    ) ->tuple[str, bool]:
         """
-        Check if the given column name references a model in the provided column list.
-        Reference relationship columns must end with '_id' or '_id_list.
+        Check if the given column name references a model in the provided 
+        column list. Reference relationship columns must end with 
+        '_id' or '_id_list.
 
         Args:
             column_name (str): The name of the column to check.
             available_column_list (list): A list of available column names.
-            string_to_compare (str) : The string to compare with the column name ending.
+            string_to_compare (str) : 
+                The string to compare with the column name ending.
 
         Returns:
-             Tuple: The modified column name and a boolean indicating if it references a model.
+             Tuple: 
+                The modified column name and a boolean if is_referencing_model.
         """
         negative_length_to_cut = - len(string_to_compare)
         db_column_contains_string_to_compare = string_to_compare \
@@ -489,17 +528,19 @@ class GeneralManager:
     def __checkIfColumnReferencesManyToMany(
         column_name: str, 
         available_column_list: list
-        ) -> tuple[str,bool]:
+    ) -> tuple[str,bool]:
         """
-        Check if the given column name references a many-to-many relationship in the provided column list.
-        Many-to-many relationship columns must end with '_id_list'.
+        Check if the given column name references a many-to-many relationship
+        in the provided column list. Many-to-many relationship columns 
+        must end with '_id_list'.
 
         Args:
             column_name (str): The name of the column to check.
             available_column_list (list): A list of available column names.
 
         Returns:
-            Tuple: The modified column name and a boolean indicating if it references a model.
+            Tuple: 
+                The modified column name and a boolean if is_referencing_model.
         """
         return  GeneralManager.__checkIfColumnReferenceBaseExists(
             column_name, 
@@ -509,17 +550,18 @@ class GeneralManager:
     def __checkIfColumnReferencesModel(
         column_name: str, 
         available_column_list: list
-        ) -> tuple[str,bool]:
+    ) -> tuple[str,bool]:
         """
-        Check if the given column name references a model in the provided column list.
-        Reference relationship columns must end with '_id'.
+        Check if the given column name references a model in the provided 
+        column list. Reference relationship columns must end with '_id'
 
         Args:
             column_name (str): The name of the column to check.
             available_column_list (list): A list of available column names.
 
         Returns:
-            Tuple: The modified column name and a boolean indicating if it references a model.
+            Tuple: 
+                The modified column name and a boolean if is_referencing_model.
         """        
         return  GeneralManager.__checkIfColumnReferenceBaseExists(
             column_name, 
@@ -529,7 +571,7 @@ class GeneralManager:
     def __getValueForReverencedModelById(
         current_model: models.Model, 
         db_column: str, id: int
-        ) -> models.Model:
+    ) -> models.Model:
         """
         Retrieve the value of a referenced model by its ID.
 
@@ -561,20 +603,23 @@ class GeneralManager:
         current_model: models.Model, 
         db_column: str, 
         id_list: list | set | tuple
-        ) -> models.QuerySet:
+    ) -> models.QuerySet:
         """
-        Retrieve a list of values for a many-to-many relationship by a list of IDs.
+        Retrieve a list of values for a many-to-many 
+        relationship by a list of IDs.
 
         Args:
             current_model (Model): The current Django model.
             db_column (str): The name of the database column.
-            id_list (list|set|tuple): A list of IDs for the many-to-many relationship.
+            id_list (list|set|tuple): 
+                A list of IDs for the many-to-many relationship.
 
         Returns:
             QuerySet: A queryset of related model objects.
         
         Raises:
-        NotValidIdError: If one or more IDs in the list do not exist in the database.
+        NotValidIdError: 
+            If one or more IDs in the list do not exist in the database.
         """
         id_set = set(id_list)
         model_for_db_value = (
@@ -587,8 +632,8 @@ class GeneralManager:
         not_existing_ids = id_set - set(existing_ids)       
         if not_existing_ids:
              raise NotValidIdError(
-                 f"One or more IDs in the list do not exist \
-                 in the database: {not_existing_ids}")                                                           
+                 f'''One or more IDs in the list do not exist 
+                 in the database: {not_existing_ids}''')                                                           
         
         model_obj_list = (                                                                   
             model_for_db_value.objects.filter(id__in=id_set)
@@ -646,15 +691,20 @@ class GeneralManager:
         invalid_key_list: list
     ) -> None:
         """
-        Checks if the given column_list contains invalid keys that should not be overridden.
+        Checks if the given column_list contains invalid keys that should 
+        not be overridden.
 
         Args:
-            manager_object (object): The manager object to which the keys belong.
+            manager_object (object): 
+                The manager object to which the keys belong.
             column_list (list): List of column names to be checked.
-            invalid_key_list (list): List of invalid keys that should not be overridden.
+            invalid_key_list (list): 
+                List of invalid keys that should not be overridden.
 
         Raises:
-            ValueError: If any of the keys in the column_list is found in the invalid_key_list.
+            ValueError: 
+                If any of the keys in the column_list is found in 
+                the invalid_key_list.
         """
         for db_column in column_list:
             if db_column in invalid_key_list:
@@ -671,7 +721,7 @@ class GeneralManager:
                 )
             
 
-    def __getToCheckListForUpdate(self):
+    def __getToCheckListForUpdate(self) -> list:
         """
         Returns:
             list: List of keys to be checked for update.
@@ -682,7 +732,7 @@ class GeneralManager:
                 'creator_user_id'
             ]
     
-    def __getToCheckListForCreation():
+    def __getToCheckListForCreation() -> list:
         """
         Returns:
         list: List of keys to be checked for creation.
@@ -709,7 +759,8 @@ class GeneralManager:
     @updateCache
     def update(self, creator_user_id: int, **kwargs: any):
         """
-        Update the current instance with new data, uploads to db and refresh the cache.
+        Update the current instance with new data, 
+        uploads to db and refresh the cache.
 
         Args:
             creator_user_id (int): The ID of the user who is making the update.
@@ -752,15 +803,18 @@ class GeneralManager:
         latest_data: dict, 
         data_data_dict: dict, 
         creator_user_id: int, 
-        group_obj: models.Model):
+        group_obj: models.Model
+    ) -> None:
         """
         Write new data to the data model.
 
         Args:
             latest_data (dict): The latest data fetched from the data model.
-            data_data_dict (dict): Dictionary containing the new data to be updated.
+            data_data_dict (dict): 
+                Dictionary containing the new data to be updated.
             creator_user_id (int): The ID of the user who is making the update.
-            group_obj (GroupModel): The group model instance to which the data belongs.
+            group_obj (GroupModel): 
+                The group model instance to which the data belongs.
         """
         group_table_name = transferToSnakeCase(group_obj.__class__.__name__)
         
@@ -798,16 +852,16 @@ class GeneralManager:
         
         new_data_in_model.save()
 
-    def deactivate(self, creator_user_id: int):
+    def deactivate(self, creator_user_id: int) -> None:
         """
         Deactivate the current instance and set active=False in db.
 
         Args:
-            creator_user_id (int): The ID of the user who is deactivating the instance.
+            creator_user_id (int): 
+                The ID of the user who is deactivating the instance.
         """
         if not self.active:
-            raise NotUpdatableError
-        ('This manager is already deactivated')
+            raise NotUpdatableError('This manager is already deactivated')
 
         self.update(creator_user_id, active=False)
     
@@ -816,19 +870,23 @@ class GeneralManager:
         cls, 
         data_dict: dict, 
         model: models.Model
-        ) -> tuple[bool,bool,bool]:
+    ) -> tuple[bool,bool,bool]:
         """
-        Check if the data provided in the dictionary can be uploaded to the specified model.
+        Check if the data provided in the dictionary can be uploaded to 
+        the specified model.
 
         Args:
             data_dict (dict): A dictionary containing the data to be uploaded.
-            model (Model): The Django model to which the data should be uploaded.
+            model (Model): 
+                The Django model to which the data should be uploaded.
 
         Returns:
-            tuple: A tuple of three boolean values, each indicating the fulfillment of the following criteria:
+            tuple: A tuple of three boolean values, each indicating the 
+                fulfillment of the following criteria:
                 1. Whether all unique fields are present in the data_dict.
                 2. Whether all not_null fields are present in the data_dict.
-                3. Whether all not_null fields in the data_dict contain data (no None values).
+                3. Whether all not_null fields in the data_dict contain data 
+                    (no None values).
         """
         unique_fields = []
         for unique_field_tuple in model._meta.unique_together:
@@ -860,13 +918,15 @@ class GeneralManager:
 
     @classmethod
     @createCache
-    def create(cls, creator_user_id: int, **kwargs: any):
+    def create(cls, creator_user_id: int, **kwargs: any) -> object:
         """
         Create a new instance of the current class and initialize cache.
 
         Args:
-            creator_user_id (int): The ID of the user who is creating the new instance.
-            **kwargs: Key-value pairs representing the data to be used for creating the new instance.
+            creator_user_id (int): 
+                The ID of the user who is creating the new instance.
+            **kwargs: Key-value pairs representing the data to be used for 
+                creating the new instance.
 
         Returns:
             cls: A new instance of the current manager class.
@@ -946,24 +1006,27 @@ class GeneralManager:
             return self.group_model.objects.get(id=group_id)
         except ObjectDoesNotExist:
             raise NotUpdatableError(
-                f"{self.group_model.__name__} with \
-                    id {group_id} does not exist"
+                f'''{self.group_model.__name__} with 
+                    id {group_id} does not exist'''
             )
     
     def __getDataObject(
-            self, 
-            group_obj: models.Model, 
-            search_date: datetime
-            ) -> models.Model:
+        self, 
+        group_obj: models.Model, 
+        search_date: datetime
+    ) -> models.Model:
         """
         Get the data model instance for the given group object and date.
 
         Args:
-            group_obj (GroupModel): The group model instance for which the data is to be fetched.
-            search_date (datetime): The date for which the data is to be fetched.
+            group_obj (GroupModel): 
+                The group model instance for which the data is to be fetched.
+            search_date (datetime):     
+                The date for which the data is to be fetched.
 
         Returns:
-            DataModel: The data model instance for the given group object and date.
+            DataModel: 
+                The data model instance for the given group object and date.
         """
         try:
             if search_date is None:
@@ -976,20 +1039,20 @@ class GeneralManager:
                     'date__lte': search_date}
                     ).latest('date')
         except ObjectDoesNotExist:
-            raise NonExistentGroupError
-        (f"{self.data_model.__name__} with group_id {group_obj.id}\
-          does not exist at date {search_date}")
+            raise NonExistentGroupError(
+                f'''{self.data_model.__name__} with group_id {group_obj.id}
+                does not exist at date {search_date}''')
 
         return data_obj
 
-    def __setManagerObjectDjangoCache(self):
+    def __setManagerObjectDjangoCache(self) -> None:
         """
         Set the current manager object in the Django cache.
         """
         cache_key = f"{self.__class__.__name__}|{self.group_id}"
         cache.set(cache_key, self)
 
-    def updateCache(self):
+    def updateCache(self) -> None:
         """
         Update the cache for the current instance.
         """
@@ -999,15 +1062,16 @@ class GeneralManager:
         CacheManager.set_cache_data(
             self.__class__.__name__, 
             self.group_id, self, 
-            self.date)
+            self.start_date)
 
-    def __getEndDate(self):
+    def __getEndDate(self) -> datetime | None:
+        return None
         data_obj = self.data_model.objects.filter(
             **{
                 self.__group_model_name: self.__group_obj,
                 'date__gt': self.start_date
             }
-        ).order_by('creation_date').latest()
+        ).order_by('date').earliest('date') #latest()
         if data_obj:
             return data_obj.date
         return None

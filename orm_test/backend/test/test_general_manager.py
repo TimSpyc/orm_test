@@ -915,6 +915,7 @@ class TestDeactivate(TestCase):
         self.manager._GeneralManager__group_model_name = 'test_project_group'
         self.manager.id = self.test_project.id
         self.manager.active = self.test_project.active
+        
 
     def test_deactivate(self):
         self.assertTrue(self.test_project.active)
@@ -971,7 +972,7 @@ class TestCreate(TestCase):
         def dummy_init(self, group_id, search_date=None):
             self.group_id = group_id
             self.active = 1
-            self.date = datetime.now()
+            self.start_date = datetime.now()
             self.search_date = search_date
         with patch.object(GeneralManager, '__init__', new = dummy_init):
             self.manager.create(creator_user_id, **group_data, **data_data)
@@ -1002,7 +1003,7 @@ class TestCreate(TestCase):
         def dummy_init(self, group_id, search_date=None):
             self.group_id = group_id
             self.active = 1
-            self.date = datetime.now()
+            self.start_date = datetime.now()
             self.search_date = search_date
         with patch.object(GeneralManager, '__init__', new = dummy_init):
             self.manager.create(creator_user_id, **group_data, **data_data)
@@ -1039,7 +1040,7 @@ class TestCreate(TestCase):
         def dummy_init(self, group_id, search_date=None):
             self.group_id = group_id
             self.active = 1
-            self.date = datetime.now()
+            self.start_date = datetime.now()
             self.search_date = search_date
 
         with patch.object(GeneralManager, '__init__', new = dummy_init):
@@ -1080,7 +1081,7 @@ class TestCreate(TestCase):
         def dummy_init(self, group_id, search_date=None):
             self.group_id = group_id
             self.active = 1
-            self.date = datetime.now()
+            self.start_date = datetime.now()
             self.search_date = search_date
 
         with patch.object(GeneralManager, '__init__', new = dummy_init):

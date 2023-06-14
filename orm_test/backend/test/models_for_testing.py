@@ -65,9 +65,6 @@ class TestProject(models.Model):
     def __str__(self):
         return self.name   
     
-
-    
-    
 class TestProject2(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
@@ -77,14 +74,12 @@ class TestProject2(models.Model):
     creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
     active = models.BooleanField(default = True)
 
-
     class Meta:
         unique_together = ('project_number', 'ap_no')
         app_label = 'backend'           
 
     def __str__(self):
         return self.name   
-
 
 class TestProjectUserGroup(models.Model):
     """
