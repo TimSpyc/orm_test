@@ -1,5 +1,4 @@
 class NonExistentGroupError(Exception):
-
     pass
 
 class NotUpdatableError(Exception):
@@ -8,3 +7,5 @@ class NotUpdatableError(Exception):
 class NotValidIdError(Exception):
     pass
 
+class MissingAttributeError(Exception):
+    pass
