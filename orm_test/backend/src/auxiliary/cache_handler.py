@@ -76,7 +76,7 @@ class CacheHandler:
         self = CacheHandler()
         dependencies: list = object.dependencies
         for dependency in dependencies:
-            watcher_obj = self._getOrCreateWatcher(dependency)
+            watcher_obj = self.__getOrCreateWatcher(dependency)
             watcher_obj.addDependentObject(object)
     
     @staticmethod
@@ -88,10 +88,10 @@ class CacheHandler:
             object (object): The object to be updated.
         """
         self = CacheHandler()
-        watcher_obj = self._getOrCreateWatcher(object)
+        watcher_obj = self.__getOrCreateWatcher(object)
         watcher_obj.inform()
 
-    def _getOrCreateWatcher(self, dependency: object) -> Watcher:
+    def __getOrCreateWatcher(self, dependency: object) -> Watcher:
         """
         Retrieve the watcher for a given dependency, creating one if it does not exist.
 

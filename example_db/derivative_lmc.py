@@ -111,7 +111,3 @@ def createFakeDerivativeLmc():
     if der_lmc is None:
         lmc_data = get_lmc_data(lmc_rev_date)
         DerivativeLMC(**modelCreationDict(lmc_data, DerivativeLMC, der_lmc_group)).save()
-
-
-def createLmcVolume(derivative_lmc_group_model):
-    DerivativeVolumeLMC()

@@ -6,11 +6,11 @@ if __name__ == '__main__':
     django.setup()
 
 from backend.src.auxiliary import db
-from datetime import date
 import random
 import user
 import project
 import derivative_lmc 
+import derivative_lmc_volume
 
 db.truncate_all_tables()
 
@@ -38,5 +38,8 @@ for _ in range(random.randint(150, 1000)):
 for _ in range(random.randint(500, 5000)):
     derivative_lmc.createFakeDerivativeLmc()
 print("Done with Fake Derivative_LMC")
+
+derivative_lmc_volume.createVolumeForAllDerivativeLmc()
+print("Done with Fake LMC Volume")
 
 print("Database was filled with random data")

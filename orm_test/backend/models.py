@@ -430,15 +430,14 @@ class DerivativeLMC(DataTable):
         return f"{self.derivative_group_lmc} - {self.local_make} {self.local_model_line}"
 
 class DerivativeVolumeLMCGroup(GroupTable):
-    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
-    year = models.PositiveIntegerField(validators=[MinValueValidator(1900), MaxValueValidator(2100)])
-    month = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE, null=False)
+    date = models.DateField(null=False)
 
     class Meta:
-        unique_together = ('derivative_lmc_group', 'year', 'month')
+        unique_together = ('derivative_lmc_group', 'date')
 
     def __str__(self):
-        return f"Derivative Volume Group {self.id}: {self.derivative_group.lmc_full_code} - {self.year}-{self.month}"
+        return f"Derivative Volume Group {self.id}: {self.derivative_group.lmc_full_code} - {self.date}"
 
 class DerivativeVolumeLMC(DataTable):
     derivative_lmc_volume_group = models.ForeignKey(DerivativeVolumeLMCGroup, on_delete=models.CASCADE)
