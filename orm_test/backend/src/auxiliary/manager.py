@@ -1065,13 +1065,13 @@ class GeneralManager:
             self.start_date)
 
     def __getEndDate(self) -> datetime | None:
-        return None
-        data_obj = self.data_model.objects.filter(
-            **{
-                self.__group_model_name: self.__group_obj,
-                'date__gt': self.start_date
-            }
-        ).order_by('date').earliest('date') #latest()
-        if data_obj:
+        try:
+            data_obj = self.data_model.objects.filter(
+                **{
+                    self.__group_model_name: self.__group_obj,
+                    'date__gt': self.start_date
+                }
+            ).earliest('date') #latest()
             return data_obj.date
-        return None
+        except ObjectDoesNotExist:
+            return None

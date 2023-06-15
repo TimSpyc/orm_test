@@ -243,7 +243,7 @@ class ProjectGroup(GroupTable):
     A Django model representing a project group.
     """
     def __str__(self):
-        return self.id
+        return f'Project Group with {self.id}'
 
 
 class Project(DataTable):
