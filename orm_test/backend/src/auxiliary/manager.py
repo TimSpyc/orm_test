@@ -1065,6 +1065,15 @@ class GeneralManager:
             self.start_date)
 
     def __getEndDate(self) -> datetime | None:
+        """
+        Get end date for data validity. As the data in the data table can
+        change over time it's unavoidable that in some point in time the data
+        is outdated. Sets this date as end_date.
+
+        Returns:
+            end_date: (datetime) if there is a end_date. (None) if there is no
+                newer entry for this group in the data table.
+        """
         try:
             data_obj = self.data_model.objects.filter(
                 **{
