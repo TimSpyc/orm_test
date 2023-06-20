@@ -329,7 +329,8 @@ class GeneralManager:
             is_in_group_model,db_column,value=cls.__getValueAndColumnIfExists(
                 db_column, 
                 group_model_column_list, 
-                cls.group_model, value
+                cls.group_model,
+                value
                 )
             is_in_data_model,db_column,value=cls.__getValueAndColumnIfExists(
                 db_column, 
@@ -594,8 +595,9 @@ class GeneralManager:
             model_for_db_value.objects.filter(id=id).first()
         )
         if model_obj is None:
-            raise NotValidIdError
-        (f"{model_for_db_value} with id {id} does not exist.")
+            raise NotValidIdError(f"""
+                {model_for_db_value} with id {id} does not exist.
+            """)
         return model_obj
 
     @staticmethod
@@ -628,12 +630,14 @@ class GeneralManager:
         )
         existing_ids = model_for_db_value.objects.filter(
             id__in = id_set
-            ).values_list('id', flat=True)
+        ).values_list('id', flat=True)
+        
         not_existing_ids = id_set - set(existing_ids)       
         if not_existing_ids:
-             raise NotValidIdError(
-                 f'''One or more IDs in the list do not exist 
-                 in the database: {not_existing_ids}''')                                                           
+            raise NotValidIdError(f'''
+                One or more IDs in the list do not exist 
+                in the database: {not_existing_ids}
+            ''')                                                           
         
         model_obj_list = (                                                                   
             model_for_db_value.objects.filter(id__in=id_set)

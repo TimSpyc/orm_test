@@ -1,9 +1,6 @@
 from django.test import TestCase
 from unittest.mock import Mock, patch
-from backend.models import CacheIntermediate
 from backend.src.auxiliary.cache_handler import Watcher, CacheHandler
-from datetime import datetime
-import pickle
 
 
 class TestWatcher(TestCase):
