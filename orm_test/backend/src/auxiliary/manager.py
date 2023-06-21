@@ -100,7 +100,6 @@ def createCache(func):
         return result
     return wrapper
 
-
 class GeneralManager:
     """
     GeneralManager is a base class for managing objects with a group model and a data model.
@@ -166,36 +165,6 @@ class GeneralManager:
         if use_cache:
             cls.updateCache(instance)
         return instance
-
-    def __init__(self, group_id: int, search_date=None):
-        """
-        Initialize the manager with the given group_id and date.
-        And save all default attributes.
-
-        Args:
-            group_id (int): The ID of the group object.
-            search_date (datetime, optional): The date for which to search
-                the data object. Defaults to None (latest data).
-        """
-        self.__group_model_name = self.__getGroupModelName()
-        group_obj = self.__getGroupObject(group_id)
-        data_obj = self.__getDataObject(group_obj, search_date)
-
-        self.__group_obj = group_obj
-        self.__data_obj = data_obj
-
-        self.id = data_obj.id
-        self.group_id = group_obj.id
-        self.creator_id = data_obj.creator.id
-        self.creator = data_obj.creator
-        self.active = data_obj.active
-        self.start_date = data_obj.date
-        self.end_date = self.__getEndDate()
-
-
-        self.search_date = search_date
-
-        return group_obj, data_obj
 
     def __eq__(self,other):
         return (
@@ -429,27 +398,6 @@ class GeneralManager:
         """
         return [cls(**data) for data in creation_dict_list] 
 
-    def __errorIfNotUpdatable(self) -> None:
-        """
-        Raise an error if the current instance is not updatable.
-
-        Raises:
-            NotUpdatableError: 
-                If the current instance is not the latest data in the database.
-        """
-        latest_db_id = self.data_model.objects.filter(
-            **{transferToSnakeCase(
-            self.group_model.__name__): self.__group_obj}
-            ).values('id').latest('date')['id']
-
-        is_latest = self.id == latest_db_id
-        if not is_latest:
-            raise NotUpdatableError(
-                f"""
-                You can only update the latest data, this is not the latest
-                data. Latest id = {latest_db_id}, your id = {self.id}
-                """
-            )
 
     @staticmethod
     def __searchForColumn(
@@ -492,7 +440,7 @@ class GeneralManager:
                is_reverencing_model, is_many_to_many
 
     @staticmethod
-    def __checkIfColumnReferenceBaseExists(
+    def __checkIfColumnReferenceExists(
         column_name: str, 
         available_column_list: list, 
         string_to_compare: str
@@ -543,7 +491,7 @@ class GeneralManager:
             Tuple: 
                 The modified column name and a boolean if is_referencing_model.
         """
-        return  GeneralManager.__checkIfColumnReferenceBaseExists(
+        return  GeneralManager.__checkIfColumnReferenceExists(
             column_name, 
             available_column_list, "_id_list")
 
@@ -564,7 +512,7 @@ class GeneralManager:
             Tuple: 
                 The modified column name and a boolean if is_referencing_model.
         """        
-        return  GeneralManager.__checkIfColumnReferenceBaseExists(
+        return  GeneralManager.__checkIfColumnReferenceExists(
             column_name, 
             available_column_list, "_id")
 
@@ -759,47 +707,6 @@ class GeneralManager:
         """
         column_list = [field.name for field in model._meta.get_fields()]
         return column_list
-
-    @updateCache
-    def update(self, creator_user_id: int, **kwargs: any):
-        """
-        Update the current instance with new data, 
-        uploads to db and refresh the cache.
-
-        Args:
-            creator_user_id (int): The ID of the user who is making the update.
-            **kwargs: Key-value pairs representing the new data to be updated.
-        """
-        self.__errorIfNotUpdatable()
-        data_model_column_list = self.__getColumnList(self.data_model)
-        group_model_column_list = [] #Unchangeable by update
-        self.__checkInputDictForInvalidKeys(
-            manager_object = self,
-            column_list = kwargs.keys(),
-            invalid_key_list = self.__getToCheckListForUpdate()
-        )
-
-        _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(
-            data_model_column_list, 
-            group_model_column_list, 
-            **kwargs
-            )
-
-        group_model_name = transferToSnakeCase(self.group_model.__name__)
-        group_model_obj = self.__getGroupObject(self.group_id)
-
-        latest_data = self.data_model.objects.filter(
-            **{group_model_name: group_model_obj}
-            ).values().latest('date')
-        if latest_data == []:
-            latest_data = {}
-
-        self.__writeDataData(
-            latest_data, 
-            data_data_dict, 
-            creator_user_id, 
-            self.__group_obj)
-        self.__init__(self.group_id)
         
     @classmethod
     def __writeDataData(
@@ -807,7 +714,8 @@ class GeneralManager:
         latest_data: dict, 
         data_data_dict: dict, 
         creator_user_id: int, 
-        group_obj: models.Model
+        group_obj: models.Model,
+        save_date: datetime
     ) -> None:
         """
         Write new data to the data model.
@@ -826,7 +734,7 @@ class GeneralManager:
             **latest_data,
             **data_data_dict,
             **{
-                'date': datetime.now(),
+                'date': save_date,
                 'creator':User.objects.get(id=creator_user_id),
                 group_table_name: group_obj
             }
@@ -921,67 +829,28 @@ class GeneralManager:
         )
 
     @classmethod
-    @createCache
-    def create(cls, creator_user_id: int, **kwargs: any) -> object:
-        """
-        Create a new instance of the current class and initialize cache.
-
-        Args:
-            creator_user_id (int): 
-                The ID of the user who is creating the new instance.
-            **kwargs: Key-value pairs representing the data to be used for 
-                creating the new instance.
-
-        Returns:
-            cls: A new instance of the current manager class.
-        """
-        data_model_column_list = cls.__getColumnList(cls.data_model)
-        group_model_column_list = cls.__getColumnList(cls.group_model)
-        cls.__checkInputDictForInvalidKeys(
-            manager_object = cls,
-            column_list = kwargs.keys(),
-            invalid_key_list = cls.__getToCheckListForCreation()
+    def __isDataDataUploadable(cls, data_data_dict):
+        is_data_data_uploadable = cls.__isDataUploadable(
+                                    data_data_dict, 
+                                    cls.group_model)
+        if all(is_data_data_uploadable):
+            return True
+        raise ValueError(
+            f'''
+            The given **kwargs are not sufficient.
+            Because data table data:
+                contains_all_unique_fields: {is_data_data_uploadable[0]}
+                contains_all_not_null_fields: {is_data_data_uploadable[1]}
+                all_not_null_fields_contain_data: {is_data_data_uploadable[2]}
+            '''
         )
-        group_data_dict, data_data_dict=cls.\
-        __getDataForGroupAndDataTableByKwargs(
-            data_model_column_list, 
-            group_model_column_list, 
-            **kwargs)
-
-        unique_fields = cls.group_model._meta.unique_together
-
-        is_group_data_uploadable = all(
-            cls.__isDataUploadable(group_data_dict, cls.group_model))
-        is_data_data_uploadable = all(
-            cls.__isDataUploadable(data_data_dict, cls.data_model))
-
-        if is_group_data_uploadable and is_data_data_uploadable:
-
-            if len(unique_fields) == 0:
-                new_group_obj = cls.group_model(
-                    **group_data_dict
-                )
-            else:
-                new_group_obj, _ = cls.group_model.objects.get_or_create(
-                    **group_data_dict
-                )
-            new_group_obj.save()
-
-            cls.__writeDataData(
-                {}, 
-                data_data_dict, 
-                creator_user_id, 
-                new_group_obj)
-
-            return cls(new_group_obj.id)
-
-        else:
-            is_group_data_uploadable = cls.__isDataUploadable(
-                                       group_data_dict, 
-                                       cls.group_model)
-            is_data_data_uploadable = cls.__isDataUploadable(
-                                      data_data_dict, 
-                                      cls.data_model)
+    @classmethod
+    def __isGroupDataUploadable(cls, group_data_dict):
+        is_group_data_uploadable = cls.__isDataUploadable(
+                                    group_data_dict, 
+                                    cls.group_model)
+        if all(is_group_data_uploadable):
+            return True
         raise ValueError(
             f'''
             The given **kwargs are not sufficient.
@@ -989,12 +858,23 @@ class GeneralManager:
                 contains_all_unique_fields: {is_group_data_uploadable[0]}
                 contains_all_not_null_fields: {is_group_data_uploadable[1]}
                 all_not_null_fields_contain_data: {is_group_data_uploadable[2]}
-            Because data table data:
-                contains_all_unique_fields: {is_data_data_uploadable[0]}
-                contains_all_not_null_fields: {is_data_data_uploadable[1]}
-                all_not_null_fields_contain_data: {is_data_data_uploadable[2]}
             '''
         )
+    
+    @classmethod
+    def __getOrCreateGroupModel(cls, group_data_dict):
+        unique_fields = cls.group_model._meta.unique_together
+
+        if len(unique_fields) == 0:
+            group_obj = cls.group_model.object.create(
+                **group_data_dict
+            )
+        else:
+            group_obj, _ = cls.group_model.objects.get_or_create(
+                **group_data_dict
+            )
+
+        return group_obj
 
     def __getGroupObject(self, group_id: int) -> models.Model:
         """
@@ -1013,41 +893,6 @@ class GeneralManager:
                 f'''{self.group_model.__name__} with 
                     id {group_id} does not exist'''
             )
-    
-    def __getDataObject(
-        self, 
-        group_obj: models.Model, 
-        search_date: datetime
-    ) -> models.Model:
-        """
-        Get the data model instance for the given group object and date.
-
-        Args:
-            group_obj (GroupModel): 
-                The group model instance for which the data is to be fetched.
-            search_date (datetime):     
-                The date for which the data is to be fetched.
-
-        Returns:
-            DataModel: 
-                The data model instance for the given group object and date.
-        """
-        try:
-            if search_date is None:
-                data_obj = self.data_model.objects.filter(
-                    **{self.__group_model_name: group_obj}
-                ).latest('date')
-            else:
-                data_obj = self.data_model.objects.filter(
-                    **{self.__group_model_name: group_obj,
-                    'date__lte': search_date}
-                    ).latest('date')
-        except ObjectDoesNotExist:
-            raise NonExistentGroupError(
-                f'''{self.data_model.__name__} with group_id {group_obj.id}
-                does not exist at date {search_date}''')
-
-        return data_obj
 
     def __setManagerObjectDjangoCache(self) -> None:
         """
@@ -1088,3 +933,348 @@ class GeneralManager:
             return data_obj.date
         except ObjectDoesNotExist:
             return None
+
+
+class MultiDataManager(GeneralManager):
+
+    def __init__(self, group_id: int, search_date=None):
+        """
+        Initialize the manager with the given group_id and date.
+        And save all default attributes.
+
+        Args:
+            group_id (int): The ID of the group object.
+            search_date (datetime, optional): The date for which to search
+                the data object. Defaults to None (latest data).
+        """
+        self.__group_model_name = self.__getGroupModelName()
+        group_obj = self.__getGroupObject(group_id)
+        data_obj_list = self.__getDataObjectList(group_obj, search_date)
+
+        self.__group_obj = group_obj
+        self.__data_obj = data_obj_list
+
+        self.id_list = [data.id for data in data_obj_list]
+        self.group_id = group_obj.id
+        self.creator_id = data_obj_list[0].creator.id
+        self.creator = data_obj_list[0].creator
+        self.active = data_obj_list[0].active
+        self.start_date = data_obj_list[0].date
+        self.end_date = self.__getEndDate()
+
+
+        self.search_date = search_date
+
+        return group_obj, data_obj_list
+
+    @updateCache
+    def update(
+        self,
+        creator_user_id: int,
+        upload_data_list: list[dict]
+    ) -> None:
+        """
+        Update the current instance with new data, 
+        uploads to db and refresh the cache.
+
+        Args:
+            creator_user_id (int): The ID of the user who is making the update.
+            **kwargs: Key-value pairs representing the new data to be updated.
+        """
+        self.__errorIfNotUpdatable()
+        data_model_column_list = self.__getColumnList(self.data_model)
+        group_model_column_list = [] #Unchangeable by update
+        save_date = datetime.now()
+
+        data_data_list = []
+
+        for entry in upload_data_list:
+            self.__checkInputDictForInvalidKeys(
+                manager_object = self,
+                column_list = entry.keys(),
+                invalid_key_list = self.__getToCheckListForUpdate()
+            )
+
+            _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(
+                data_model_column_list, 
+                group_model_column_list, 
+                **entry
+                )
+            
+
+            is_data_data_uploadable = self.__isDataDataUploadable(
+                data_data_dict
+            )
+            if is_data_data_uploadable:
+                data_data_list.append(data_data_dict)
+
+        for data_data_dict in data_data_list:
+            self.__writeDataData(
+                {}, 
+                data_data_dict, 
+                creator_user_id, 
+                self.__group_obj,
+                save_date
+            )
+
+        self.__init__(self.group_id)
+
+    def __errorIfNotUpdatable(self) -> None:
+        """
+        Raise an error if the current instance is not updatable.
+
+        Raises:
+            NotUpdatableError: 
+                If the current instance is not the latest data in the database.
+        """
+        latest_db_id = self.data_model.objects.filter(
+            **{transferToSnakeCase(
+            self.group_model.__name__): self.__group_obj}
+            ).values('id').latest('date')['id']
+
+        is_latest = latest_db_id in self.id_list
+        if not is_latest:
+            raise NotUpdatableError(
+                f"""
+                You can only update the latest data, this is not the latest
+                data. Latest id = {latest_db_id}, your ids = {self.id_list}
+                """
+            )
+
+    @classmethod
+    @createCache
+    def create(
+        cls,
+        creator_user_id: int,
+        upload_data_list: list[dict],
+        group_data_dict: dict
+    ) -> object:
+        """
+        Create a new instance of the current class and initialize cache.
+
+        Args:
+            creator_user_id (int): 
+                The ID of the user who is creating the new instance.
+            **kwargs: Key-value pairs representing the data to be used for 
+                creating the new instance.
+
+        Returns:
+            cls: A new instance of the current manager class.
+        """
+        save_date = datetime.now()
+        data_model_column_list = cls.__getColumnList(cls.data_model)
+        group_model_column_list = cls.__getColumnList(cls.group_model)
+
+        data_data_list = []
+        for entry in upload_data_list:
+            cls.__checkInputDictForInvalidKeys(
+                manager_object = cls,
+                column_list = entry.keys(),
+                invalid_key_list = cls.__getToCheckListForUpdate()
+            )
+
+            _, data_data_dict = cls.__getDataForGroupAndDataTableByKwargs(
+                data_model_column_list, 
+                group_model_column_list, 
+                **entry
+                )
+
+            is_data_data_uploadable = cls.__isDataDataUploadable(
+                data_data_dict
+            )
+            if is_data_data_uploadable:
+                data_data_list.append(data_data_dict)
+
+
+        is_group_data_uploadable = cls.__isGroupDataUploadable(group_data_dict)
+
+        if is_group_data_uploadable:
+            group_obj = cls.__getOrCreateGroupModel(group_data_dict)
+
+        for data_data_dict in data_data_list:
+            cls.__writeDataData(
+                {}, 
+                data_data_dict, 
+                creator_user_id, 
+                group_obj,
+                save_date
+            )
+
+            return cls(group_obj.id)
+
+class SingleDataManager(GeneralManager):
+
+    def __init__(self, group_id: int, search_date=None):
+        """
+        Initialize the manager with the given group_id and date.
+        And save all default attributes.
+
+        Args:
+            group_id (int): The ID of the group object.
+            search_date (datetime, optional): The date for which to search
+                the data object. Defaults to None (latest data).
+        """
+        self.__group_model_name = self.__getGroupModelName()
+        group_obj = self.__getGroupObject(group_id)
+        data_obj = self.__getDataObject(group_obj, search_date)
+
+        self.__group_obj = group_obj
+        self.__data_obj = data_obj
+
+        self.id = data_obj.id
+        self.group_id = group_obj.id
+        self.creator_id = data_obj.creator.id
+        self.creator = data_obj.creator
+        self.active = data_obj.active
+        self.start_date = data_obj.date
+        self.end_date = self.__getEndDate()
+
+
+        self.search_date = search_date
+
+        return group_obj, data_obj
+
+    @updateCache
+    def update(self, creator_user_id: int, **kwargs: any):
+        """
+        Update the current instance with new data, 
+        uploads to db and refresh the cache.
+
+        Args:
+            creator_user_id (int): The ID of the user who is making the update.
+            **kwargs: Key-value pairs representing the new data to be updated.
+        """
+        self.__errorIfNotUpdatable()
+        data_model_column_list = self.__getColumnList(self.data_model)
+        group_model_column_list = [] #Unchangeable by update
+        self.__checkInputDictForInvalidKeys(
+            manager_object = self,
+            column_list = kwargs.keys(),
+            invalid_key_list = self.__getToCheckListForUpdate()
+        )
+
+        _, data_data_dict = self.__getDataForGroupAndDataTableByKwargs(
+            data_model_column_list, 
+            group_model_column_list, 
+            **kwargs
+            )
+
+        group_model_name = transferToSnakeCase(self.group_model.__name__)
+        group_model_obj = self.__getGroupObject(self.group_id)
+
+        latest_data = self.data_model.objects.filter(
+            **{group_model_name: group_model_obj}
+            ).values().latest('date')
+        if latest_data == []:
+            latest_data = {}
+
+        self.__writeDataData(
+            latest_data, 
+            data_data_dict, 
+            creator_user_id, 
+            self.__group_obj,
+            datetime.now()
+        )
+
+        self.__init__(self.group_id)
+
+    def __errorIfNotUpdatable(self) -> None:
+        """
+        Raise an error if the current instance is not updatable.
+
+        Raises:
+            NotUpdatableError: 
+                If the current instance is not the latest data in the database.
+        """
+        latest_db_id = self.data_model.objects.filter(
+            **{transferToSnakeCase(
+            self.group_model.__name__): self.__group_obj}
+            ).values('id').latest('date')['id']
+
+        is_latest = self.id == latest_db_id
+        if not is_latest:
+            raise NotUpdatableError(
+                f"""
+                You can only update the latest data, this is not the latest
+                data. Latest id = {latest_db_id}, your id = {self.id}
+                """
+            )
+    
+    def __getDataObject(
+        self, 
+        group_obj: models.Model, 
+        search_date: datetime
+    ) -> models.Model:
+        """
+        Get the data model instance for the given group object and date.
+
+        Args:
+            group_obj (GroupModel): 
+                The group model instance for which the data is to be fetched.
+            search_date (datetime):     
+                The date for which the data is to be fetched.
+
+        Returns:
+            DataModel: 
+                The data model instance for the given group object and date.
+        """
+        try:
+            if search_date is None:
+                data_obj = self.data_model.objects.filter(
+                    **{self.__group_model_name: group_obj}
+                ).latest('date')
+            else:
+                data_obj = self.data_model.objects.filter(
+                    **{self.__group_model_name: group_obj,
+                    'date__lte': search_date}
+                    ).latest('date')
+        except ObjectDoesNotExist:
+            raise NonExistentGroupError(
+                f'''{self.data_model.__name__} with group_id {group_obj.id}
+                does not exist at date {search_date}''')
+
+        return data_obj
+
+    @classmethod
+    @createCache
+    def create(cls, creator_user_id: int, **kwargs: any) -> object:
+        """
+        Create a new instance of the current class and initialize cache.
+
+        Args:
+            creator_user_id (int): 
+                The ID of the user who is creating the new instance.
+            **kwargs: Key-value pairs representing the data to be used for 
+                creating the new instance.
+
+        Returns:
+            cls: A new instance of the current manager class.
+        """
+        data_model_column_list = cls.__getColumnList(cls.data_model)
+        group_model_column_list = cls.__getColumnList(cls.group_model)
+        cls.__checkInputDictForInvalidKeys(
+            manager_object = cls,
+            column_list = kwargs.keys(),
+            invalid_key_list = cls.__getToCheckListForCreation()
+        )
+        group_data_dict, data_data_dict=cls.\
+        __getDataForGroupAndDataTableByKwargs(
+            data_model_column_list, 
+            group_model_column_list, 
+            **kwargs)
+
+        is_group_data_uploadable = cls.__isDataDataUploadable(group_data_dict)
+        is_data_data_uploadable = cls.__isGroupDataUploadable(data_data_dict)
+
+        if is_group_data_uploadable and is_data_data_uploadable:
+            group_obj = cls.__getOrCreateGroupModel(group_data_dict)
+
+            cls.__writeDataData(
+                {}, 
+                data_data_dict, 
+                creator_user_id, 
+                group_obj,
+                datetime.now()
+            )
+
+            return cls(group_obj.id)
