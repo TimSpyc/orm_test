@@ -966,6 +966,44 @@ class MultiDataManager(GeneralManager):
         self.search_date = search_date
 
         return group_obj, data_obj_list
+    
+    def __getDataObjectList(
+        self, 
+        group_obj: models.Model, 
+        search_date: datetime
+    ) -> models.Model:
+        """
+        Get the data model instance for the given group object and date.
+
+        Args:
+            group_obj (GroupModel): 
+                The group model instance for which the data is to be fetched.
+            search_date (datetime):     
+                The date for which the data is to be fetched.
+
+        Returns:
+            DataModel: 
+                The data model instance for the given group object and date.
+        """
+        try:
+            if search_date is None:
+                entry_date = self.data_model.objects.latest('date').date
+            else:
+                entry_date = self.data_model.objects.filter(
+                    date__lte=search_date
+                ).latest('date').date
+
+            data_obj_list = self.data_model.objects.filter(
+                **{self.__group_model_name: group_obj,
+                'date': entry_date}
+            )
+
+        except ObjectDoesNotExist:
+            raise NonExistentGroupError(
+                f'''{self.data_model.__name__} with group_id {group_obj.id}
+                does not exist at date {search_date}''')
+
+        return data_obj_list
 
     @updateCache
     def update(
@@ -1227,7 +1265,7 @@ class SingleDataManager(GeneralManager):
                 data_obj = self.data_model.objects.filter(
                     **{self.__group_model_name: group_obj,
                     'date__lte': search_date}
-                    ).latest('date')
+                ).latest('date')
         except ObjectDoesNotExist:
             raise NonExistentGroupError(
                 f'''{self.data_model.__name__} with group_id {group_obj.id}
