@@ -952,7 +952,7 @@ class MultiDataManager(GeneralManager):
         data_obj_list = self.__getDataObjectList(group_obj, search_date)
 
         self.__group_obj = group_obj
-        self.__data_obj = data_obj_list
+        self.__data_obj_list = data_obj_list
 
         self.id_list = [data.id for data in data_obj_list]
         self.group_id = group_obj.id
@@ -971,7 +971,7 @@ class MultiDataManager(GeneralManager):
         self, 
         group_obj: models.Model, 
         search_date: datetime
-    ) -> models.Model:
+    ) -> QuerySet:
         """
         Get the data model instance for the given group object and date.
 
