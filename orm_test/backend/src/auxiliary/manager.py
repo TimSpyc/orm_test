@@ -773,7 +773,10 @@ class GeneralManager:
             latest_data, 
             data_data_dict, 
             creator_user_id, 
-            self.__group_obj)
+            self.__group_obj,
+            datetime.now()
+        )
+
         self.__init__(self.group_id)
         
     @classmethod
@@ -843,7 +846,19 @@ class GeneralManager:
             raise NotUpdatableError('This manager is already deactivated')
 
         self.update(creator_user_id, active=False)
-    
+
+    @staticmethod
+    def __getNotNullFields(model):
+        return [field.name for field in model._meta.get_fields() 
+                if not field.null and not field.auto_created]
+
+    @staticmethod
+    def __getUniqueFields(model):
+        unique_fields = []
+        for unique_field_tuple in model._meta.unique_together:
+            unique_fields = [*unique_field_tuple, *unique_fields]
+        return unique_fields
+
     @classmethod
     def __isDataUploadable(
         cls, 
@@ -867,11 +882,8 @@ class GeneralManager:
                 3. Whether all not_null fields in the data_dict contain data 
                     (no None values).
         """
-        unique_fields = []
-        for unique_field_tuple in model._meta.unique_together:
-            unique_fields = [*unique_field_tuple, *unique_fields]
-        not_null_fields = [field.name for field in model._meta.get_fields() 
-                           if not field.null and not field.auto_created]
+        not_null_fields = cls.__getNotNullFields(model)
+        unique_fields = cls.__getUniqueFields(model)
         
         data_dict_extended_list = list(data_dict.keys())
         data_dict_extended_list.extend(
@@ -894,6 +906,64 @@ class GeneralManager:
             contains_all_not_null_fields,
             all_not_null_fields_contain_data
         )
+
+    @classmethod
+    def __errorForInsufficientUploadData(cls, model_type: str, is_data_uploadable: list):
+        if model_type == 'data_model':
+            name = 'data table data'
+            model = cls.data_model
+        elif model_type == 'group_model':
+            name = 'group table data'
+            model = cls.group_model
+        raise ValueError(
+            f'''
+            The given **kwargs are not sufficient.
+            Because {name}:
+                contains_all_unique_fields: {is_data_uploadable[0]}
+                contains_all_not_null_fields: {is_data_uploadable[1]}
+                all_not_null_fields_contain_data: {is_data_uploadable[2]}
+            For data model: {model}
+                not_null_fields = {cls.__getNotNullFields(model)}
+                unique_fields = {cls.__getUniqueFields(model)}
+            '''
+        )
+
+    @classmethod
+    def __isDataDataUploadable(cls, data_data_dict):
+        is_data_data_uploadable = cls.__isDataUploadable(
+                                    data_data_dict, 
+                                    cls.data_model)
+        if all(is_data_data_uploadable):
+            return True
+        cls.__errorForInsufficientUploadData(
+            'data_model', is_data_data_uploadable
+        )
+
+    @classmethod
+    def __isGroupDataUploadable(cls, group_data_dict):
+        is_group_data_uploadable = cls.__isDataUploadable(
+                                    group_data_dict, 
+                                    cls.group_model)
+        if all(is_group_data_uploadable):
+            return True
+        cls.__errorForInsufficientUploadData(
+            'group_model', is_group_data_uploadable
+        )
+    
+    @classmethod
+    def __getOrCreateGroupModel(cls, group_data_dict):
+        unique_fields = cls.group_model._meta.unique_together
+
+        if len(unique_fields) == 0:
+            group_obj = cls.group_model.object.create(
+                **group_data_dict
+            )
+        else:
+            group_obj, _ = cls.group_model.objects.get_or_create(
+                **group_data_dict
+            )
+
+        return group_obj
 
     @classmethod
     @createCache
@@ -923,53 +993,21 @@ class GeneralManager:
             group_model_column_list, 
             **kwargs)
 
-        unique_fields = cls.group_model._meta.unique_together
-
-        is_group_data_uploadable = all(
-            cls.__isDataUploadable(group_data_dict, cls.group_model))
-        is_data_data_uploadable = all(
-            cls.__isDataUploadable(data_data_dict, cls.data_model))
+        is_group_data_uploadable = cls.__isDataDataUploadable(group_data_dict)
+        is_data_data_uploadable = cls.__isGroupDataUploadable(data_data_dict)
 
         if is_group_data_uploadable and is_data_data_uploadable:
-
-            if len(unique_fields) == 0:
-                new_group_obj = cls.group_model(
-                    **group_data_dict
-                )
-            else:
-                new_group_obj, _ = cls.group_model.objects.get_or_create(
-                    **group_data_dict
-                )
-            new_group_obj.save()
+            group_obj = cls.__getOrCreateGroupModel(group_data_dict)
 
             cls.__writeDataData(
                 {}, 
                 data_data_dict, 
                 creator_user_id, 
-                new_group_obj)
+                group_obj,
+                datetime.now()
+            )
 
-            return cls(new_group_obj.id)
-
-        else:
-            is_group_data_uploadable = cls.__isDataUploadable(
-                                       group_data_dict, 
-                                       cls.group_model)
-            is_data_data_uploadable = cls.__isDataUploadable(
-                                      data_data_dict, 
-                                      cls.data_model)
-        raise ValueError(
-            f'''
-            The given **kwargs are not sufficient.
-            Because group table data:
-                contains_all_unique_fields: {is_group_data_uploadable[0]}
-                contains_all_not_null_fields: {is_group_data_uploadable[1]}
-                all_not_null_fields_contain_data: {is_group_data_uploadable[2]}
-            Because data table data:
-                contains_all_unique_fields: {is_data_data_uploadable[0]}
-                contains_all_not_null_fields: {is_data_data_uploadable[1]}
-                all_not_null_fields_contain_data: {is_data_data_uploadable[2]}
-            '''
-        )
+            return cls(group_obj.id)
 
     def __getGroupObject(self, group_id: int) -> models.Model:
         """
@@ -1016,7 +1054,7 @@ class GeneralManager:
                 data_obj = self.data_model.objects.filter(
                     **{self.__group_model_name: group_obj,
                     'date__lte': search_date}
-                    ).latest('date')
+                ).latest('date')
         except ObjectDoesNotExist:
             raise NonExistentGroupError(
                 f'''{self.data_model.__name__} with group_id {group_obj.id}
