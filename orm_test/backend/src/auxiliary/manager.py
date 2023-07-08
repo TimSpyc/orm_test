@@ -10,31 +10,6 @@ from django.db.models.query import QuerySet
 import timeit
 from django.db import models
 
-
-def timing(func):
-    """
-    A Python decorator that measures the execution time of a function and prints it.
-
-    Args:
-        func: The function whose execution time is to be measured.
-
-    Returns:
-        A new function that wraps the passed function and measures its execution time.
-
-    Example:
-        @timing
-        def my_function():
-            # Code for your function goes here
-            pass
-
-    The `timing` function measures the execution time of the passed function and prints it in seconds.
-    """
-    def wrapper(*args, **kwargs):
-        execution_time = timeit.timeit(lambda: func(*args, **kwargs), number=1)
-        print(
-         f"The function {func.__name__} was run in {execution_time} seconds.")
-    return wrapper
-
 def transferToSnakeCase(name):
     """
     Convert a string from CamelCase to snake_case.
