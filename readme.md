@@ -45,11 +45,29 @@ Table for data storage of user changeable data. Always contains the following co
         ...
 ```
 
+## Data Extension Table
+Extension Table for many to one data in data table. It will always be incremented when data table is changing and contains additional data that is not manageable within the original data table. In comparison to Reverence Table the data is user changeable.
+
+```python
+    class VolumeCustomer(models.Model):
+        volume_customer_group = models.ForeignKey(VolumeCustomerGroup)
+        description = models.TextField()
+        volume_customer_extension = models.ManyToManyField(VolumeCustomerExtension, blank=True)
+        date = models.DateTimeField()
+        creator = models.ForeignKey(User, on_delete=models.CASCADE)
+        active = models.BooleanField()
+
+    class VolumeCustomerExtension(models.Model):
+        year = models.IntegerField()
+        volume = models.IntegerField()
+```
+
 ## Reverence Table
-Table for reverence data (not user changeable data). It uneditable by user and always contains a active column.
+Table for reverence data (not user changeable data). It's uneditable by user and always contains a active column.
 ```python
 class ProjectUserRole(models.Model):
     role_name = models.CharField(max_length=255)
+    active = models.BooleanField()
 
     def __str__(self):
         return self.role_name
