@@ -5,9 +5,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
 from backend.models import CacheManager, User
 from datetime import datetime
-from django.db.models import Max, Model
+from django.db.models import Model, Field
 from django.db.models.query import QuerySet
-import timeit
 from django.db import models
 
 def transferToSnakeCase(name):
@@ -180,14 +179,18 @@ class GeneralManager:
         self.start_date = data_obj.date
         self.end_date = self.__getEndDate()
 
-    def __eq__(self,other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, self.__class__) and
             self.group_id == other.group_id and
             self.start_date == other.start_date
         )
 
-    def __setAllAttributesFromModel(self, model_obj, ignore_list=[]):
+    def __setAllAttributesFromModel(
+        self,
+        model_obj: Model,
+        ignore_list: list = []
+    ) -> None:
 
         for column in model_obj._meta.get_fields():
             ref_table_type, ref_type = self.__getRefAndTableType(column)
@@ -199,32 +202,64 @@ class GeneralManager:
             if ref_table_type is None:
                 self.__createDirectAttribute(column_name, column, model_obj)
             else:
-                self.__createReferenceAttribute(column_name, column, model_obj, ref_table_type, ref_type)
+                self.__createReferenceAttribute(
+                    column_name, column, model_obj, ref_table_type, ref_type
+                )
 
 
-    def __createDirectAttribute(self, column_name, column, model_obj):
+    def __createDirectAttribute(
+        self,
+        column_name: str,
+        column: Field,
+        model_obj: Model
+    ) -> None:
         setattr(self, column_name, getattr(model_obj, column.name))
 
-    def __createReferenceAttribute(self, column_name, column, model_obj, ref_table_type, ref_type):
+    def __createReferenceAttribute(
+        self,
+        column_name: str,
+        column: Field,
+        model_obj: Model,
+        ref_table_type: str,
+        ref_type: str
+    ) -> None:
+
+        def getManagerList():
+            return [
+                group_data.manager(self.search_date, self.use_cache)
+                for group_data in getattr(model_obj, column.name).all()
+            ]
+
+        def getExtensionDataDict():
+            return [
+                extension_data.__dict__
+                for extension_data in getattr(model_obj, column.name).all()
+            ]
+
+        def getManager():
+            foreign_key_object = getattr(model_obj, column.name)
+            return foreign_key_object.manager(self.search_date, self.use_cache)
+
         if ref_type == 'ManyToManyField':
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager_list')
-                setattr(self, attribute_name, property(lambda: [group_data.manager(self.search_date, self.use_cache) for group_data in getattr(model_obj, column.name).all()]))
+                setattr(self, attribute_name, property(getManagerList))
             elif ref_table_type == 'DataExtensionTable':
                 attribute_name = f'{column_name}_dict_list'
-                setattr(self, attribute_name, property(lambda: [data_extension_data.__dict__ for data_extension_data in getattr(model_obj, column.name).all()]))
+                setattr(self, attribute_name, property(getExtensionDataDict))
             else:
                 raise ValueError('this is not implemented yet')
         elif ref_type == 'ForeignKey':
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager')
-                foreign_key_object = getattr(model_obj, column.name)
-                setattr(self, attribute_name, property(lambda: foreign_key_object.manager(self.search_date, self.use_cache)))
+                setattr(self, attribute_name, property(getManager))
             elif ref_table_type == 'ReferenceTable':
                 foreign_key_object = getattr(model_obj, column.name)
                 setattr(self, column_name, getattr(model_obj, column.name))
-            elif ref_table_type == 'DataTable' or ref_table_type == 'DataExtensionTable':
-                raise ValueError('Your database model is not correctly implemented!!')
+            elif ref_table_type in ('DataTable', 'DataExtensionTable'):
+                raise ValueError(
+                    'Your database model is not correctly implemented!!'
+                )
             else:
                 raise ValueError('this is not implemented yet')
 
@@ -235,7 +270,7 @@ class GeneralManager:
         return False
 
     @staticmethod
-    def __getRefAndTableType(column):
+    def __getRefAndTableType(column: Field) -> tuple[str, str]:
         if column.related_model:
             ref_table_type = column.related_model.table_type
             ref_type = column.remote_field.get_internal_type()
@@ -244,7 +279,7 @@ class GeneralManager:
         return ref_table_type, ref_type
 
     @classmethod
-    def __getGroupModelName(cls):
+    def __getGroupModelName(cls) -> str:
         """
         Get group model name. Raises value error if group model name 
         is not in data model columns!
@@ -1088,7 +1123,7 @@ class GeneralManager:
         except ObjectDoesNotExist:
             raise ValueError(
                 f'''{self.group_model.__name__} with 
-                    id {group_id} does not exist'''
+                    id {self.group_id} does not exist'''
             )
     
     def __getDataObject(
