@@ -335,7 +335,7 @@ class GeneralManager:
             search_date
             )
         return cls.__createManagerObjectsFromDictList(
-            found_group_id_date_combination_dict_list
+            found_group_id_date_combination_dict_list,
             use_cache=use_cache
             )
 
