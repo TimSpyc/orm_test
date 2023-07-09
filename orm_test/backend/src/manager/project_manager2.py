@@ -23,6 +23,10 @@ class Project(DataTable):
     project_number = models.CharField(max_length=255, unique=False, null=True)
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
 
+    @property
+    def group(self):
+        return self.project_group
+
     def __str__(self):
         return self.name
 

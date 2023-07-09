@@ -209,11 +209,20 @@ class GeneralManager:
         ref_type: str
     ) -> None:
 
-        def getManagerList():
+        def getManagerListFromGroupModel():
             return [
                 group_data.manager(self.search_date, self.use_cache)
                 for group_data in getattr(model_obj, column.name).all()
             ]
+        
+        def getManagerListFromDataModel():
+            manager_list = []
+            for data_data in getattr(model_obj, column.name).all(): 
+                group_data = data_data.group
+                manager = group_data.manager(self.search_date, self.use_cache)
+                if manager.id == data_data.id:
+                    manager_list.append(manager)
+            return manager_list
 
         def getExtensionDataDict():
             def get_fields_and_values(instance):
@@ -231,30 +240,56 @@ class GeneralManager:
                 for instance in getattr(model_obj, column.name).all()
             ]
 
-        def getManager():
-            foreign_key_object = getattr(model_obj, column.name)
-            return foreign_key_object.manager(self.search_date, self.use_cache)
+        def getManagerFromGroupModel():
+            foreign_key_group_object = getattr(model_obj, column.name)
+            return foreign_key_group_object.manager(self.search_date, self.use_cache)
+
+        def getManagerFromDataModel():
+            data_data = getattr(model_obj, column.name)
+            group_data = data_data.group
+            manager = group_data.manager(self.search_date, self.use_cache)
+            if manager.id == data_data.id:
+                return manager
 
         if ref_type == 'ManyToManyField' or ref_type == 'ManyToOneRel':
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager_list')
-                self.__createProperty(attribute_name, property(getManagerList))
+                self.__createProperty(
+                    attribute_name,
+                    getManagerListFromGroupModel
+                )
             elif ref_table_type == 'DataExtensionTable':
                 attribute_name = f'{column_name}_dict_list'
-                self.__createProperty(attribute_name, property(getExtensionDataDict))
+                self.__createProperty(
+                    attribute_name,
+                    getExtensionDataDict
+                )
             elif ref_table_type == 'DataTable':
-                return
+                if self.data_model == column.related_model:
+                    return
+                self.__createProperty(
+                    attribute_name,
+                    getManagerListFromDataModel
+                )
             else:
                 raise ValueError('this is not implemented yet')
         elif ref_type == 'ForeignKey':
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager')
-                self.__createProperty(attribute_name, property(getManager))
+                self.__createProperty(
+                    attribute_name,
+                    getManagerFromGroupModel
+                )
             elif ref_table_type == 'ReferenceTable':
                 foreign_key_object = getattr(model_obj, column.name)
                 setattr(self, column_name, foreign_key_object)
             elif ref_table_type == 'DataTable':
-                return
+                if self.data_model == column.related_model:
+                    return
+                self.__createProperty(
+                    attribute_name,
+                    getManagerFromDataModel
+                )
             elif ref_table_type == 'DataExtensionTable':
                 raise ValueError(
                     'Your database model is not correctly implemented!!'
@@ -262,8 +297,8 @@ class GeneralManager:
             else:
                 raise ValueError('this is not implemented yet')
 
-    def __createProperty(self, attribute_name: str, func: function):
-        setattr(self.__class__, attribute_name, func)
+    def __createProperty(self, attribute_name: str, func):
+        setattr(self.__class__, attribute_name, property(func))
 
     @staticmethod
     def __isIgnored(key: str, ignore_list: list) -> bool:
