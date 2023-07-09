@@ -215,10 +215,19 @@ class GeneralManager:
             ]
 
         def getExtensionDataDict():
-            return [{
-                    field.name: getattr(instance, field.name)
-                    for field in instance._meta.fields
-                } for instance in getattr(model_obj, column.name).all()
+            def get_fields_and_values(instance):
+                fields = {}
+                for field in instance._meta.fields:
+                    value = getattr(instance, field.name)
+                    fields[field.name] = value
+                for field in instance._meta.many_to_many:
+                    fields[field.name] = list(
+                        getattr(instance, field.name).all()
+                    )
+                return fields
+            return [
+                get_fields_and_values(instance)
+                for instance in getattr(model_obj, column.name).all()
             ]
 
         def getManager():
