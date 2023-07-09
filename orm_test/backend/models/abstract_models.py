@@ -33,7 +33,7 @@ class DataTable(models.Model):
 
 class DataExtensionTable(models.Model):
     """
-    An abstract Django model for representing group tables.
+    An abstract Django model for representing data extension tables.
     """
     table_type = 'DataExtensionTable'
     class Meta:

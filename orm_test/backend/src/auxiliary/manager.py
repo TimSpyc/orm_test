@@ -104,8 +104,6 @@ class GeneralManager:
             manager: A new or cached instance of the manager.
         """
 
-        manager_name = cls.__name__
-
         if hasattr(cls, 'group_model'):
             group_table_id_name = f'''
                 {transferToSnakeCase(cls.group_model.__name__)}_id
@@ -115,30 +113,16 @@ class GeneralManager:
         
         if group_id is None:
             return super().__new__(cls)
-        if use_cache:
-            group_model_name = transferToSnakeCase(cls.group_model.__name__)
-            group_model_obj = cls.group_model(group_id)
 
-            if search_date is None:
-                cached_instance = cache.get(f"{manager_name}|{group_id}")
-                if cached_instance is not None:
-                    return cached_instance
-            cached_instance = CacheManager.get_cache_data(
-                manager_name, 
-                group_model_obj, 
-                group_model_name, 
-                cls.data_model, 
-                group_id, 
-                search_date
-                )
+        if use_cache:
+            cached_instance = cls.__handleCache(group_id, search_date)
             if cached_instance:
-                cls.updateCache(cached_instance)
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        if use_cache:
-            cls.updateCache(instance)
+        cls.updateCache(instance)
+
         return instance
 
     def __init__(
@@ -299,7 +283,7 @@ class GeneralManager:
         return group_model_name
 
     @classmethod
-    def all(cls, search_date=None) -> list:
+    def all(cls, search_date=None, use_cache=True) -> list:
         """
         Retrieves all objects of the manager's class, 
         optionally filtering by search_date.
@@ -313,10 +297,10 @@ class GeneralManager:
             list: A list of manager objects, 
                 filtered by the optional search_date if provided.
         """
-        return cls.filter(search_date=search_date)
+        return cls.filter(search_date=search_date, use_cache=use_cache)
 
     @classmethod
-    def filter(cls, search_date=None, **kwargs: any) -> list:
+    def filter(cls, search_date=None, use_cache=True, **kwargs: any) -> list:
         """Creates a list of objects based on the given parameters.
 
         Keyword arguments:
@@ -352,6 +336,7 @@ class GeneralManager:
             )
         return cls.__createManagerObjectsFromDictList(
             found_group_id_date_combination_dict_list
+            use_cache=use_cache
             )
 
     @classmethod
@@ -486,7 +471,8 @@ class GeneralManager:
     @classmethod
     def __createManagerObjectsFromDictList(
         cls, 
-        creation_dict_list: list
+        creation_dict_list: list,
+        use_cache
     ) -> list:
         """
         Creates a list of manager objects from a list of dictionaries.
@@ -501,7 +487,7 @@ class GeneralManager:
                 A list of manager objects created 
                 from the provided dictionary data.
         """
-        return [cls(**data) for data in creation_dict_list] 
+        return [cls(**data, use_cache=use_cache) for data in creation_dict_list] 
 
     def __errorIfNotUpdatable(self) -> None:
         """
@@ -1179,6 +1165,30 @@ class GeneralManager:
             self.__class__.__name__, 
             self.group_id, self, 
             self.start_date)
+
+    @classmethod
+    def __handleCache(cls, group_id, search_date):
+            
+        manager_name = cls.__name__
+        group_model_name = transferToSnakeCase(cls.group_model.__name__)
+        group_model_obj = cls.group_model(group_id)
+
+        if search_date is None:
+            cached_instance = cache.get(f"{manager_name}|{group_id}")
+            if cached_instance:
+                return cached_instance
+        cached_instance = CacheManager.get_cache_data(
+            manager_name, 
+            group_model_obj, 
+            group_model_name, 
+            cls.data_model, 
+            group_id, 
+            search_date
+            )
+        if cached_instance:
+            cls.updateCache(cached_instance)
+            return cached_instance
+        return None
 
     def __getEndDate(self) -> datetime | None:
         """
