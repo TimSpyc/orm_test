@@ -215,9 +215,10 @@ class GeneralManager:
             ]
 
         def getExtensionDataDict():
-            return [
-                extension_data.__dict__
-                for extension_data in getattr(model_obj, column.name).all()
+            return [{
+                    field.name: getattr(instance, field.name)
+                    for field in instance._meta.fields
+                } for instance in getattr(model_obj, column.name).all()
             ]
 
         def getManager():
@@ -239,7 +240,7 @@ class GeneralManager:
                 setattr(self, attribute_name, property(getManager))
             elif ref_table_type == 'ReferenceTable':
                 foreign_key_object = getattr(model_obj, column.name)
-                setattr(self, column_name, getattr(model_obj, column.name))
+                setattr(self, column_name, foreign_key_object)
             elif ref_table_type in ('DataTable', 'DataExtensionTable'):
                 raise ValueError(
                     'Your database model is not correctly implemented!!'
@@ -302,6 +303,7 @@ class GeneralManager:
     @classmethod
     def filter(cls, search_date=None, use_cache=True, **kwargs: any) -> list:
         """Creates a list of objects based on the given parameters.
+        It's NOT possible to search for DataExtensionTable Data.
 
         Keyword arguments:
         search_date (datetime.date, optional) -- An optional argument 
