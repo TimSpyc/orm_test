@@ -241,8 +241,8 @@ class GeneralManager:
             ]
 
         def getManagerFromGroupModel():
-            foreign_key_group_object = getattr(model_obj, column.name)
-            return foreign_key_group_object.manager(self.search_date, self.use_cache)
+            group_data = getattr(model_obj, column.name)
+            return group_data.manager(self.search_date, self.use_cache)
 
         def getManagerFromDataModel():
             data_data = getattr(model_obj, column.name)
