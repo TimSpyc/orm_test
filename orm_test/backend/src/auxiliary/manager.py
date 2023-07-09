@@ -5,9 +5,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
 from backend.models import CacheManager, User
 from datetime import datetime
-from django.db.models import Max, Model
+from django.db.models import Model, Field
 from django.db.models.query import QuerySet
-import timeit
 from django.db import models
 
 def transferToSnakeCase(name):
@@ -105,8 +104,6 @@ class GeneralManager:
             manager: A new or cached instance of the manager.
         """
 
-        manager_name = cls.__name__
-
         if hasattr(cls, 'group_model'):
             group_table_id_name = f'''
                 {transferToSnakeCase(cls.group_model.__name__)}_id
@@ -116,33 +113,24 @@ class GeneralManager:
         
         if group_id is None:
             return super().__new__(cls)
-        if use_cache:
-            group_model_name = transferToSnakeCase(cls.group_model.__name__)
-            group_model_obj = cls.group_model(group_id)
 
-            if search_date is None:
-                cached_instance = cache.get(f"{manager_name}|{group_id}")
-                if cached_instance is not None:
-                    return cached_instance
-            cached_instance = CacheManager.get_cache_data(
-                manager_name, 
-                group_model_obj, 
-                group_model_name, 
-                cls.data_model, 
-                group_id, 
-                search_date
-                )
+        if use_cache:
+            cached_instance = cls.__handleCache(group_id, search_date)
             if cached_instance:
-                cls.updateCache(cached_instance)
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        if use_cache:
-            cls.updateCache(instance)
+        cls.updateCache(instance)
+
         return instance
 
-    def __init__(self, group_id: int, search_date=None):
+    def __init__(
+        self,
+        group_id: int,
+        search_date: datetime|None = None,
+        use_cache: bool = True
+    ):
         """
         Initialize the manager with the given group_id and date.
         And save all default attributes.
@@ -152,42 +140,137 @@ class GeneralManager:
             search_date (datetime, optional): The date for which to search
                 the data object. Defaults to None (latest data).
         """
+        self.use_cache = use_cache
+        self.search_date = search_date
+        self.group_id = group_id
+
         self.__group_model_name = self.__getGroupModelName()
-        group_obj = self.__getGroupObject(group_id)
+        group_obj = self.__getGroupObject()
         data_obj = self.__getDataObject(group_obj, search_date)
 
         self.__group_obj = group_obj
         self.__data_obj = data_obj
 
         self.id = data_obj.id
-        self.group_id = group_obj.id
-        self.creator_id = data_obj.creator.id
-        self.creator = data_obj.creator
-        self.active = data_obj.active
+        ignore_list = [
+            self.__group_model_name,
+            'id',
+            'date'
+        ]
+        self.__setAllAttributesFromModel(group_obj, ignore_list)
+        self.__setAllAttributesFromModel(data_obj, ignore_list)
+
         self.start_date = data_obj.date
         self.end_date = self.__getEndDate()
 
-
-        self.search_date = search_date
-
-        return group_obj, data_obj
-
-    def __eq__(self,other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, self.__class__) and
             self.group_id == other.group_id and
             self.start_date == other.start_date
         )
 
+    def __setAllAttributesFromModel(
+        self,
+        model_obj: Model,
+        ignore_list: list = []
+    ) -> None:
+
+        for column in model_obj._meta.get_fields():
+            ref_table_type, ref_type = self.__getRefAndTableType(column)
+            column_name = column.name
+
+            if self.__isIgnored(ignore_list):
+                continue
+
+            if ref_table_type is None:
+                self.__createDirectAttribute(column_name, column, model_obj)
+            else:
+                self.__createReferenceAttribute(
+                    column_name, column, model_obj, ref_table_type, ref_type
+                )
+
+
+    def __createDirectAttribute(
+        self,
+        column_name: str,
+        column: Field,
+        model_obj: Model
+    ) -> None:
+        setattr(self, column_name, getattr(model_obj, column.name))
+
+    def __createReferenceAttribute(
+        self,
+        column_name: str,
+        column: Field,
+        model_obj: Model,
+        ref_table_type: str,
+        ref_type: str
+    ) -> None:
+
+        def getManagerList():
+            return [
+                group_data.manager(self.search_date, self.use_cache)
+                for group_data in getattr(model_obj, column.name).all()
+            ]
+
+        def getExtensionDataDict():
+            return [
+                extension_data.__dict__
+                for extension_data in getattr(model_obj, column.name).all()
+            ]
+
+        def getManager():
+            foreign_key_object = getattr(model_obj, column.name)
+            return foreign_key_object.manager(self.search_date, self.use_cache)
+
+        if ref_type == 'ManyToManyField':
+            if ref_table_type == 'GroupTable':
+                attribute_name = column_name.replace('group', 'manager_list')
+                setattr(self, attribute_name, property(getManagerList))
+            elif ref_table_type == 'DataExtensionTable':
+                attribute_name = f'{column_name}_dict_list'
+                setattr(self, attribute_name, property(getExtensionDataDict))
+            else:
+                raise ValueError('this is not implemented yet')
+        elif ref_type == 'ForeignKey':
+            if ref_table_type == 'GroupTable':
+                attribute_name = column_name.replace('group', 'manager')
+                setattr(self, attribute_name, property(getManager))
+            elif ref_table_type == 'ReferenceTable':
+                foreign_key_object = getattr(model_obj, column.name)
+                setattr(self, column_name, getattr(model_obj, column.name))
+            elif ref_table_type in ('DataTable', 'DataExtensionTable'):
+                raise ValueError(
+                    'Your database model is not correctly implemented!!'
+                )
+            else:
+                raise ValueError('this is not implemented yet')
+
+    @staticmethod
+    def __isIgnored(key: str, ignore_list: list) -> bool:
+        if key in ignore_list:
+            return True
+        return False
+
+    @staticmethod
+    def __getRefAndTableType(column: Field) -> tuple[str, str]:
+        if column.related_model:
+            ref_table_type = column.related_model.table_type
+            ref_type = column.remote_field.get_internal_type()
+        else:
+            ref_table_type = None
+        return ref_table_type, ref_type
+
     @classmethod
-    def __getGroupModelName(cls):
+    def __getGroupModelName(cls) -> str:
         """
         Get group model name. Raises value error if group model name 
         is not in data model columns!
         Returns:
             group_model_name
         """
-        column_list = cls.__getColumnList(cls.data_model)
+        column_list = cls.__getNameColumnList(cls.data_model)
         group_model_name = transferToSnakeCase(cls.group_model.__name__)
         db_column_exists, *_ = cls.\
         __searchForColumn(group_model_name, column_list)
@@ -200,7 +283,7 @@ class GeneralManager:
         return group_model_name
 
     @classmethod
-    def all(cls, search_date=None) -> list:
+    def all(cls, search_date=None, use_cache=True) -> list:
         """
         Retrieves all objects of the manager's class, 
         optionally filtering by search_date.
@@ -214,10 +297,10 @@ class GeneralManager:
             list: A list of manager objects, 
                 filtered by the optional search_date if provided.
         """
-        return cls.filter(search_date=search_date)
+        return cls.filter(search_date=search_date, use_cache=use_cache)
 
     @classmethod
-    def filter(cls, search_date=None, **kwargs: any) -> list:
+    def filter(cls, search_date=None, use_cache=True, **kwargs: any) -> list:
         """Creates a list of objects based on the given parameters.
 
         Keyword arguments:
@@ -236,8 +319,8 @@ class GeneralManager:
         if search_date is None:
             search_date = datetime.now()
 
-        group_model_column_list = cls.__getColumnList(cls.group_model)
-        data_model_column_list = cls.__getColumnList(cls.data_model)
+        group_model_column_list = cls.__getNameColumnList(cls.group_model)
+        data_model_column_list = cls.__getNameColumnList(cls.data_model)
 
         group_data_dict, data_data_dict = cls.\
             __getDataForGroupAndDataTableByKwargs(
@@ -253,6 +336,7 @@ class GeneralManager:
             )
         return cls.__createManagerObjectsFromDictList(
             found_group_id_date_combination_dict_list
+            use_cache=use_cache
             )
 
     @classmethod
@@ -387,7 +471,8 @@ class GeneralManager:
     @classmethod
     def __createManagerObjectsFromDictList(
         cls, 
-        creation_dict_list: list
+        creation_dict_list: list,
+        use_cache
     ) -> list:
         """
         Creates a list of manager objects from a list of dictionaries.
@@ -402,7 +487,7 @@ class GeneralManager:
                 A list of manager objects created 
                 from the provided dictionary data.
         """
-        return [cls(**data) for data in creation_dict_list] 
+        return [cls(**data, use_cache=use_cache) for data in creation_dict_list] 
 
     def __errorIfNotUpdatable(self) -> None:
         """
@@ -722,7 +807,7 @@ class GeneralManager:
             ]
 
     @staticmethod
-    def __getColumnList(model: models.Model) -> list:
+    def __getNameColumnList(model: models.Model) -> list:
         """
         Retrieve a list of column names for the given model.
 
@@ -746,7 +831,7 @@ class GeneralManager:
             **kwargs: Key-value pairs representing the new data to be updated.
         """
         self.__errorIfNotUpdatable()
-        data_model_column_list = self.__getColumnList(self.data_model)
+        data_model_column_list = self.__getNameColumnList(self.data_model)
         group_model_column_list = [] #Unchangeable by update
         self.__checkInputDictForInvalidKeys(
             manager_object = self,
@@ -761,7 +846,7 @@ class GeneralManager:
             )
 
         group_model_name = transferToSnakeCase(self.group_model.__name__)
-        group_model_obj = self.__getGroupObject(self.group_id)
+        group_model_obj = self.__getGroupObject()
 
         latest_data = self.data_model.objects.filter(
             **{group_model_name: group_model_obj}
@@ -980,8 +1065,8 @@ class GeneralManager:
         Returns:
             cls: A new instance of the current manager class.
         """
-        data_model_column_list = cls.__getColumnList(cls.data_model)
-        group_model_column_list = cls.__getColumnList(cls.group_model)
+        data_model_column_list = cls.__getNameColumnList(cls.data_model)
+        group_model_column_list = cls.__getNameColumnList(cls.group_model)
         cls.__checkInputDictForInvalidKeys(
             manager_object = cls,
             column_list = kwargs.keys(),
@@ -1009,7 +1094,7 @@ class GeneralManager:
 
             return cls(group_obj.id)
 
-    def __getGroupObject(self, group_id: int) -> models.Model:
+    def __getGroupObject(self) -> models.Model:
         """
         Get the group model instance with the provided group ID.
 
@@ -1020,11 +1105,11 @@ class GeneralManager:
             GroupModel: The group model instance with the provided ID.
         """
         try:
-            return self.group_model.objects.get(id=group_id)
+            return self.group_model.objects.get(id=self.group_id)
         except ObjectDoesNotExist:
-            raise NotUpdatableError(
+            raise ValueError(
                 f'''{self.group_model.__name__} with 
-                    id {group_id} does not exist'''
+                    id {self.group_id} does not exist'''
             )
     
     def __getDataObject(
@@ -1080,6 +1165,30 @@ class GeneralManager:
             self.__class__.__name__, 
             self.group_id, self, 
             self.start_date)
+
+    @classmethod
+    def __handleCache(cls, group_id, search_date):
+            
+        manager_name = cls.__name__
+        group_model_name = transferToSnakeCase(cls.group_model.__name__)
+        group_model_obj = cls.group_model(group_id)
+
+        if search_date is None:
+            cached_instance = cache.get(f"{manager_name}|{group_id}")
+            if cached_instance:
+                return cached_instance
+        cached_instance = CacheManager.get_cache_data(
+            manager_name, 
+            group_model_obj, 
+            group_model_name, 
+            cls.data_model, 
+            group_id, 
+            search_date
+            )
+        if cached_instance:
+            cls.updateCache(cached_instance)
+            return cached_instance
+        return None
 
     def __getEndDate(self) -> datetime | None:
         """
