@@ -8,6 +8,7 @@ from datetime import datetime
 from django.db.models import Model, Field
 from django.db.models.query import QuerySet
 from django.db import models
+from django.db.models.fields.reverse_related import ManyToOneRel
 
 def transferToSnakeCase(name):
     """
@@ -180,7 +181,7 @@ class GeneralManager:
             ref_table_type, ref_type = self.__getRefAndTableType(column)
             column_name = column.name
 
-            if self.__isIgnored(ignore_list):
+            if self.__isIgnored(column_name, ignore_list):
                 continue
 
             if ref_table_type is None:
@@ -234,28 +235,35 @@ class GeneralManager:
             foreign_key_object = getattr(model_obj, column.name)
             return foreign_key_object.manager(self.search_date, self.use_cache)
 
-        if ref_type == 'ManyToManyField':
+        if ref_type == 'ManyToManyField' or ref_type == 'ManyToOneRel':
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager_list')
-                setattr(self, attribute_name, property(getManagerList))
+                self.__createProperty(attribute_name, property(getManagerList))
             elif ref_table_type == 'DataExtensionTable':
                 attribute_name = f'{column_name}_dict_list'
-                setattr(self, attribute_name, property(getExtensionDataDict))
+                self.__createProperty(attribute_name, property(getExtensionDataDict))
+            elif ref_table_type == 'DataTable':
+                return
             else:
                 raise ValueError('this is not implemented yet')
         elif ref_type == 'ForeignKey':
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager')
-                setattr(self, attribute_name, property(getManager))
+                self.__createProperty(attribute_name, property(getManager))
             elif ref_table_type == 'ReferenceTable':
                 foreign_key_object = getattr(model_obj, column.name)
                 setattr(self, column_name, foreign_key_object)
-            elif ref_table_type in ('DataTable', 'DataExtensionTable'):
+            elif ref_table_type == 'DataTable':
+                return
+            elif ref_table_type == 'DataExtensionTable':
                 raise ValueError(
                     'Your database model is not correctly implemented!!'
                 )
             else:
                 raise ValueError('this is not implemented yet')
+
+    def __createProperty(self, attribute_name: str, func: function):
+        setattr(self.__class__, attribute_name, func)
 
     @staticmethod
     def __isIgnored(key: str, ignore_list: list) -> bool:
@@ -267,9 +275,12 @@ class GeneralManager:
     def __getRefAndTableType(column: Field) -> tuple[str, str]:
         if column.related_model:
             ref_table_type = column.related_model.table_type
-            ref_type = column.remote_field.get_internal_type()
+            ref_type = column.get_internal_type()
+            if isinstance(column, ManyToOneRel):
+                ref_type = "ManyToOneRel"
         else:
             ref_table_type = None
+            ref_type = None
         return ref_table_type, ref_type
 
     @classmethod
