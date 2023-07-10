@@ -42,6 +42,7 @@ class ProjectManager(GeneralManager):
     """
     group_model = ProjectGroup
     data_model = Project
+    data_extension_model_list = []
 
     def __init__(self, project_group_id, search_date=None, use_cache=True):
         """
