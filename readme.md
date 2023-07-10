@@ -52,12 +52,12 @@ Extension Table for many to one data in data table. It will always be incremente
     class VolumeCustomer(models.Model):
         volume_customer_group = models.ForeignKey(VolumeCustomerGroup)
         description = models.TextField()
-        volume_customer_extension = models.ManyToManyField(VolumeCustomerExtension, blank=True)
         date = models.DateTimeField()
         creator = models.ForeignKey(User, on_delete=models.CASCADE)
         active = models.BooleanField()
 
     class VolumeCustomerExtension(models.Model):
+        volume_customer_extension = models.ForeignKey(VolumeCustomer)
         year = models.IntegerField()
         volume = models.IntegerField()
 ```
