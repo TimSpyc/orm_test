@@ -23,6 +23,10 @@ class Project(DataTable):
     project_number = models.CharField(max_length=255, unique=False, null=True)
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
 
+    @property
+    def group(self):
+        return self.project_group
+
     def __str__(self):
         return self.name
 
@@ -38,6 +42,7 @@ class ProjectManager(GeneralManager):
     """
     group_model = ProjectGroup
     data_model = Project
+    data_extension_model_list = []
 
     def __init__(self, project_group_id, search_date=None, use_cache=True):
         """
@@ -49,3 +54,11 @@ class ProjectManager(GeneralManager):
             use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
         """
         super().__init__(group_id=project_group_id, search_date=search_date, use_cache=use_cache)
+
+
+def test():
+    a = ProjectManager(1, use_cache=False)
+    print(a.name)
+    print(a.project_number)
+    print(a.group_id)
+    print(a.creator.first_name, a.creator.last_name)
