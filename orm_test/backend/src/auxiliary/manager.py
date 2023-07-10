@@ -387,6 +387,11 @@ class GeneralManager:
             group_model_column_list, 
             **kwargs
             )
+        if data_extension_data_dict != {}:
+            raise ValueError(f'''
+                It's not possible to search for data in data extension tables
+                yet. You have searched for {data_extension_data_dict}.
+            ''')
         found_group_id_date_combination_dict_list = cls.\
             __getFilteredManagerList(
             data_data_dict,
