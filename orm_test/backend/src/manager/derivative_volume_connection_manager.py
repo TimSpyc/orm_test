@@ -14,7 +14,7 @@ if __name__ == '__main__':
     django.setup()
 
 from backend.models import DerivativeVolumeLMCDerivativeConstelliumConnectionGroup, DerivativeVolumeLMCDerivativeConstelliumConnection
-from manager import GeneralManager
+from backend.src.auxiliary.manager import GeneralManager
 
 
 class DerivativeLMCDerivativeConstelliumConnectionManager(GeneralManager):
