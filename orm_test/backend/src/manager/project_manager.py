@@ -1,26 +1,11 @@
-if __name__ == '__main__':
-    import sys
-    import os
 
-    sys.path.append(r'C:\Users\Spyc\Django_ORM')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\orm_test')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\backend\src\manager')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\backend\src\auxiliary')
-    sys.path.append(r'C:\Users\Spyc\Django_ORM\orm_test\backend')
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
-
-    import django
-    django.setup()
-
-from backend.models import ProjectUserGroup, ProjectGroup, Project, User
-from exceptions import NonExistentGroupError
-from datetime import datetime
-from manager import GeneralManager, updateCache
+from backend.models import ProjectNumber, ProjectGroup, Project
+from backend.src.auxiliary.manager import GeneralManager
 
 class ProjectManager(GeneralManager):
     """
-    A manager class for handling Project-related operations, extending the GeneralManager.
+    A manager class for handling Project-related operations, 
+    extending the GeneralManager.
 
     Attributes:
         group_model (models.Model): The ProjectGroup model.
@@ -35,8 +20,10 @@ class ProjectManager(GeneralManager):
 
         Args:
             project_group_id (int): The ID of the ProjectGroup instance.
-            search_date (datetime.datetime, optional): The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
+            search_date (datetime.datetime, optional): 
+                The date used for filtering data. Defaults to None.
+            use_cache (bool, optional): 
+                Whether to use the cache for data retrieval. Defaults to True.
         """
         project_group, project = super().__init__(
             group_id=project_group_id,
@@ -44,20 +31,41 @@ class ProjectManager(GeneralManager):
         )
 
         self.name = project.name
-        self.number = project.project_number
+        self.project_number = project.project_number
+        self.project_status = project.project_status
+        self.project_type = project.project_type
+        self.currency = project.currency
+        self.file_group_id:  int = project.file_group.id
+        self.customer = project.customer
+        self.probability_of_nomination = project.probability_of_nomination
+        self.project_group = project_group.id
+
 
     @property
-    def project_user_list(self):
+    def file(self):
         """
-        Get a list of ProjectUserManager instances for the current ProjectManager.
+        Get a File instance for the current ProjectManager.
 
         Returns:
-            list: A list of ProjectUserManager instances.
+            FileManager: An instance of the FileManager class.
         """
-        from project_user_manager import ProjectUserManager
-        return ProjectUserManager.filter(
-            date=self.search_date,
-            project_group_id=self.group_id
-        )
+        from file_manager import FileManager
+        return FileManager(self.file_group_id, self.search_date)  
+    
+
+    @staticmethod
+    def getOrCreateProjectNumber(project_number: str) -> ProjectNumber:
+        return ProjectNumber.objects.get_or_create(
+            project_number=project_number
+            )
+    
+    
+    def checkIfProjectNumberIdIsAlreadyOccupiedInActiveProject(
+        self,    
+        project_number, 
+    ):
+        pass
+        
+        
 
 
