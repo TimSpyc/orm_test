@@ -267,7 +267,7 @@ class GeneralManager:
         group_data_dict, data_data_dict = cls.\
             __getDataForGroupAndDataTableByKwargs(
             data_model_column_list,
-            group_model_column_list, 
+            group_model_column_list,
             **kwargs
             )
         found_group_id_date_combination_dict_list = cls.\
