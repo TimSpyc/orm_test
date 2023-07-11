@@ -1,5 +1,11 @@
 {
     "cSpell.words": [
         "Constellium"
+    ],
+    "python.analysis.extraPaths": [
+        "/workspace",
+        "/workspace/orm_test",
+        "./orm_test/backend/src",
+        "./orm_test/backend/src/manager"
     ]
 }
