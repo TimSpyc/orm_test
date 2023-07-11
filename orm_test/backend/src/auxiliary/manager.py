@@ -167,6 +167,18 @@ class GeneralManager:
         self.start_date = data_obj.date
         self.end_date = self.__getEndDate()
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
+
+    def __iter__(self):
+        for attr, value in self.__dict__.items():
+            if isinstance(value, Model):
+                value_dict = value.__dict__
+                for key, value in value_dict.items():
+                    attr_with_key = f'{attr}__{key}'
+                    yield attr_with_key, value
+            yield attr, value
+
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, self.__class__) and
