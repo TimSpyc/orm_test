@@ -3,7 +3,8 @@ from backend.src.auxiliary.manager import GeneralManager
 
 class PartSoldPriceSavingManager(GeneralManager):
     """
-    A manager class for handling PartSoldPriceSaving-related operations,extending the GeneralManager.
+    A manager class for handling PartSoldPriceSaving-related operations,
+    extending the GeneralManager.
 
     Attributes:
         group_model (models.Model): The PartSoldPriceSavingGroup model.
@@ -12,7 +13,12 @@ class PartSoldPriceSavingManager(GeneralManager):
     group_model = PartSoldPriceSavingGroup
     data_model = PartSoldPriceSaving
 
-    def __init__(self, part_sold_price_saving_group_id, search_date=None, use_cache=True):
+    def __init__(
+            self, 
+            part_sold_price_saving_group_id, 
+            search_date=None, 
+            use_cache=True
+            ):
         """
         Initialize a ContractManager instance.
 
