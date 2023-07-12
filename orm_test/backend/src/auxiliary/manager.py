@@ -480,7 +480,7 @@ class GeneralManager:
             )
 
             if not any(
-                is_in_group_model, is_in_data_model, is_in_data_ext_model
+                [is_in_group_model, is_in_data_model, is_in_data_ext_model]
             ):
                 raise ValueError(
                     f'''
