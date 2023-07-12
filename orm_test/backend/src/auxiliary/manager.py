@@ -215,7 +215,7 @@ class GeneralManager:
         setattr(self, column_name, getattr(model_obj, column.name))
 
     @staticmethod
-    def __get_fields_and_values(instance):
+    def __getFieldsAndValues(instance):
         fields = {}
         for field in instance._meta.fields:
             value = getattr(instance, field.name)
@@ -1086,7 +1086,7 @@ class GeneralManager:
 
             latest_extension_data[data_extension_model_name] = []
             for entry in latest_data:
-                data_dict = self.__get_fields_and_values(entry)
+                data_dict = self.__getFieldsAndValues(entry)
                 latest_extension_data[data_extension_model_name].append(data_dict)
 
         return latest_extension_data
