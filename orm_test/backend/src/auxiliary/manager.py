@@ -78,6 +78,24 @@ def createCache(func):
     return wrapper
 
 
+class ExternalDataManager:
+
+    database_model: Model
+
+    def __init__(self, search_date):
+        self.search_date = search_date
+        self.start_date = self.__getStartDate()
+        self.end_date = self.__getEndDate()
+
+    def getData(self, column_list, filter_dict_list):
+        pass
+    def __getStartDate(self):
+        pass
+    def __getEndDate(self):
+        pass
+
+
+
 class GeneralManager:
     """
     GeneralManager is a base class for managing objects with a group model and a data model.
@@ -172,6 +190,8 @@ class GeneralManager:
 
     def __iter__(self):
         for attr, value in self.__dict__.items():
+            if '_GeneralManager' in attr:
+                continue
             if isinstance(value, Model):
                 value_dict = value.__dict__
                 for key, value in value_dict.items():
@@ -194,7 +214,10 @@ class GeneralManager:
 
         for column in model_obj._meta.get_fields():
             ref_table_type, ref_type = self.__getRefAndTableType(column)
-            column_name = column.name
+            if ref_type is not None:
+                column_name = transferToSnakeCase(column.related_model.__name__)
+            else:
+                column_name = column.name
 
             if self.__isIgnored(column_name, ignore_list):
                 continue
@@ -235,13 +258,13 @@ class GeneralManager:
         ref_type: str
     ) -> None:
 
-        def getManagerListFromGroupModel():
+        def getManagerListFromGroupModel(self):
             return [
                 group_data.manager(self.search_date, self.use_cache)
                 for group_data in getattr(model_obj, column.name).all()
             ]
         
-        def getManagerListFromDataModel():
+        def getManagerListFromDataModel(self):
             manager_list = []
             for data_data in getattr(model_obj, column.name).all(): 
                 group_data = data_data.group
@@ -256,11 +279,11 @@ class GeneralManager:
                 for instance in getattr(model_obj, column.name).all()
             ]
 
-        def getManagerFromGroupModel():
+        def getManagerFromGroupModel(self):
             group_data = getattr(model_obj, column.name)
             return group_data.manager(self.search_date, self.use_cache)
 
-        def getManagerFromDataModel():
+        def getManagerFromDataModel(self):
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group
             manager = group_data.manager(self.search_date, self.use_cache)
