@@ -261,6 +261,21 @@ class GeneralManager:
         ref_type: str
     ) -> None:
 
+        def getManagerListFromGroupModelManyToOne(self):
+            return [
+                group_data.manager(self.search_date, self.use_cache)
+                for group_data in getattr(model_obj, f'{column.name}_set').all()
+            ]
+        
+        def getManagerListFromDataModelManyToOne(self):
+            manager_list = []
+            for data_data in getattr(model_obj, f'{column.name}_set').all(): 
+                group_data = data_data.group
+                manager = group_data.manager(self.search_date, self.use_cache)
+                if manager.id == data_data.id:
+                    manager_list.append(manager)
+            return manager_list
+
         def getManagerListFromGroupModel(self):
             return [
                 group_data.manager(self.search_date, self.use_cache)
@@ -298,18 +313,14 @@ class GeneralManager:
                 attribute_name = column_name.replace('group', 'manager_list')
                 self.__createProperty(
                     attribute_name,
-                    getManagerListFromGroupModel
+                    getManagerListFromGroupModelManyToOne
                 )
-            elif ref_table_type == 'DataExtensionTable':
-                attribute_name = f'{column_name}_dict_list'
-                setattr(self, attribute_name, getExtensionDataDict())
-
             elif ref_table_type == 'DataTable':
                 if self.data_model == column.related_model:
                     return
                 self.__createProperty(
                     attribute_name,
-                    getManagerListFromDataModel
+                    getManagerListFromDataModelManyToOne
                 )
             else:
                 raise ValueError('this is not implemented yet')
