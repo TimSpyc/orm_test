@@ -281,6 +281,7 @@ class GeneralManager:
             elif ref_table_type == 'DataTable':
                 if self.data_model == column.related_model:
                     return
+                attribute_name = f"{column_name}_manager"
                 self.__createProperty(
                     attribute_name,
                     getManagerListFromDataModel
@@ -300,6 +301,7 @@ class GeneralManager:
             elif ref_table_type == 'DataTable':
                 if self.data_model == column.related_model:
                     return
+                attribute_name = f"{column_name}_manager"
                 self.__createProperty(
                     attribute_name,
                     getManagerFromDataModel
@@ -322,6 +324,16 @@ class GeneralManager:
 
     @staticmethod
     def __getRefAndTableType(column: Field) -> tuple[str, str]:
+        """
+        Get the reference table type and field type of a column.
+
+        Args:
+            column (Field): The field object to analyze.
+
+        Returns:
+            tuple[str, str]: A tuple containing the ref table type and ref type.
+         """
+        
         if column.related_model:
             ref_table_type = column.related_model.table_type
             ref_type = column.get_internal_type()
@@ -331,6 +343,7 @@ class GeneralManager:
             ref_table_type = None
             ref_type = None
         return ref_table_type, ref_type
+    
 
     @classmethod
     def __getGroupModelName(cls) -> str:
@@ -480,7 +493,7 @@ class GeneralManager:
             )
 
             if not any(
-                is_in_group_model, is_in_data_model, is_in_data_ext_model
+                [is_in_group_model, is_in_data_model, is_in_data_ext_model]
             ):
                 raise ValueError(
                     f'''
@@ -737,13 +750,13 @@ class GeneralManager:
         possible_models: list
     ) -> tuple[str,bool]:
         """
-        Check if the given column name references a many-to-many relationship
-        in the provided column list. Many-to-many relationship columns 
-        must end with '_id_list'.
+        Check if the given column name references a DataTable Model
+        in the provided possible models list. DataExtensions relationship columns 
+        must end with '_dict_list'.
 
         Args:
             column_name (str): The name of the column to check.
-            available_column_list (list): A list of available column names.
+            possible_models (list): A list of available models.
 
         Returns:
             Tuple: 
@@ -752,7 +765,7 @@ class GeneralManager:
         return  GeneralManager.__checkIfColumnReferenceBaseExists(
             column_name, 
             possible_models,
-            "dict_list"
+            "_dict_list"
         )
 
     @staticmethod
