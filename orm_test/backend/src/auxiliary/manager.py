@@ -87,7 +87,7 @@ class ExternalDataManager:
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
 
-    def getData(self, column_list, filter_dict_list):
+    def getData(self, column_list: list, filter_dict: dict):
         pass
     def __getStartDate(self):
         pass
@@ -190,13 +190,16 @@ class GeneralManager:
 
     def __iter__(self):
         for attr, value in self.__dict__.items():
-            if '_GeneralManager' in attr:
+            if attr[0] == '_':
                 continue
             if isinstance(value, Model):
                 value_dict = value.__dict__
                 for key, value in value_dict.items():
+                    if attr[0] == '_':
+                        continue
                     attr_with_key = f'{attr}__{key}'
                     yield attr_with_key, value
+                continue
             yield attr, value
 
     def __eq__(self, other: object) -> bool:
@@ -290,7 +293,27 @@ class GeneralManager:
             if manager.id == data_data.id:
                 return manager
 
-        if ref_type == 'ManyToManyField' or ref_type == 'ManyToOneRel':
+        if ref_type == 'ManyToOneRel':
+            if ref_table_type == 'GroupTable':
+                attribute_name = column_name.replace('group', 'manager_list')
+                self.__createProperty(
+                    attribute_name,
+                    getManagerListFromGroupModel
+                )
+            elif ref_table_type == 'DataExtensionTable':
+                attribute_name = f'{column_name}_dict_list'
+                setattr(self, attribute_name, getExtensionDataDict())
+
+            elif ref_table_type == 'DataTable':
+                if self.data_model == column.related_model:
+                    return
+                self.__createProperty(
+                    attribute_name,
+                    getManagerListFromDataModel
+                )
+            else:
+                raise ValueError('this is not implemented yet')
+        elif ref_type == 'ManyToManyField': 
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager_list')
                 self.__createProperty(
@@ -1055,7 +1078,6 @@ class GeneralManager:
                 data_data_dict,
                 creator_user_id, 
                 self.__group_obj,
-                datetime.now(),
                 latest_extension_data,
                 data_extension_data_dict,
             )
@@ -1078,7 +1100,6 @@ class GeneralManager:
             data_data_dict,
             creator_user_id, 
             group_obj,
-            datetime.now()
         )
 
         cls.__writeDataExtensionData(
@@ -1444,17 +1465,17 @@ class GeneralManager:
             group_model_column_list, 
             **kwargs)
 
-        is_group_data_uploadable = cls.__isDataDataUploadable(group_data_dict)
-        is_data_data_uploadable = cls.__isGroupDataUploadable(data_data_dict)
+        is_group_data_uploadable = cls.__isGroupDataUploadable(group_data_dict)
+        is_data_data_uploadable = cls.__isDataDataUploadable(data_data_dict)
         is_data_extension_data_uploadable = cls.__isDataExtensionUploadable(
             data_extension_data_dict
         )
 
-        if all(
+        if all([
             is_group_data_uploadable,
             is_data_data_uploadable,
             is_data_extension_data_uploadable
-        ):
+        ]):
             group_obj = cls.__getOrCreateGroupModel(group_data_dict)
 
             cls.__writeData(
