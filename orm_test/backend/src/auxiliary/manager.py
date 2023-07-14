@@ -78,6 +78,24 @@ def createCache(func):
     return wrapper
 
 
+class ExternalDataManager:
+
+    database_model: Model
+
+    def __init__(self, search_date):
+        self.search_date = search_date
+        self.start_date = self.__getStartDate()
+        self.end_date = self.__getEndDate()
+
+    def getData(self, column_list: list, filter_dict: dict):
+        pass
+    def __getStartDate(self):
+        pass
+    def __getEndDate(self):
+        pass
+
+
+
 class GeneralManager:
     """
     GeneralManager is a base class for managing objects with a group model and a data model.
@@ -169,15 +187,33 @@ class GeneralManager:
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
+    
+    def __str__(self):
+        return f'''
+            {self.__class__.__name__} with group_id:{self.group_id}
+            and validity from {self.start_date} to {self.end_date}
+        '''
 
     def __iter__(self):
-        for attr, value in self.__dict__.items():
+        def model_iterator(model_obj, prefix):
+            value_dict = model_obj.__dict__
+            for key, value in value_dict.items():
+                if key[0] == '_':
+                    continue
+                attribute_name = f'{prefix}__{key}'
+                yield attribute_name, value
+
+        for attribute_name, value in self.__dict__.items():
+            if attribute_name[0] == '_':
+                continue
             if isinstance(value, Model):
-                value_dict = value.__dict__
-                for key, value in value_dict.items():
-                    attr_with_key = f'{attr}__{key}'
-                    yield attr_with_key, value
-            yield attr, value
+                for attribute_name, value in model_iterator(
+                    value,
+                    attribute_name
+                ):
+                    yield attribute_name, value
+            else:
+                yield attribute_name, value
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -194,7 +230,10 @@ class GeneralManager:
 
         for column in model_obj._meta.get_fields():
             ref_table_type, ref_type = self.__getRefAndTableType(column)
-            column_name = column.name
+            if ref_table_type == 'ManyToOneRel':
+                column_name = transferToSnakeCase(column.related_model.__name__)
+            else:
+                column_name = column.name
 
             if self.__isIgnored(column_name, ignore_list):
                 continue
@@ -215,7 +254,7 @@ class GeneralManager:
         setattr(self, column_name, getattr(model_obj, column.name))
 
     @staticmethod
-    def __get_fields_and_values(instance):
+    def __getFieldsAndValues(instance):
         fields = {}
         for field in instance._meta.fields:
             value = getattr(instance, field.name)
@@ -235,13 +274,28 @@ class GeneralManager:
         ref_type: str
     ) -> None:
 
-        def getManagerListFromGroupModel():
+        def getManagerListFromGroupModelManyToOne(self):
+            return [
+                group_data.manager(self.search_date, self.use_cache)
+                for group_data in getattr(model_obj, f'{column.name}_set').all()
+            ]
+        
+        def getManagerListFromDataModelManyToOne(self):
+            manager_list = []
+            for data_data in getattr(model_obj, f'{column.name}_set').all(): 
+                group_data = data_data.group
+                manager = group_data.manager(self.search_date, self.use_cache)
+                if manager.id == data_data.id:
+                    manager_list.append(manager)
+            return manager_list
+
+        def getManagerListFromGroupModel(self):
             return [
                 group_data.manager(self.search_date, self.use_cache)
                 for group_data in getattr(model_obj, column.name).all()
             ]
         
-        def getManagerListFromDataModel():
+        def getManagerListFromDataModel(self):
             manager_list = []
             for data_data in getattr(model_obj, column.name).all(): 
                 group_data = data_data.group
@@ -256,18 +310,35 @@ class GeneralManager:
                 for instance in getattr(model_obj, column.name).all()
             ]
 
-        def getManagerFromGroupModel():
+        def getManagerFromGroupModel(self):
             group_data = getattr(model_obj, column.name)
             return group_data.manager(self.search_date, self.use_cache)
 
-        def getManagerFromDataModel():
+        def getManagerFromDataModel(self):
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group
             manager = group_data.manager(self.search_date, self.use_cache)
             if manager.id == data_data.id:
                 return manager
 
-        if ref_type == 'ManyToManyField' or ref_type == 'ManyToOneRel':
+        if ref_type == 'ManyToOneRel':
+            if ref_table_type == 'GroupTable':
+                attribute_name = column_name.replace('group', 'manager_list')
+                self.__createProperty(
+                    attribute_name,
+                    getManagerListFromGroupModelManyToOne
+                )
+            elif ref_table_type == 'DataTable':
+                attribute_name = f'{column_name}_manager'
+                if self.data_model == column.related_model:
+                    return
+                self.__createProperty(
+                    attribute_name,
+                    getManagerListFromDataModelManyToOne
+                )
+            else:
+                raise ValueError('this is not implemented yet')
+        elif ref_type == 'ManyToManyField': 
             if ref_table_type == 'GroupTable':
                 attribute_name = column_name.replace('group', 'manager_list')
                 self.__createProperty(
@@ -279,6 +350,7 @@ class GeneralManager:
                 setattr(self, attribute_name, getExtensionDataDict())
 
             elif ref_table_type == 'DataTable':
+                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 self.__createProperty(
@@ -298,6 +370,7 @@ class GeneralManager:
                 foreign_key_object = getattr(model_obj, column.name)
                 setattr(self, column_name, foreign_key_object)
             elif ref_table_type == 'DataTable':
+                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 self.__createProperty(
@@ -480,7 +553,7 @@ class GeneralManager:
             )
 
             if not any(
-                is_in_group_model, is_in_data_model, is_in_data_ext_model
+                [is_in_group_model, is_in_data_model, is_in_data_ext_model]
             ):
                 raise ValueError(
                     f'''
@@ -554,7 +627,6 @@ class GeneralManager:
 
         return is_in_data_ext_model, model_name, to_upload_dict
 
-
     @classmethod
     def __getFilteredManagerList(
         cls, 
@@ -581,6 +653,16 @@ class GeneralManager:
         group_model_name = cls.__getGroupModelName()
         data_table_name = cls.data_model._meta.db_table
 
+        data_search_dict_with_operators = dict(
+            cls.__createSearchKeys(key, value)
+            for key, value in data_search_dict.items()
+        )
+
+        group_search_dict_with_operators = {
+            cls.__createSearchKeys(key, value)[0]: cls.__createSearchKeys(key, value)[1]
+            for key, value in group_search_dict.items()
+        }
+
         newest_data_table_entries = cls.data_model.objects.raw(f'''
             SELECT
                 id
@@ -599,16 +681,48 @@ class GeneralManager:
                 )
         ''')
         group_model_ids = cls.data_model.objects.filter(
-            **{**data_search_dict, 
+            **{**data_search_dict_with_operators, 
             'id__in': [data_obj.id for data_obj in newest_data_table_entries]}
             ).values(f'{group_model_name}_id')
         
         group_id_list = cls.group_model.objects.filter(
-            **{**group_search_dict, 'id__in': group_model_ids}
+            **{**group_search_dict_with_operators, 'id__in': group_model_ids}
             ).values_list('id', flat=True)
         
         return [{f'{group_model_name}_id': group_id,
                   'search_date': search_date} for group_id in group_id_list]
+
+    @staticmethod
+    def __createSearchKeys(key, value):
+        if type(value) != tuple:
+            return key, value
+        if len(value) != 2:
+            raise ValueError(
+                f'''
+                The value for {key} must be a tuple of length 2.
+                Starting with the operator and then the value.
+                Possible Operators are:
+                ">", "<", ">=", "<=", "=" and "like"
+                '''
+            )
+        operator, value = value
+        translation_dict = {
+            '>': 'gt',
+            '<': 'lt',
+            '>=': 'gte',
+            '<=': 'lte',
+            '=': 'iexact',
+            'like': 'icontains',
+        }
+        
+        if operator not in translation_dict.keys():
+            raise ValueError(
+                f'''
+                The operator for {key} must be one of the following:
+                ">", "<", ">=", "<=", "=" and "like"
+                '''
+            )
+        return f'{key}__{translation_dict[operator]}', value
 
     @classmethod
     def __createManagerObjectsFromDictList(
@@ -752,7 +866,7 @@ class GeneralManager:
         return  GeneralManager.__checkIfColumnReferenceBaseExists(
             column_name, 
             possible_models,
-            "dict_list"
+            "_dict_list"
         )
 
     @staticmethod
@@ -1032,7 +1146,6 @@ class GeneralManager:
                 data_data_dict,
                 creator_user_id, 
                 self.__group_obj,
-                datetime.now(),
                 latest_extension_data,
                 data_extension_data_dict,
             )
@@ -1055,7 +1168,6 @@ class GeneralManager:
             data_data_dict,
             creator_user_id, 
             group_obj,
-            datetime.now()
         )
 
         cls.__writeDataExtensionData(
@@ -1086,7 +1198,7 @@ class GeneralManager:
 
             latest_extension_data[data_extension_model_name] = []
             for entry in latest_data:
-                data_dict = self.__get_fields_and_values(entry)
+                data_dict = self.__getFieldsAndValues(entry)
                 latest_extension_data[data_extension_model_name].append(data_dict)
 
         return latest_extension_data
@@ -1421,17 +1533,17 @@ class GeneralManager:
             group_model_column_list, 
             **kwargs)
 
-        is_group_data_uploadable = cls.__isDataDataUploadable(group_data_dict)
-        is_data_data_uploadable = cls.__isGroupDataUploadable(data_data_dict)
+        is_group_data_uploadable = cls.__isGroupDataUploadable(group_data_dict)
+        is_data_data_uploadable = cls.__isDataDataUploadable(data_data_dict)
         is_data_extension_data_uploadable = cls.__isDataExtensionUploadable(
             data_extension_data_dict
         )
 
-        if all(
+        if all([
             is_group_data_uploadable,
             is_data_data_uploadable,
             is_data_extension_data_uploadable
-        ):
+        ]):
             group_obj = cls.__getOrCreateGroupModel(group_data_dict)
 
             cls.__writeData(
