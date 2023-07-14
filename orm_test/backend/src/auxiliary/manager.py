@@ -230,7 +230,7 @@ class GeneralManager:
 
         for column in model_obj._meta.get_fields():
             ref_table_type, ref_type = self.__getRefAndTableType(column)
-            if ref_type is not None:
+            if ref_table_type == 'ManyToOneRel':
                 column_name = transferToSnakeCase(column.related_model.__name__)
             else:
                 column_name = column.name
@@ -651,6 +651,15 @@ class GeneralManager:
         group_model_name = cls.__getGroupModelName()
         data_table_name = cls.data_model._meta.db_table
 
+        data_search_dict_with_operators = {
+            cls.__createSearchKeys(key, value)
+            for key, value in data_search_dict
+        }
+        group_search_dict_with_operators = {
+            cls.__createSearchKeys(key, value)
+            for key, value in group_search_dict
+        }
+
         newest_data_table_entries = cls.data_model.objects.raw(f'''
             SELECT
                 id
@@ -669,16 +678,49 @@ class GeneralManager:
                 )
         ''')
         group_model_ids = cls.data_model.objects.filter(
-            **{**data_search_dict, 
+            **{**data_search_dict_with_operators, 
             'id__in': [data_obj.id for data_obj in newest_data_table_entries]}
             ).values(f'{group_model_name}_id')
         
         group_id_list = cls.group_model.objects.filter(
-            **{**group_search_dict, 'id__in': group_model_ids}
+            **{**group_search_dict_with_operators, 'id__in': group_model_ids}
             ).values_list('id', flat=True)
         
         return [{f'{group_model_name}_id': group_id,
                   'search_date': search_date} for group_id in group_id_list]
+
+    @staticmethod
+    def __createSearchKeys(key, value):
+        if type(value) != tuple:
+            return key, value
+        if len(value) != 2:
+            raise ValueError(
+                f'''
+                The value for {key} must be a tuple of length 2.
+                Starting with the operator and then the value.
+                Possible Operators are:
+                ">", "<", ">=", "<=", "!=", "=" and "like"
+                '''
+            )
+        operator, value = value
+        translation_dict = {
+            '>': 'gt',
+            '<': 'lt',
+            '>=': 'gte',
+            '<=': 'lte',
+            '=': 'iexact',
+            '!=': 'not',
+            'like': 'icontains',
+        }
+        
+        if operator not in translation_dict.keys():
+            raise ValueError(
+                f'''
+                The operator for {key} must be one of the following:
+                ">", "<", ">=", "<=", "=", "!=" and "like"
+                '''
+            )
+        return f'{key}__{translation_dict[operator]}', value
 
     @classmethod
     def __createManagerObjectsFromDictList(
