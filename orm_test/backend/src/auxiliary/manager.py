@@ -187,20 +187,33 @@ class GeneralManager:
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
+    
+    def __str__(self):
+        return f'''
+            {self.__class__.__name__} with group_id:{self.group_id}
+            and validity from {self.start_date} to {self.end_date}
+        '''
 
     def __iter__(self):
-        for attr, value in self.__dict__.items():
-            if attr[0] == '_':
+        def model_iterator(model_obj, prefix):
+            value_dict = model_obj.__dict__
+            for key, value in value_dict.items():
+                if key[0] == '_':
+                    continue
+                attribute_name = f'{prefix}__{key}'
+                yield attribute_name, value
+
+        for attribute_name, value in self.__dict__.items():
+            if attribute_name[0] == '_':
                 continue
             if isinstance(value, Model):
-                value_dict = value.__dict__
-                for key, value in value_dict.items():
-                    if attr[0] == '_':
-                        continue
-                    attr_with_key = f'{attr}__{key}'
-                    yield attr_with_key, value
-                continue
-            yield attr, value
+                for attribute_name, value in model_iterator(
+                    value,
+                    attribute_name
+                ):
+                    yield attribute_name, value
+            else:
+                yield attribute_name, value
 
     def __eq__(self, other: object) -> bool:
         return (
