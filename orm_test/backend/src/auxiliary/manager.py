@@ -329,6 +329,7 @@ class GeneralManager:
                     getManagerListFromGroupModelManyToOne
                 )
             elif ref_table_type == 'DataTable':
+                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 self.__createProperty(
@@ -349,6 +350,7 @@ class GeneralManager:
                 setattr(self, attribute_name, getExtensionDataDict())
 
             elif ref_table_type == 'DataTable':
+                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 self.__createProperty(
@@ -368,6 +370,7 @@ class GeneralManager:
                 foreign_key_object = getattr(model_obj, column.name)
                 setattr(self, column_name, foreign_key_object)
             elif ref_table_type == 'DataTable':
+                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 self.__createProperty(
@@ -624,7 +627,6 @@ class GeneralManager:
 
         return is_in_data_ext_model, model_name, to_upload_dict
 
-
     @classmethod
     def __getFilteredManagerList(
         cls, 
@@ -651,13 +653,14 @@ class GeneralManager:
         group_model_name = cls.__getGroupModelName()
         data_table_name = cls.data_model._meta.db_table
 
-        data_search_dict_with_operators = {
+        data_search_dict_with_operators = dict(
             cls.__createSearchKeys(key, value)
-            for key, value in data_search_dict
-        }
+            for key, value in data_search_dict.items()
+        )
+
         group_search_dict_with_operators = {
-            cls.__createSearchKeys(key, value)
-            for key, value in group_search_dict
+            cls.__createSearchKeys(key, value)[0]: cls.__createSearchKeys(key, value)[1]
+            for key, value in group_search_dict.items()
         }
 
         newest_data_table_entries = cls.data_model.objects.raw(f'''
@@ -699,7 +702,7 @@ class GeneralManager:
                 The value for {key} must be a tuple of length 2.
                 Starting with the operator and then the value.
                 Possible Operators are:
-                ">", "<", ">=", "<=", "!=", "=" and "like"
+                ">", "<", ">=", "<=", "=" and "like"
                 '''
             )
         operator, value = value
@@ -709,7 +712,6 @@ class GeneralManager:
             '>=': 'gte',
             '<=': 'lte',
             '=': 'iexact',
-            '!=': 'not',
             'like': 'icontains',
         }
         
@@ -717,7 +719,7 @@ class GeneralManager:
             raise ValueError(
                 f'''
                 The operator for {key} must be one of the following:
-                ">", "<", ">=", "<=", "=", "!=" and "like"
+                ">", "<", ">=", "<=", "=" and "like"
                 '''
             )
         return f'{key}__{translation_dict[operator]}', value
