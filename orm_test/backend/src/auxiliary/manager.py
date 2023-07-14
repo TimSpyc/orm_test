@@ -866,7 +866,7 @@ class GeneralManager:
         return  GeneralManager.__checkIfColumnReferenceBaseExists(
             column_name, 
             possible_models,
-            "dict_list"
+            "_dict_list"
         )
 
     @staticmethod
