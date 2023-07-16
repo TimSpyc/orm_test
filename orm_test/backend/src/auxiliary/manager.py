@@ -10,6 +10,7 @@ from django.db.models.query import QuerySet
 from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
+from backend.src.auxiliary.cache_handler import CacheHandler
 
 
 def transferToSnakeCase(name):
@@ -87,13 +88,22 @@ class ExternalDataManager:
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
 
-    def getData(self, column_list: list, filter_dict: dict):
-        pass
-    def __getStartDate(self):
-        pass
-    def __getEndDate(self):
-        pass
+    def getData(self, column_list: list, **kwargs: dict) -> QuerySet:
+        return self.database_model.objects.filter(**kwargs).values(*column_list)
 
+    def __getStartDate(self) -> datetime:
+        return self.database_model.objects.filter(date__lte=self.search_date).order_by('-date').first()
+
+    def __getEndDate(self) -> datetime:
+        return self.database_model.objects.filter(date__gt=self.search_date).order_by('date').first()
+
+    def create(self, **kwargs: dict):
+        self.database_model.objects.create(**kwargs)
+        CacheHandler.update(self)
+
+    def bulkCreate(self, data_list: list):
+        self.database_model.objects.bulk_create(data_list)
+        CacheHandler.update(self)
 
 
 class GeneralManager:
@@ -1151,7 +1161,8 @@ class GeneralManager:
             )
 
             self.__init__(self.group_id)
-    
+            CacheHandler.update(self)
+
     @classmethod
     def __writeData(
         cls, 
