@@ -87,6 +87,9 @@ class ExternalDataManager:
         self.search_date = search_date
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
+        self._identification_dict = {
+            'database_model': self.database_model,
+        }
 
     def getData(self, column_list: list, **kwargs: dict) -> QuerySet:
         return self.database_model.objects.filter(**kwargs).values(*column_list)
@@ -194,6 +197,12 @@ class GeneralManager:
 
         self.start_date = data_obj.date
         self.end_date = self.__getEndDate()
+        self._identification_dict = {
+            'group_id': self.group_id,
+            'manager_name': self.__class__.__name__,
+            'start_date': self.start_date,
+            'end_date': self.end_date
+        }
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
@@ -1147,21 +1156,23 @@ class GeneralManager:
         is_data_extension_data_uploadable = self.__isDataExtensionUploadable(
             data_extension_data_dict
         )
-        if is_data_extension_data_uploadable:
-            latest_data_data = self.__getLatestDataData()
-            latest_extension_data = self.__getLatestDataExtensionData()
+        if not is_data_extension_data_uploadable:
+            return
 
-            self.__writeData(
-                latest_data_data,
-                data_data_dict,
-                creator_user_id, 
-                self.__group_obj,
-                latest_extension_data,
-                data_extension_data_dict,
-            )
+        latest_data_data = self.__getLatestDataData()
+        latest_extension_data = self.__getLatestDataExtensionData()
 
-            self.__init__(self.group_id)
-            CacheHandler.update(self)
+        self.__writeData(
+            latest_data_data,
+            data_data_dict,
+            creator_user_id, 
+            self.__group_obj,
+            latest_extension_data,
+            data_extension_data_dict,
+        )
+
+        CacheHandler.update(self)
+        self.__init__(self.group_id)
 
     @classmethod
     def __writeData(

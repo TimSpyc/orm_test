@@ -11,7 +11,7 @@ class Watcher:
                 responsible for.
         """
         self.dependency = dependency
-        self.identification = json.dumps(dependency.identification_dict)
+        self.identification = json.dumps(dependency._identification_dict)
         self.dependent_object_list = []
 
     def __repr__(self) -> None:
@@ -102,7 +102,7 @@ class CacheHandler:
             Watcher: The watcher for the given dependency.
         """
 
-        identification = json.dumps(dependency.identification_dict)
+        identification = json.dumps(dependency._identification_dict)
         if identification not in self.watch_dict.keys():
             self.watch_dict[identification] = Watcher(dependency)
         

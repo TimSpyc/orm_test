@@ -41,11 +41,14 @@ class GeneralIntermediate:
 
         kwargs['relevant_scenarios'] = rel_scenario
         intermediate_name = cls.__name__
-
+        _identification_dict = {
+            'intermediate_name': intermediate_name,
+            'kwargs': kwargs
+        }
         if use_cache:
             cached_instance = CacheIntermediate.get_cache_data(
                 intermediate_name=intermediate_name,
-                identification_dict=kwargs,
+                _identification_dict=_identification_dict,
                 date=search_date
             )
             if cached_instance:
@@ -53,7 +56,7 @@ class GeneralIntermediate:
 
         instance = super().__new__(cls)
         instance.__init__({**kwargs, 'search_date': search_date})
-        instance.identification_dict = kwargs
+        instance._identification_dict = _identification_dict
 
         return instance
 
@@ -73,8 +76,8 @@ class GeneralIntermediate:
             kwargs (dict): Additional keyword arguments to use when
                 initializing the instance.
         """
-        self.identification_dict: dict
-        self.scenario_handler : ScenarioHandler(scenario_dict)
+        self._identification_dict: dict
+        self.scenario_handler = ScenarioHandler(scenario_dict)
         self.dependencies = dependencies
         self.search_date = search_date
         self.__checkIfDependenciesAreFilled()
@@ -99,10 +102,10 @@ class GeneralIntermediate:
             return False
 
         own_id_string = CacheIntermediate.getIdString(
-            self.identification_dict
+            self._identification_dict
         )
         other_id_string = CacheIntermediate.getIdString(
-            other.identification_dict
+            other._identification_dict
         )
         
         return (
@@ -239,7 +242,7 @@ class GeneralIntermediate:
     def updateCache(self):
         CacheIntermediate.set_cache_data(
             intermediate_name=self.__class__.__name__,
-            identification_dict=self.identification_dict,
+            _identification_dict=self._identification_dict,
             data=self,
             start_date=self.start_date,
             end_date=self.end_date
