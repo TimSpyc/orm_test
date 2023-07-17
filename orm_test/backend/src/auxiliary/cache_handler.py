@@ -134,6 +134,7 @@ class CacheHandler:
 def updateCache(func):
     """
     Decorator function to update the cache after executing the wrapped function.
+    Use this for object methods.
 
     Args:
         func (callable): The function to be decorated.
@@ -151,7 +152,8 @@ def updateCache(func):
 def createCache(func):
     """
     Decorator function to update the cache after executing the wrapped function.
-
+    Use this for class methods.
+    
     Args:
         func (callable): The function to be decorated.
 
