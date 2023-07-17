@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Max, Q
 import pickle, json
 from datetime import datetime
+from hashlib import md5
 
 class CacheManager(models.Model):
     """
@@ -121,16 +122,16 @@ class CacheIntermediate(models.Model):
     def get_cache_data(
         cls,
         intermediate_name: str,
-        _identification_dict: dict,
+        identification_dict: dict,
         date: datetime | None
     ) -> object | None:
         """
-        Get cached data based on intermediate_name, _identification_dict, and
+        Get cached data based on intermediate_name, identification_dict, and
         date. If date is None, use the current datetime.
 
         Args:
             intermediate_name (str): The intermediate name.
-            _identification_dict (dict): The identification dictionary.
+            identification_dict (dict): The identification dictionary.
             date (datetime | None): The datetime to filter the data.
 
         Returns:
@@ -143,7 +144,7 @@ class CacheIntermediate(models.Model):
                 Q(start_date__lte=date, end_date__gte=date) | 
                 Q(start_date__lte=date, end_date__isnull=True),
                 intermediate_name=intermediate_name,
-                identification = cls.getIdString(_identification_dict),
+                identification = cls.getIdString(identification_dict),
             )
             if result.exists():
                 entry = result.first()
@@ -156,25 +157,25 @@ class CacheIntermediate(models.Model):
     def set_cache_data(
         cls,
         intermediate_name: str,
-        _identification_dict: dict,
+        identification_dict: dict,
         data: object,
         start_date: datetime,
         end_date: datetime | None
     ) -> None:
         """
-        Set cached data based on intermediate_name, _identification_dict,
+        Set cached data based on intermediate_name, identification_dict,
         start_date, end_date and data.
 
         Args:
             intermediate_name (str): The intermediate name.
-            _identification_dict (dict): The identification dictionary.
+            identification_dict (dict): The identification dictionary.
             data (object): The data to be cached.
             start_date (datetime): The start datetime of the cache data.
             end_date (datetime | None): The end datetime of the cache data.
         """
         entry, _ = cls.objects.get_or_create(
             intermediate_name=intermediate_name,
-            identification=cls.getIdString(_identification_dict),
+            identification=cls.getIdString(identification_dict),
             start_date=start_date,
             end_date=end_date
         )
@@ -182,14 +183,15 @@ class CacheIntermediate(models.Model):
         entry.save()
 
     @staticmethod
-    def getIdString(_identification_dict: dict) -> str:
+    def getIdString(identification_dict: dict) -> str:
         """
-        Convert an _identification_dict into a JSON string, with keys sorted.
+        Convert an identification_dict into a JSON string, with keys sorted.
 
         Args:
-            _identification_dict (dict): The identification dictionary.
+            identification_dict (dict): The identification dictionary.
 
         Returns:
             str: The sorted JSON string of the identification dictionary.
         """
-        return json.dumps(_identification_dict, sort_keys=True)
+        id_json = json.dumps(identification_dict, sort_keys=True)
+        return md5(id_json).hexdigest()

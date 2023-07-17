@@ -12,7 +12,6 @@ from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from backend.src.auxiliary.cache_handler import CacheHandler
 
-
 def transferToSnakeCase(name):
     """
     Convert a string from CamelCase to snake_case.

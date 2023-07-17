@@ -4,14 +4,14 @@ from backend.models import CacheIntermediate
 from datetime import datetime
 
 class Watcher:
-    def __init__(self, dependency: object) -> None:
+    def __init__(self, dependency: object, id_string: str) -> None:
         """
         Args:
             dependency (object): The dependency object this Watcher is
                 responsible for.
         """
         self.dependency = dependency
-        self.identification = json.dumps(dependency._identification_dict)
+        self.identification = id_string
         self.dependent_object_list = []
 
     def __repr__(self) -> None:
@@ -102,11 +102,11 @@ class CacheHandler:
             Watcher: The watcher for the given dependency.
         """
 
-        identification = json.dumps(dependency._identification_dict)
-        if identification not in self.watch_dict.keys():
-            self.watch_dict[identification] = Watcher(dependency)
+        id_string = CacheIntermediate.getIdString(dependency._identification_dict)
+        if id_string not in self.watch_dict.keys():
+            self.watch_dict[id_string] = Watcher(dependency, id_string)
         
-        return self.watch_dict[identification]
+        return self.watch_dict[id_string]
 
     def __startUpCacheHandler(self) -> None:
         """

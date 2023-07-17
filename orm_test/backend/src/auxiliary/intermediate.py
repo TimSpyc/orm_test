@@ -5,6 +5,8 @@ from backend.src.auxiliary.exceptions import MissingAttributeError
 from backend.src.auxiliary.scenario_handler import ScenarioHandler
 from backend.src.auxiliary.cache_handler import CacheHandler
 from backend.src.auxiliary.manager import GeneralManager
+from django.core.cache import cache
+
 
 class GeneralIntermediate:
     """
@@ -46,10 +48,10 @@ class GeneralIntermediate:
             'kwargs': kwargs
         }
         if use_cache:
-            cached_instance = CacheIntermediate.get_cache_data(
-                intermediate_name=intermediate_name,
-                _identification_dict=_identification_dict,
-                date=search_date
+            cached_instance = cls.__handleCache(
+                intermediate_name,
+                _identification_dict,
+                search_date
             )
             if cached_instance:
                 return cached_instance
@@ -59,6 +61,21 @@ class GeneralIntermediate:
         instance._identification_dict = _identification_dict
 
         return instance
+
+    @staticmethod
+    def __handleCache(intermediate_name, _identification_dict, search_date):
+        if search_date is None:
+            id_string = CacheIntermediate.getIdString(_identification_dict)
+            cached_instance = cache.get(id_string)
+            if cached_instance:
+                return cached_instance
+        cached_instance = CacheIntermediate.get_cache_data(
+            intermediate_name=intermediate_name,
+            identification_dict=_identification_dict,
+            date=search_date
+        )
+        if cached_instance:
+            return cached_instance
 
     def __init__(
         self,
