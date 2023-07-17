@@ -35,7 +35,7 @@ class Watcher:
         date = datetime.now()
 
         for obj in self.dependent_object_list:
-            obj.setEndDate(date)
+            obj.setCacheData(date)
         
         self.destroy()
 
@@ -128,3 +128,39 @@ class CacheHandler:
         """
         self = CacheHandler()
         self.watch_dict.pop(identification, None)
+
+
+
+def updateCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        self.updateCache()
+
+        return result
+    return wrapper
+
+def createCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(cls, *args, **kwargs):
+        result = func(cls, *args, **kwargs)
+        cls.updateCache(result)
+
+        return result
+    return wrapper

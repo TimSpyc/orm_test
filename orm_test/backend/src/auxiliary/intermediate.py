@@ -3,7 +3,7 @@ from backend.models import CacheIntermediate
 from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
 from backend.src.auxiliary.scenario_handler import ScenarioHandler
-from backend.src.auxiliary.cache_handler import CacheHandler
+from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
 from backend.src.auxiliary.manager import GeneralManager
 from django.core.cache import cache
 
@@ -69,7 +69,7 @@ class GeneralIntermediate:
             cached_instance = cache.get(id_string)
             if cached_instance:
                 return cached_instance
-        cached_instance = CacheIntermediate.get_cache_data(
+        cached_instance = CacheIntermediate.getCacheData(
             intermediate_name=intermediate_name,
             identification_dict=_identification_dict,
             date=search_date
@@ -102,6 +102,7 @@ class GeneralIntermediate:
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
         CacheHandler.add(self)
+        self.updateCache()
 
     def __eq__(self, other: object) -> bool:
         """
@@ -257,7 +258,10 @@ class GeneralIntermediate:
         return relevant_scenarios, scenario_handler
 
     def updateCache(self):
-        CacheIntermediate.set_cache_data(
+        if self.end_date is None:
+            id_string = CacheIntermediate.getIdString(self._identification_dict)
+            cache.set(id_string, self)
+        CacheIntermediate.setEndDate(
             intermediate_name=self.__class__.__name__,
             _identification_dict=self._identification_dict,
             data=self,
@@ -268,4 +272,10 @@ class GeneralIntermediate:
     def setEndDate(self, end_date: datetime):
         if self.end_date is None:
             self.end_date = end_date
-            self.updateCache()
+            CacheIntermediate.setEndDate(
+                intermediate_name=self.__class__.__name__,
+                _identification_dict=self._identification_dict,
+                data=self,
+                start_date=self.start_date,
+                end_date=self.end_date
+            )

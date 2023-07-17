@@ -10,7 +10,8 @@ from django.db.models.query import QuerySet
 from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
-from backend.src.auxiliary.cache_handler import CacheHandler
+from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
+
 
 def transferToSnakeCase(name):
     """
@@ -42,40 +43,6 @@ def noneValueInNotNullField(not_null_fields, data_dict):
             data_is_none_list.append(key)
     
     return bool(set(not_null_fields).intersection(set(data_is_none_list)))
-
-def updateCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(self, *args, **kwargs):
-        result = func(self, *args, **kwargs)
-        self.updateCache()
-
-        return result
-    return wrapper
-
-def createCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(cls, *args, **kwargs):
-        result = func(cls, *args, **kwargs)
-        cls.updateCache(result)
-
-        return result
-    return wrapper
 
 
 class ExternalDataManager:
@@ -1786,7 +1753,7 @@ class GeneralManager:
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
 
-        CacheManager.set_cache_data(
+        CacheManager.setCacheData(
             self.__class__.__name__, 
             self.group_id, self, 
             self.start_date)
@@ -1802,7 +1769,7 @@ class GeneralManager:
             cached_instance = cache.get(f"{manager_name}|{group_id}")
             if cached_instance:
                 return cached_instance
-        cached_instance = CacheManager.get_cache_data(
+        cached_instance = CacheManager.getCacheData(
             manager_name, 
             group_model_obj, 
             group_model_name, 

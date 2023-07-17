@@ -18,7 +18,7 @@ class CacheManager(models.Model):
         unique_together = ('manager_name', 'group_id', 'date')
 
     @classmethod
-    def get_cache_data(
+    def getCacheData(
         cls,
         manager_name: str,
         group_model_obj: models.Model,
@@ -69,7 +69,7 @@ class CacheManager(models.Model):
         return None
 
     @classmethod
-    def set_cache_data(
+    def setCacheData(
         cls,
         manager_name: str,
         group_id: int,
@@ -119,7 +119,7 @@ class CacheIntermediate(models.Model):
         )
 
     @classmethod
-    def get_cache_data(
+    def getCacheData(
         cls,
         intermediate_name: str,
         identification_dict: dict,
@@ -154,7 +154,7 @@ class CacheIntermediate(models.Model):
         return None
 
     @classmethod
-    def set_cache_data(
+    def setCacheData(
         cls,
         intermediate_name: str,
         identification_dict: dict,
@@ -180,6 +180,25 @@ class CacheIntermediate(models.Model):
             end_date=end_date
         )
         entry.data=pickle.dumps(data)
+        entry.save()
+
+    @classmethod
+    def setEndDate(
+        cls,
+        intermediate_name: str,
+        identification_dict: dict,
+        data: object,
+        start_date: datetime,
+        end_date: datetime | None
+    ) -> None:
+        entry = cls.objects.get(
+            intermediate_name=intermediate_name,
+            identification=cls.getIdString(identification_dict),
+            start_date=start_date,
+            end_date=None
+        )
+        entry.data=pickle.dumps(data)
+        entry.end_date = end_date
         entry.save()
 
     @staticmethod
