@@ -118,8 +118,20 @@ class TestProject2(TestDataTable):
 
     def __str__(self):
         return self.name   
+    
+class TestProjectGroup3(TestGroupTable):
+    """
+    A Django model representing a TestProject group.
+    """
+    unique3 = models.CharField(max_length=255)
+    unique4 = models.CharField(max_length=255)
+    def __str__(self):
+        return f'{self.id}'
 
-class TestProjectUserGroup(models.Model):
+    class Meta:
+        app_label = 'backend'
+
+class TestProjectUserGroup(TestGroupTable):
     """
     A Django model representing a TestProject user group, which associates a user with a TestProject group.
     """
@@ -143,7 +155,7 @@ class TestProjectUserRole(TestReferenceTable):
         app_label = 'backend'
 
 
-class TestProjectUser(models.Model):
+class TestProjectUser(TestDataTable):
     """
     A Django model representing a TestProject user, including their TestProject user group and TestProject user roles.
     """
@@ -182,8 +194,18 @@ class TestProjectUser2(models.Model):
 
 
 
-# class TestProjectExtensionTable(TestDataExtensionTable):
+class TestProject2ExtensionTable(TestDataExtensionTable):
 
-#     extension = models.CharField(max_length=255)
-#     test_project = models.ForeignKey(TestProject, on_delete=models.CASCADE)
+    name_extension = models.CharField(max_length=255)
+    test_project2 = models.ForeignKey(TestProject2, on_delete=models.CASCADE)
 
+
+# TestProjectManager.create(
+#     name='Test',
+#     project_number='123'
+#     TestProject2ExtensionTable=[{'name_extension': 1},{'name_extension': 2}]
+# )
+
+# TestProjectManager.update(
+#     TestProject2ExtensionTable=[{'name_extension': 1},{'name_extension': 2}]
+# )
