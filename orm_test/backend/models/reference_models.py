@@ -24,3 +24,39 @@ class Currency(ReferenceTable):
 
     def __str__(self):
         return f'{self.name}'
+    
+class NormType(ReferenceTable):
+    """
+    A Django model representing a NormType with a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
+
+class PartType(ReferenceTable):
+    """
+    A Django model representing a PartType with a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
+
+class SemiFinishedProductType(ReferenceTable):
+    """
+    A Django model representing a SemiFinishedProductType with a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
+    
+class MaterialType(ReferenceTable):
+    """
+    A Django model representing a MaterialType with a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'

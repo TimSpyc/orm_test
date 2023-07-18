@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
+from backend.models import GroupTable, DataTable, FileGroup, NormType
 from backend.src.auxiliary.manager import GeneralManager
 
 class NormGroup(GroupTable):

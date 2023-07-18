@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
+from backend.models import GroupTable, DataTable, PartType, SemiFinishedProductType, CrossSectionGroup, NormGroup, MaterialGroup
 from backend.src.auxiliary.manager import GeneralManager
 
 class PartGroup(GroupTable):
@@ -32,10 +32,10 @@ class Part(DataTable):
     length = models.FloatField()
     tolerance = models.CharField(max_length=255)
     customer_tolerance = models.CharField(max_length=255)
-    semi_finished_product = models.ForeignKey(SemiFinishedProduct, on_delete= models.CASCADE)
+    semi_finished_product_type = models.ForeignKey(SemiFinishedProductType, on_delete= models.CASCADE)
     material_group = models.ForeignKey(MaterialGroup, on_delete= models.CASCADE)
     delivery_temper = models.CharField(max_length=255)
-    material_norm_customer = models.ForeignKey(Norm, on_delete= models.CASCADE)
+    material_norm_customer = models.ForeignKey(NormGroup, on_delete= models.CASCADE)
 
     @property
     def group(self):
