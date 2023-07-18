@@ -77,7 +77,6 @@ def createCache(func):
         return result
     return wrapper
 
-
 class ExternalDataManager:
 
     database_model: Model
@@ -93,8 +92,6 @@ class ExternalDataManager:
         pass
     def __getEndDate(self):
         pass
-
-
 
 class GeneralManager:
     """
@@ -187,7 +184,7 @@ class GeneralManager:
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
-    
+
     def __str__(self):
         return f'''
             {self.__class__.__name__} with group_id:{self.group_id}
@@ -273,7 +270,7 @@ class GeneralManager:
         ref_table_type: str,
         ref_type: str
     ) -> None:
-
+        
         def getManagerListFromGroupModelManyToOne(self):
             return [
                 group_data.manager(self.search_date, self.use_cache)
@@ -289,13 +286,13 @@ class GeneralManager:
                     manager_list.append(manager)
             return manager_list
 
-        def getManagerListFromGroupModel(self):
+        def getManagerListFromGroupModel():
             return [
                 group_data.manager(self.search_date, self.use_cache)
                 for group_data in getattr(model_obj, column.name).all()
             ]
         
-        def getManagerListFromDataModel(self):
+        def getManagerListFromDataModel():
             manager_list = []
             for data_data in getattr(model_obj, column.name).all(): 
                 group_data = data_data.group
@@ -306,15 +303,15 @@ class GeneralManager:
 
         def getExtensionDataDict():
             return [
-                self.get_fields_and_values(instance)
+                self.__getFieldsAndValues(instance)
                 for instance in getattr(model_obj, column.name).all()
             ]
 
-        def getManagerFromGroupModel(self):
+        def getManagerFromGroupModel():
             group_data = getattr(model_obj, column.name)
             return group_data.manager(self.search_date, self.use_cache)
 
-        def getManagerFromDataModel(self):
+        def getManagerFromDataModel():
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group
             manager = group_data.manager(self.search_date, self.use_cache)
@@ -350,7 +347,6 @@ class GeneralManager:
                 setattr(self, attribute_name, getExtensionDataDict())
 
             elif ref_table_type == 'DataTable':
-                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 attribute_name = f"{column_name}_manager"
@@ -371,7 +367,6 @@ class GeneralManager:
                 foreign_key_object = getattr(model_obj, column.name)
                 setattr(self, column_name, foreign_key_object)
             elif ref_table_type == 'DataTable':
-                attribute_name = f'{column_name}_manager'
                 if self.data_model == column.related_model:
                     return
                 attribute_name = f"{column_name}_manager"
@@ -591,6 +586,26 @@ class GeneralManager:
         key: str,
         value: any
     ) -> tuple[bool, str, any]:
+        """
+        Get data for DataExtensionTable models and organize it for uploading.
+
+        Args:
+            key (str): The key of the key-value pair to be processed.
+            value (any): The value associated with the key.
+
+        Returns:
+            tuple: A tuple containing: 
+                - bool: Whether value is meant for a DataExtensionTable model.
+                - str: The name of the DataExtensionTable model.
+                - any: A dictionary containing the data organized for uploading
+                        to the corresponding DataExtensionTable model.
+
+        Raises:
+            ValueError: 
+            If the provided column name references a non-existent model and 
+            If the provided data contains columns that do not exist in 
+            the referenced model.
+        """
         is_in_data_ext_model = False
         if not type(value) == list:
             return is_in_data_ext_model, key, value
@@ -639,6 +654,7 @@ class GeneralManager:
             to_upload_dict['data'].append(to_insert_dict)
 
         return is_in_data_ext_model, model_name, to_upload_dict
+
 
     @classmethod
     def __getFilteredManagerList(
@@ -704,7 +720,7 @@ class GeneralManager:
         
         return [{f'{group_model_name}_id': group_id,
                   'search_date': search_date} for group_id in group_id_list]
-
+    
     @staticmethod
     def __createSearchKeys(key, value):
         if type(value) != tuple:
@@ -1147,7 +1163,7 @@ class GeneralManager:
                 group_model_column_list, 
                 **kwargs
                 )
-        is_data_extension_data_uploadable = self.__isDataExtensionUploadable(
+        is_data_extension_data_uploadable = self.__isDataExtensionTableDataUploadable(
             data_extension_data_dict
         )
         if is_data_extension_data_uploadable:
@@ -1433,7 +1449,7 @@ class GeneralManager:
             name = 'group table data'
             model = cls.group_model
         raise ValueError(
-            f'''
+            f''' 
             The given **kwargs are not sufficient.
             Because {name}:
                 contains_all_unique_fields: {is_data_uploadable[0]}
@@ -1444,9 +1460,10 @@ class GeneralManager:
                 unique_fields = {cls.__getUniqueFields(model)}
             '''
         )
+   
 
     @classmethod
-    def __isDataDataUploadable(cls, data_data_dict):
+    def __isDataTableDataUploadable(cls, data_data_dict):
         is_data_data_uploadable = cls.__isDataUploadable(
                                     data_data_dict, 
                                     cls.data_model)
@@ -1457,7 +1474,7 @@ class GeneralManager:
         )
 
     @classmethod
-    def __isGroupDataUploadable(cls, group_data_dict):
+    def __isGroupTableDataUploadable(cls, group_data_dict):
         is_group_data_uploadable = cls.__isDataUploadable(
                                     group_data_dict, 
                                     cls.group_model)
@@ -1466,9 +1483,12 @@ class GeneralManager:
         cls.__errorForInsufficientUploadData(
             'group_model', is_group_data_uploadable
         )
+        return False
+
+
     
     @classmethod
-    def __isDataExtensionUploadable(
+    def __isDataExtensionTableDataUploadable(
         cls,
         data_extension_data_dict
     ):
@@ -1508,7 +1528,7 @@ class GeneralManager:
         unique_fields = cls.group_model._meta.unique_together
 
         if len(unique_fields) == 0:
-            group_obj = cls.group_model.object.create(
+            group_obj = cls.group_model.objects.create(
                 **group_data_dict
             )
         else:
@@ -1546,9 +1566,9 @@ class GeneralManager:
             group_model_column_list, 
             **kwargs)
 
-        is_group_data_uploadable = cls.__isGroupDataUploadable(group_data_dict)
-        is_data_data_uploadable = cls.__isDataDataUploadable(data_data_dict)
-        is_data_extension_data_uploadable = cls.__isDataExtensionUploadable(
+        is_group_data_uploadable = cls.__isGroupTableDataUploadable(group_data_dict)
+        is_data_data_uploadable = cls.__isDataTableDataUploadable(data_data_dict)
+        is_data_extension_data_uploadable = cls.__isDataExtensionTableDataUploadable(
             data_extension_data_dict
         )
 
@@ -1564,7 +1584,7 @@ class GeneralManager:
                 data_data_dict,
                 creator_user_id, 
                 group_obj,
-                datetime.now(),
+                #datetime.now(),
                 {},
                 data_extension_data_dict,
             )
