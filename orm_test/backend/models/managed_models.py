@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from .abstract_models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
 from .reference_models import User
-from backend.src.manager.project_manager2 import ProjectGroup
+from backend.src.manager.project_manager import ProjectGroup
 
 class ProjectUserGroup(GroupTable):
     """

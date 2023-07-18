@@ -14,3 +14,13 @@ class User(ReferenceTable):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+
+class Currency(ReferenceTable):
+    """
+    A Django model representing a Currency with a name, symbol, and exchange rate.
+    """
+    name = models.CharField(max_length=255)
+    symbol = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
