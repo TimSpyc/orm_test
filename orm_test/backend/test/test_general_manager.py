@@ -3,7 +3,7 @@ from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatable
 from django.test import TestCase
 from backend.src.auxiliary.manager import GeneralManager
 from datetime import date, datetime
-from .models_for_testing import TestProjectGroup2, TestProject3, TestProject2, TestProjectGroup, TestProject, TestProjectUser2, TestProjectUserGroup, TestProjectUserGroup2, TestProjectUserRole, TestProjectUser
+from .models_for_testing import TestProject2ExtensionTable, TestProjectGroup2, TestProject3, TestProject2, TestProjectGroup, TestProject, TestProjectGroup3, TestProjectUser2, TestProjectUserGroup, TestProjectUserGroup2, TestProjectUserRole, TestProjectUser
 from backend.models import User
 from django.core.exceptions import FieldDoesNotExist, FieldError
 
@@ -11,11 +11,13 @@ from django.core.exceptions import FieldDoesNotExist, FieldError
 class TestProjectManager(GeneralManager):
     group_model = TestProjectGroup
     data_model = TestProject
+    data_extension_model_list: list = []
 
-    def __init__(self, test_project_group_id, search_date=None):
-        group, data = super().__init__(
+    def __init__(self, test_project_group_id, search_date=None, use_cache=True):
+        super().__init__(
             group_id=test_project_group_id,
             search_date=search_date,
+            use_cache=use_cache
             )
         
 class TestProjectUserManager(GeneralManager):
@@ -24,10 +26,11 @@ class TestProjectUserManager(GeneralManager):
     data_extension_model_list: list = []
 
 
-    def __init__(self, test_project_user_group_id, search_date=None):
-        group, data = super().__init__(
+    def __init__(self, test_project_user_group_id, search_date=None, use_cache=True):
+        super().__init__(
             group_id=test_project_user_group_id,
             search_date=search_date,
+            use_cache=use_cache
             )    
 
 class TestSearchForColumn(TestCase):
@@ -252,7 +255,7 @@ class TestGetValueAndColumnIfExists(TestCase):
         is_in_model, db_column, value = GeneralManager._GeneralManager__getValueAndColumnIfExists('test_project_user_role_id_list', column_list, TestProjectUser, value)
         self.assertEqual((is_in_model, db_column, list(value)), (True, 'test_project_user_role', list(TestProjectUserRole.objects.filter(id__in=value))))
 
-class TestGetColumnList(TestCase):
+class TestGetColumnNameList(TestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -267,130 +270,131 @@ class TestGetColumnList(TestCase):
         column_list = ['id', 'name', 'project_number', 'test_project_group','date', 'creator', 'active']
         self.assertEqual(result,column_list)      
         
-# class TestFilter(TestCase):
-#     def setUp(self):
-#         self.test_project_group = TestProjectGroup.objects.create()
-#         self.user = User.objects.create()
-#         self.test_project = TestProject.objects.create(
-#             name='TestProject1',
-#             project_number='123456',
-#             test_project_group = self.test_project_group,
-#             date = datetime(2023, 5, 15),
-#             creator = self.user,
-#             active = True
-#         )
-#         self.manager = TestProjectManager(test_project_group_id = self.test_project_group.id)
+class TestFilter(TestCase):
     
-#     def test_filter_with_search_date(self):
-#         search_date = date(2023, 5, 16)
-#         result = self.manager.filter(search_date=search_date)
+    def setUp(self):
+        self.test_project_group = TestProjectGroup.objects.create()
+        self.user = User.objects.create()
+        self.test_project = TestProject.objects.create(
+            name='TestProject1',
+            project_number='123456',
+            test_project_group = self.test_project_group,
+            date = datetime(2023, 5, 15),
+            creator = self.user,
+            active = True
+        )
+        self.manager = TestProjectManager(test_project_group_id = self.test_project_group.id)
+    
+    def test_filter_with_search_date(self):
+        search_date = date(2023, 5, 16)
+        result = self.manager.filter(search_date=search_date)
 
-#         expected_result = [
-#             TestProjectManager(test_project_group_id= self.test_project_group.id, search_date= search_date)
-#         ]
-#         self.assertEqual(result, expected_result)
+        expected_result = [
+            TestProjectManager(test_project_group_id= self.test_project_group.id, search_date= search_date)
+        ]
+        self.assertEqual(result, expected_result)
 
         
-#     def test_filter_with_invalid_filter_condition(self):
-#         with self.assertRaises(ValueError):
-#             result = self.manager.filter(invalid_field='invalid_value')
+    def test_filter_with_invalid_filter_condition(self):
+        with self.assertRaises(ValueError):
+            result = self.manager.filter(invalid_field='invalid_value')
 
 
-#     def test_filter_with_other_filter_condition_than_searchDate(self):
-#         name = 'TestProject1'
-#         result = self.manager.filter(name = name)
-#         expected_result = [
-#             TestProjectManager(test_project_group_id= self.test_project_group.id)
-#         ]
-#         self.assertEqual(result, expected_result)
+    def test_filter_with_other_filter_condition_than_searchDate(self):
+        name = 'TestProject1'
+        result = self.manager.filter(name = name)
+        expected_result = [
+            TestProjectManager(test_project_group_id= self.test_project_group.id)
+        ]
+        self.assertEqual(result, expected_result)
 
 
-#     def test_filter_with_no_found_data_in_table(self):
-#         result = self.manager.filter(name = 'not_existing_data')
-#         expected_result = [
-#         ]
-#         self.assertEqual(result, expected_result)
+    def test_filter_with_no_found_data_in_table(self):
+        result = self.manager.filter(name = 'not_existing_data')
+        expected_result = [
+        ]
+        self.assertEqual(result, expected_result)
             
           
-#     def test_filter_with_multiple_conditions(self):
-#         search_date = date(2023, 5, 20)
-#         name = 'TestProject1'
-#         project_number = '123456'
-#         result = self.manager.filter(search_date=search_date, project_number=project_number, name = name)
-#         expected_result = [
-#             TestProjectManager(test_project_group_id=self.test_project_group.id, search_date = search_date)
-#         ]
-#         self.assertEqual(result, expected_result)
+    def test_filter_with_multiple_conditions(self):
+        search_date = date(2023, 5, 20)
+        name = 'TestProject1'
+        project_number = '123456'
+        result = self.manager.filter(search_date=search_date, project_number=project_number, name = name)
+        expected_result = [
+            TestProjectManager(test_project_group_id=self.test_project_group.id, search_date = search_date)
+        ]
+        self.assertEqual(result, expected_result)
 
 
-#     def test_filter_with_many_to_many_relations(self):
-#         self.test_project_user_group = TestProjectUserGroup.objects.create()
-#         self.test_project_user_role1 = TestProjectUserRole.objects.create(role_name='Role 1')
-#         self.test_project_user_role2 = TestProjectUserRole.objects.create(role_name='Role 2')
+    # def test_filter_with_many_to_many_relations(self):
+    #     self.test_project_user_group = TestProjectUserGroup.objects.create()
+    #     self.test_project_user_role1 = TestProjectUserRole.objects.create(role_name='Role 1')
+    #     self.test_project_user_role2 = TestProjectUserRole.objects.create(role_name='Role 2')
 
-#         User.objects.all().delete()
-#         self.user = User.objects.create()
+    #     User.objects.all().delete()
+    #     self.user = User.objects.create()
 
-#         self.test_project_user1 = TestProjectUser.objects.create(test_project_user_group = self.test_project_user_group, creator = self.user)
-#         self.test_project_user1.test_project_user_role.add(self.test_project_user_role1)
-#         self.test_project_user1.test_project_user_role.add(self.test_project_user_role2)
+    #     self.test_project_user1 = TestProjectUser.objects.create(test_project_user_group = self.test_project_user_group, creator = self.user)
+    #     self.test_project_user1.test_project_user_role.add(self.test_project_user_role1)
+    #     self.test_project_user1.test_project_user_role.add(self.test_project_user_role2)
 
         
-#         self.many_to_many_manager = TestProjectUserManager(test_project_user_group_id=self.test_project_user_group.id)
+    #     self.many_to_many_manager = TestProjectUserManager(test_project_user_group_id=self.test_project_user_group.id)
 
-#         result = self.many_to_many_manager.filter(test_project_user_role = self.test_project_user_role1)
-#         expected_result = [
-#             TestProjectUserManager(test_project_user_group_id= self.test_project_user_group.id)
-#         ]
-#         self.assertEqual(result, expected_result)
+    #     result = self.many_to_many_manager.filter(test_project_user_role = self.test_project_user_role1)
+    #     expected_result = [
+    #         TestProjectUserManager(test_project_user_group_id= self.test_project_user_group.id)
+    #     ]
+    #     self.assertEqual(result, expected_result)
 
-# class TestAll(TestCase):
-#     def setUp(self):
-#         self.test_project_group = TestProjectGroup.objects.create()
-#         self.user = User.objects.create()
+class TestAll(TestCase):
+    def setUp(self):
+        self.test_project_group = TestProjectGroup.objects.create()
+        self.user = User.objects.create()
         
-#         self.test_project1 = TestProject.objects.create(
-#             name='TestProject1',
-#             project_number='123456',
-#             test_project_group = self.test_project_group,
-#             date = datetime(2023, 5, 14),
-#             creator = self.user,
-#             active = True
-#         )
-#         self.test_project2 = TestProject.objects.create(
-#             name='TestProject2',
-#             project_number='123',
-#             test_project_group = self.test_project_group,
-#             date = datetime(2023, 5, 15),
-#             creator = self.user,
-#             active = True
-#         )
-#         self.test_project3 = TestProject.objects.create(
-#             name='TestProject3',
-#             project_number='12111',
-#             test_project_group = self.test_project_group,
-#             date = datetime(2023, 5, 15),
-#             creator = self.user,
-#             active = True
-#         )
-#         self.manager = TestProjectManager(test_project_group_id = self.test_project_group.id)
+        self.test_project1 = TestProject.objects.create(
+            name='TestProject1',
+            project_number='123456',
+            test_project_group = self.test_project_group,
+            date = datetime(2023, 5, 14),
+            creator = self.user,
+            active = True
+        )
+        self.test_project2 = TestProject.objects.create(
+            name='TestProject2',
+            project_number='123',
+            test_project_group = self.test_project_group,
+            date = datetime(2023, 5, 15),
+            creator = self.user,
+            active = True
+        )
+        self.test_project3 = TestProject.objects.create(
+            name='TestProject3',
+            project_number='12111',
+            test_project_group = self.test_project_group,
+            date = datetime(2023, 5, 15),
+            creator = self.user,
+            active = True
+        )
+        self.manager = TestProjectManager(test_project_group_id = self.test_project_group.id)
     
-#     def test_all_with_search_date(self):
-#         search_date = date(2023, 5, 17)
-#         result = self.manager.all(search_date=search_date)
+    def test_all_with_search_date(self):
+        search_date = date(2023, 5, 17)
+        result = self.manager.all(search_date=search_date)
 
-#         expected_result = [
-#             TestProjectManager(test_project_group_id= self.test_project_group.id, search_date= search_date)
-#         ]
-#         self.assertEqual(result, expected_result)
+        expected_result = [
+            TestProjectManager(test_project_group_id= self.test_project_group.id, search_date= search_date)
+        ]
+        self.assertEqual(result, expected_result)
 
-#     def test_all_without_search_date(self):
-#         result = self.manager.all()
+    def test_all_without_search_date(self):
+        result = self.manager.all()
 
-#         expected_result = [
-#             TestProjectManager(test_project_group_id= self.test_project_group.id),
-#         ]
-#         self.assertEqual(result, expected_result)    
+        expected_result = [
+            TestProjectManager(test_project_group_id= self.test_project_group.id),
+        ]
+        self.assertEqual(result, expected_result)    
 
 class TestGetDataForGroupAndDataTableByKwargs(TestCase):
     def setUp(self):
@@ -840,15 +844,8 @@ class TestWriteDataData(TestCase):
         self.assertEqual(updated_data_obj.creator, self.user)
         self.assertEqual(updated_data_obj.test_project_group, self.test_project_group)
 
-
 class TestUpdate(TestCase):
     def setUp(self):
-
-        # #self.manager = GeneralManager.__new__(GeneralManager)
-        # self.manager.group_model = TestProjectGroup
-        # self.manager.data_model = TestProject
-        # GeneralManager.data_extension_model_list = []
-
         self.user = User.objects.create(microsoft_id= 'a')
         self.test_project_group = TestProjectGroup.objects.create()
         self.test_project = TestProject.objects.create(
@@ -858,10 +855,10 @@ class TestUpdate(TestCase):
              date=datetime(2023, 5, 15),
              creator = self.user
         )
-        self.manager = GeneralManager(group_id=self.test_project_group.id)
-        self.manager.group_model = TestProjectGroup
-        self.manager.data_model = TestProject
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
         GeneralManager.data_extension_model_list = []
+        self.manager = GeneralManager(group_id=self.test_project_group.id)
         self.manager.group_id = self.test_project_group.id
         self.manager._GeneralManager__group_obj = self.test_project_group
         self.manager._GeneralManager__group_model_name = 'test_project_group'
@@ -933,202 +930,200 @@ class TestUpdate(TestCase):
 #         with self.assertRaises(NotUpdatableError):
 #             self.manager.deactivate(creator_user_id=self.creator_user_id)
 
-# class TestCreate(TestCase):
-#     def setUp(self):
-#         self.manager = GeneralManager.__new__(GeneralManager)
-#         GeneralManager.group_model = TestProjectGroup2
-#         GeneralManager.data_model = TestProject3
-#         #GeneralManager.data_extension_model_list = []
+class TestCreate(TestCase):
+    def setUp(self):
+        self.manager = GeneralManager.__new__(GeneralManager)
+        GeneralManager.group_model = TestProjectGroup2
+        GeneralManager.data_model = TestProject3
+        GeneralManager.data_extension_model_list = []
 
-#         self.user = User.objects.create(microsoft_id= 'a')
-#         self.test_project_group = TestProjectGroup2.objects.create(
-#             unique1 = 'a',
-#             unique2 = 'a'
-#         )
-#         self.test_project = TestProject3.objects.create(
-#              name='TestProject1',
-#              project_number='123',
-#              test_project_group2=self.test_project_group,
-#              date=datetime(2023, 5, 15),
-#              creator = self.user,
-#              active = True
-#         )
-#         self.creator_user_id = self.user.id
+        self.user = User.objects.create(microsoft_id= 'a')
+        self.creator_user_id = self.user.id
+        self.test_project_group2 = TestProjectGroup2.objects.create(
+            unique1 = 'a',
+            unique2 = 'a'
+        )
+        self.test_project = TestProject3.objects.create(
+             name='TestProject1',
+             project_number='123',
+             test_project_group2=self.test_project_group2,
+             date=datetime(2023, 5, 15),
+             creator = self.user,
+             active = True
+        )
+        self.test_project_user_group2 = TestProjectUserGroup2.objects.create(
+            unique1ProjectUserGroup = 'a',
+            unique2ProjectUserGroup = 'a'
+        )
+        self.test_project_user_role1 = TestProjectUserRole.objects.create(role_name='Role 1')
+        self.test_project_user_role2 = TestProjectUserRole.objects.create(role_name='Role 2')
 
-#         self.test_project_user_group2 = TestProjectUserGroup2.objects.create(
-#             unique1ProjectUserGroup = 'a',
-#             unique2ProjectUserGroup = 'a'
-#         )
-#         self.test_project_user_role1 = TestProjectUserRole.objects.create(role_name='Role 1')
-#         self.test_project_user_role2 = TestProjectUserRole.objects.create(role_name='Role 2')
-
-#     def test_create_new(self):
-#         creator_user_id = self.creator_user_id
-#         group_data = {
-#             "unique1": 'a',
-#             "unique2": 'b'
-#         }
-#         data_data = {
-#             'name': 'TestProjectNew',
-#             'project_number': '123456New',
-#             'ap_no': 1,
-#         }
+    def test_create_new(self):
+        group_data = {
+            "unique1": 'a',
+            "unique2": 'b'
+        }
+        data_data = {
+            'name': 'TestProjectNew',
+            'project_number': '123456New',
+            'ap_no': 1,
+            'test_project_group2' : self.test_project_group2,
+        }
         
-#         def dummy_init(self, group_id, search_date=None):
-#             self.group_id = group_id
-#             self.active = 1
-#             self.start_date = datetime.now()
-#             self.search_date = search_date
-#         with patch.object(GeneralManager, '__init__', new = dummy_init):
-#             self.manager.create(creator_user_id, **group_data, **data_data)
+        def dummy_init(self, group_id, search_date=None):
+            self.group_id = group_id
+            self.active = 1
+            self.start_date = datetime.now()
+            self.search_date = search_date
+        with patch.object(GeneralManager, '__init__', new = dummy_init):
+            self.manager.create(self.creator_user_id, **group_data, **data_data)
 
+            group_entries = TestProjectGroup2.objects.count()
+            data_entries = TestProject3.objects.count()
+            self.assertEqual(group_entries,2)
+            self.assertEqual(data_entries,2)
 
-    #         group_entries = TestProjectGroup2.objects.count()
-    #         data_entries = TestProject3.objects.count()
-    #         self.assertEqual(group_entries,2)
-    #         self.assertEqual(data_entries,2)
+            created_data = TestProject3.objects.latest('id')
+            self.assertEqual(created_data.name, 'TestProjectNew')
+            self.assertEqual(created_data.project_number, '123456New')
+            self.assertEqual(created_data.test_project_group2, TestProjectGroup2.objects.get(id=2))
+            self.assertTrue(created_data.active)
 
-    #         created_data = TestProject3.objects.latest('id')
-    #         self.assertEqual(created_data.name, 'TestProjectNew')
-    #         self.assertEqual(created_data.project_number, '123456New')
-    #         self.assertEqual(created_data.test_project_group2, TestProjectGroup2.objects.get(id=2))
-    #         self.assertTrue(created_data.active)
+    def test_create_not_new(self):
+        creator_user_id = self.creator_user_id
+        group_data = {
+            "unique1": 'a',
+            "unique2": 'a'
+        }
+        data_data = {
+            'name': 'TestProjectNew',
+            'project_number': '123456New',
+            'ap_no': None
+        }
 
-#     def test_create_not_new(self):
-#         creator_user_id = self.creator_user_id
-#         group_data = {
-#             "unique1": 'a',
-#             "unique2": 'a'
-#         }
-#         data_data = {
-#             'name': 'TestProjectNew',
-#             'project_number': '123456New',
-#             'ap_no': None
-#         }
+        def dummy_init(self, group_id, search_date=None):
+            self.group_id = group_id
+            self.active = 1
+            self.start_date = datetime.now()
+            self.search_date = search_date
+        with patch.object(GeneralManager, '__init__', new = dummy_init):
+            self.manager.create(creator_user_id, **group_data, **data_data)
 
-#         def dummy_init(self, group_id, search_date=None):
-#             self.group_id = group_id
-#             self.active = 1
-#             self.start_date = datetime.now()
-#             self.search_date = search_date
-#         with patch.object(GeneralManager, '__init__', new = dummy_init):
-#             self.manager.create(creator_user_id, **group_data, **data_data)
+            group_entries = TestProjectGroup2.objects.count()
+            data_entries = TestProject3.objects.count()
+            self.assertEqual(group_entries,1)
+            self.assertEqual(data_entries,2)
 
-#             group_entries = TestProjectGroup2.objects.count()
-#             data_entries = TestProject3.objects.count()
-#             self.assertEqual(group_entries,1)
-#             self.assertEqual(data_entries,2)
+            created_data = TestProject3.objects.latest('id')
+            self.assertEqual(created_data.name, 'TestProjectNew')
+            self.assertEqual(created_data.project_number, '123456New')
+            self.assertEqual(created_data.test_project_group2, self.test_project_group2)
+            self.assertTrue(created_data.active)
 
-#             created_data = TestProject3.objects.latest('id')
-#             self.assertEqual(created_data.name, 'TestProjectNew')
-#             self.assertEqual(created_data.project_number, '123456New')
-#             self.assertEqual(created_data.test_project_group2, self.test_project_group)
-#             self.assertTrue(created_data.active)
-
-#     def test_create_many_to_many_relation_with_existing_group_id(self):
+    def test_create_many_to_many_relation_with_existing_group_id(self):
         
-#         self.manager = GeneralManager.__new__(GeneralManager)
-#         GeneralManager.group_model = TestProjectUserGroup2
-#         GeneralManager.data_model = TestProjectUser2
+        self.manager = GeneralManager.__new__(GeneralManager)
+        GeneralManager.group_model = TestProjectUserGroup2
+        GeneralManager.data_model = TestProjectUser2
 
-#         creator_user_id = self.creator_user_id
-#         group_data = {
-#             'unique1ProjectUserGroup': 'a',
-#             'unique2ProjectUserGroup': 'a'
-#         }
-#         data_data = {
-#             'test_project_user_role_id_list': [self.test_project_user_role1.id, self.test_project_user_role2.id],
-#             'creator': self.user,
-#             'active': 1,
-#             'name': 'TestProjectUserNew'
-#         }
+        creator_user_id = self.creator_user_id
+        group_data = {
+            'unique1ProjectUserGroup': 'a',
+            'unique2ProjectUserGroup': 'a'
+        }
+        data_data = {
+            'test_project_user_role_id_list': [self.test_project_user_role1.id, self.test_project_user_role2.id],
+            'creator': self.user,
+            'active': 1,
+            'name': 'TestProjectUserNew'
+        }
 
-#         def dummy_init(self, group_id, search_date=None):
-#             self.group_id = group_id
-#             self.active = 1
-#             self.start_date = datetime.now()
-#             self.search_date = search_date
+        def dummy_init(self, group_id, search_date=None):
+            self.group_id = group_id
+            self.active = 1
+            self.start_date = datetime.now()
+            self.search_date = search_date
 
-#         with patch.object(GeneralManager, '__init__', new = dummy_init):
-#             self.manager.create(creator_user_id, **group_data, **data_data)
+        with patch.object(GeneralManager, '__init__', new = dummy_init):
+            self.manager.create(creator_user_id, **group_data, **data_data)
 
-#             group_entries = TestProjectUserGroup2.objects.count()
-#             data_entries = TestProjectUser2.objects.count()
-#             self.assertEqual(group_entries,1)
-#             self.assertEqual(data_entries,1)
+            group_entries = TestProjectUserGroup2.objects.count()
+            data_entries = TestProjectUser2.objects.count()
+            self.assertEqual(group_entries,1)
+            self.assertEqual(data_entries,1)
 
-#             created_data = TestProjectUser2.objects.latest('id')
-#             self.assertEqual(created_data.name, 'TestProjectUserNew')
-#             self.assertEqual(created_data.test_project_user_group2, self.test_project_user_group2)
-#             self.assertTrue(created_data.active)
+            created_data = TestProjectUser2.objects.latest('id')
+            self.assertEqual(created_data.name, 'TestProjectUserNew')
+            self.assertEqual(created_data.test_project_user_group2, self.test_project_user_group2)
+            self.assertTrue(created_data.active)
 
-#             self.assertEqual(created_data.test_project_user_role.count(), 2)
-#             self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 1').exists())
-#             self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 2').exists())
+            self.assertEqual(created_data.test_project_user_role.count(), 2)
+            self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 1').exists())
+            self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 2').exists())
 
-#     def test_create_many_to_many_relation_with_new_group_id(self):
+    def test_create_many_to_many_relation_with_new_group_id(self):
 
-#         self.manager = GeneralManager.__new__(GeneralManager)
-#         GeneralManager.group_model = TestProjectUserGroup2
-#         GeneralManager.data_model = TestProjectUser2
-#         creator_user_id = self.creator_user_id
+        self.manager = GeneralManager.__new__(GeneralManager)
+        GeneralManager.group_model = TestProjectUserGroup2
+        GeneralManager.data_model = TestProjectUser2
+        creator_user_id = self.creator_user_id
 
-#         group_data = {
-#             'unique1ProjectUserGroup': 'b',
-#             'unique2ProjectUserGroup': 'b'
-#         }
-#         data_data = {
-#             'test_project_user_role_id_list': [self.test_project_user_role1.id, self.test_project_user_role2.id],
-#             'creator': self.user,
-#             'active': 1,
-#             'name': 'TestProjectUserNew'
-#         }
+        group_data = {
+            'unique1ProjectUserGroup': 'b',
+            'unique2ProjectUserGroup': 'b'
+        }
+        data_data = {
+            'test_project_user_role_id_list': [self.test_project_user_role1.id, self.test_project_user_role2.id],
+            'creator': self.user,
+            'active': 1,
+            'name': 'TestProjectUserNew'
+        }
 
-#         def dummy_init(self, group_id, search_date=None):
-#             self.group_id = group_id
-#             self.active = 1
-#             self.start_date = datetime.now()
-#             self.search_date = search_date
+        def dummy_init(self, group_id, search_date=None):
+            self.group_id = group_id
+            self.active = 1
+            self.start_date = datetime.now()
+            self.search_date = search_date
 
-#         with patch.object(GeneralManager, '__init__', new = dummy_init):
-#             self.manager.create(creator_user_id, **group_data, **data_data)
+        with patch.object(GeneralManager, '__init__', new = dummy_init):
+            self.manager.create(creator_user_id, **group_data, **data_data)
 
-#             group_entries = TestProjectUserGroup2.objects.count()
-#             data_entries = TestProjectUser2.objects.count()
-#             self.assertEqual(group_entries,2)
-#             self.assertEqual(data_entries,1)
+            group_entries = TestProjectUserGroup2.objects.count()
+            data_entries = TestProjectUser2.objects.count()
+            self.assertEqual(group_entries,2)
+            self.assertEqual(data_entries,1)
 
-#             created_data = TestProjectUser2.objects.latest('id')
-#             self.assertEqual(created_data.name, 'TestProjectUserNew')
-#             self.assertEqual(created_data.test_project_user_group2, TestProjectUserGroup2.objects.get(id=2))
-#             self.assertTrue(created_data.active)
+            created_data = TestProjectUser2.objects.latest('id')
+            self.assertEqual(created_data.name, 'TestProjectUserNew')
+            self.assertEqual(created_data.test_project_user_group2, TestProjectUserGroup2.objects.get(id=2))
+            self.assertTrue(created_data.active)
 
-#             self.assertEqual(created_data.test_project_user_role.count(), 2)
-#             self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 1').exists())
-#             self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 2').exists())
+            self.assertEqual(created_data.test_project_user_role.count(), 2)
+            self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 1').exists())
+            self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 2').exists())
 
-#     def test_create_no_corresponding_column_in_dict(self):
-#         creator_user_id = self.creator_user_id
-#         group_data = {
-#             "unique1": 'a',   
-#             "unique2": 'a'
-#         }
-#         data_data = {
-#             'name': 'TestProjectNew',
-#             'project_number': '123456New',
-#             'ap_no': None,
-#             'test_project_group' : self.test_project_group
-#         }
+    def test_create_no_corresponding_column_in_dict(self):
+        creator_user_id = self.creator_user_id
+        group_data = {
+            "unique1": 'a',   
+            "unique2": 'a'
+        }
+        data_data = {
+            'name': 'TestProjectNew',
+            'project_number': '123456New',
+            'ap_no': None,
+            'test_project_group' : self.test_project_group2
+        }
 
-#         with self.assertRaises(ValueError): 
-#             self.manager.create(creator_user_id, **group_data, **data_data)   
+        with self.assertRaises(ValueError): 
+            self.manager.create(creator_user_id, **group_data, **data_data)   
     
 
 
 
 
 
-
+################# NEW FUNCTIONS ###########################################
 
 
 class TestGetRefAndTableType(TestCase):
@@ -1151,11 +1146,8 @@ class TestGetRefAndTableType(TestCase):
         self.assertEqual(ref_table_type, 'ReferenceTable')
         self.assertEqual(ref_type, 'ManyToManyField') 
 
-    # def test_many_to_one_field(self):
-    #     field = TestProjectUser._meta.get_field('test_project_user_role')
-    #     ref_table_type, ref_type = GeneralManager._GeneralManager__getRefAndTableType(field)
-    #     self.assertEqual(ref_table_type, 'ReferenceTable')
-    #     self.assertEqual(ref_type, 'ManyToOneRel')
+    def test_many_to_one_field(self):
+        pass
 
 
 class TestCheckIfColumnReferencesDataExtensionModel(TestCase):
@@ -1185,26 +1177,372 @@ class TestCheckIfColumnReferencesDataExtensionModel(TestCase):
         self.assertEqual(result, ('project_id_list', False))
 
 
-
-class TestGetDataExtensionData(TestCase):
+class TestErrorForInsufficientUploadData(TestCase):
     def setUp(self):
-        self.data_extension_model_list = [
-            'TestProjectExtensionTable',
-            'TestOtherExtensionTable'
-        ]
-        # self.manager = GeneralManager(1)
         GeneralManager.group_model = TestProjectGroup
         GeneralManager.data_model = TestProject
         self.manager = GeneralManager.__new__(GeneralManager)
+        self.model_type = 'data_model'
+        # self.model_type = 'group_model'
+        self.is_data_uploadable_with_error = [True, False, True]
+        self.is_data_uploadable_without_error = [True, True, True]
+
+    def test_error_with_error(self):
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__errorForInsufficientUploadData(self.model_type, self.is_data_uploadable_with_error)
+
+    def test_error_with_error(self):
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__errorForInsufficientUploadData(self.model_type, self.is_data_uploadable_without_error)
+
+
+class TestIsDataTableDataUploadable(TestCase):
+    def setUp(self):
+        self.manager = GeneralManager.__new__(GeneralManager)
+
+    def test_data_uploadable(self):
+        data_data_dict = {
+            'name': 'testproject1',
+            'project_number': '123456',
+            'date': datetime(2023, 5, 22),
+            'test_project_group': 1
+        }
+        self.assertTrue(self.manager._GeneralManager__isDataTableDataUploadable(data_data_dict))
+
+    def test_missing_unique_fields(self):
+        data_data_dict = {
+            'name': 'testproject1',
+            # 'project_number': '123456',
+            'date': datetime(2023, 5, 22),
+            'test_project_group': 1,
+            'ap_no' : 2
+        }
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__isDataTableDataUploadable(data_data_dict)
+
+    def test_missing_not_null_fields(self):
+        data_data_dict = {
+            'name': 'testproject1',
+            'date': datetime(2023, 5, 22),
+            'test_project_group': 1
+        }
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__isDataTableDataUploadable(data_data_dict)
+
+    def test_missing_data_in_not_null_fields(self):
+        data_data_dict = {
+            'name': 'testproject1',
+            'project_number': None,
+            'date': datetime(2023, 5, 22),
+            'test_project_group': 1
+        }
+        with self.assertRaises(ValueError):
+             self.manager._GeneralManager__isDataTableDataUploadable(data_data_dict)
+
+## needs to be fixed
+class TestIsGroupTableDataUploadable(TestCase):
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup2
+        GeneralManager.data_model = TestProject2
+        self.manager = GeneralManager.__new__(GeneralManager)
+
+    def test_data_uploadable(self):
+        group_data_dict = {
+            'unique1': 'u1',
+            'unique2': 'u2',
+        }
+        self.assertTrue(self.manager._GeneralManager__isGroupTableDataUploadable(group_data_dict))
+
+    def test_missing_unique_fields(self):
+        group_data_dict = {
+            'unique1': 'u1',
+            #'unique2': 'u2',
+        }
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__isGroupTableDataUploadable(group_data_dict)
+
+    # def test_missing_not_null_fields(self):
+    #     group_data_dict = {}
+    #     with self.assertRaises(ValueError):
+    #         self.manager._GeneralManager__isGroupTableDataUploadable(group_data_dict)
+
+    def test_missing_data_in_not_null_fields(self):
+        group_data_dict = {
+            'unique1': None,
+            'unique2': 'u2',
+        }
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__isGroupTableDataUploadable(group_data_dict)
+
+
+class TestCheckIfDataExtensionIsUploadable(TestCase):
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.model_type = 'data_model'
+
+    def test_data_extension_uploadable(self):
+        data_extension_model = TestProject2ExtensionTable
+        data_extension_data_dict = {
+            'TestProject2': {
+                'name': 'testproject1',
+                'project_number': '123456',
+                'date': datetime(2023, 5, 22),
+                'test_project_group': 1,
+                'ap_no' : 2,
+                'djdj': 2
+            }
+        }
+        self.assertTrue(
+            self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+                data_extension_model, data_extension_data_dict
+            )
+        )
+
+    def test_missing_data_extension_model(self):
+        data_extension_model = TestProject
+        data_extension_data_dict = {}
+        self.assertTrue(
+            self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+                data_extension_model, data_extension_data_dict
+            )
+        )
+
+    # def test_missing_unique_fields(self):
+    #     data_extension_model = TestProject
+    #     data_extension_data_dict = {
+    #         'TestProject': {
+    #             'name': 'testproject1',
+    #             'date': datetime(2023, 5, 22),
+    #             'test_project_group': 1
+    #         }
+    #     }
+    #     with self.assertRaises(ValueError):
+    #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+    #             data_extension_model, data_extension_data_dict
+    #         )
+
+    # def test_missing_not_null_fields(self):
+    #     data_extension_model = TestProject
+    #     data_extension_data_dict = {
+    #         'TestProject': {
+    #             'name': 'testproject1',
+    #             'project_number': '123456',
+    #             'test_project_group': 1
+    #         }
+    #     }
+    #     with self.assertRaises(ValueError):
+    #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+    #             data_extension_model, data_extension_data_dict
+    #         )
+
+    # def test_missing_data_in_not_null_fields(self):
+    #     data_extension_model = TestProject
+    #     data_extension_data_dict = {
+    #         'TestProject': {
+    #             'name': 'testproject1',
+    #             'project_number': None,
+    #             'date': datetime(2023, 5, 22),
+    #             'test_project_group': 1
+    #         }
+    #     }
+    #     with self.assertRaises(ValueError):
+    #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+    #             data_extension_model, data_extension_data_dict
+    #         )
+
+
+class TestIsDataExtensionTableDataUploadable(TestCase):
+    pass
+
+
+
+
+
+class TestGetOrCreateGroupModel(TestCase):
+    def setUp(self):
+
+        GeneralManager.group_model = TestProjectGroup2
+        self.manager = GeneralManager.__new__(GeneralManager)
+        #self.manager.group_model = TestProjectGroup2
+
+    def test_get_or_create_group_model_with_unique_fields(self):
+        group_data_dict = {
+            'unique1': 'u1',
+            'unique2': 'u2',
+        }
+        # Ensure that the group model is not already in the database
+        self.assertEqual(TestProjectGroup2.objects.filter(**group_data_dict).count(), 0)
+        group_obj = self.manager._GeneralManager__getOrCreateGroupModel(group_data_dict)
+
+        self.assertIsInstance(group_obj, TestProjectGroup2)
+        self.assertTrue(group_obj.pk)
+        self.assertEqual(group_obj.unique1, 'u1')
+        self.assertEqual(group_obj.unique2, 'u2')
+
+    def test_get_or_create_group_model_without_unique_fields(self):
+        GeneralManager.group_model = TestProjectGroup3
+        group_data_dict = {
+            'unique3': 'u3',
+            'unique4': 'u4',
+        }
+        self.assertEqual(TestProjectGroup3.objects.filter(**group_data_dict).count(), 0)
+        group_obj = self.manager._GeneralManager__getOrCreateGroupModel(group_data_dict)
+        self.assertIsInstance(group_obj, TestProjectGroup3)
+        self.assertTrue(group_obj.pk)
+        self.assertEqual(group_obj.unique3, 'u3')
+        self.assertEqual(group_obj.unique4, 'u4')
+
+    def test_get_existing_group_model(self):
+        existing_group = TestProjectGroup2.objects.create(unique1='u1', unique2='u2')
+        group_data_dict = {
+            'unique1': 'u1',
+            'unique2': 'u2',
+        }
+        self.assertEqual(TestProjectGroup2.objects.filter(**group_data_dict).count(),1)
+
+        group_obj = self.manager._GeneralManager__getOrCreateGroupModel(group_data_dict)
+        self.assertIsInstance(group_obj, TestProjectGroup2)
+        self.assertEqual(group_obj.id, existing_group.id)
+        self.assertEqual(group_obj.unique1, 'u1')
+        self.assertEqual(group_obj.unique2, 'u2')
+
+
+
+
+
+
+
+
+
+class TestGetDataExtensionData(TestCase):
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject2
+        self.manager = GeneralManager.__new__(GeneralManager)
         self.manager.group_id = 1
         self.manager._GeneralManager__group_model_name = 'test_project_group'
-        self.manager.data_extension_model_list = self.data_extension_model_list
+        GeneralManager.data_extension_model_list = [TestProject2ExtensionTable]
+        self.test_project_group = TestProjectGroup.objects.create()
+        self.test_project_2 = TestProject2.objects.create(
+            name ='testproject2',
+            project_number = '123456',
+            date = datetime(2023, 5, 22),
+            test_project_group = self.test_project_group,
+            ap_no = 2,
+        )
 
     def test_with_non_list_value(self):
-        key = 'name'
+        key = 'TestProject2ExtensionTable_dict_list'
         value = 'TestProject'
         result = self.manager._GeneralManager__getDataExtensionData(key, value)
         self.assertEqual(result, (False, key, value))
 
-    # def test_with_non_reverencing_column(self):
- 
+  
+    def test_get_data_extension_data_with_non_list_value(self):
+        key = 'TestProject2ExtensionTable_dict_list'
+        value = 1
+        is_in_data_ext_model, model_name, to_upload_dict = self.manager._GeneralManager__getDataExtensionData(key, value)
+        
+        self.assertFalse(is_in_data_ext_model)
+        self.assertEqual(model_name, key)
+        self.assertEqual(to_upload_dict, value)
+
+
+    def test_getDataExtensionData_with_data_extension_model(self):
+        key = 'TestProject2ExtensionTable_dict_list'
+        value = [
+            {'name_extension' : 'extension1'},
+            {'name_extension' : 'extension2'}
+        ]
+
+        is_in_data_ext_model, model_name, to_upload_dict =self.manager._GeneralManager__getDataExtensionData(
+            key, value
+        )
+        self.assertTrue(is_in_data_ext_model)
+        self.assertEqual(model_name, 'TestProject2ExtensionTable')
+        self.assertIsInstance(to_upload_dict, dict)
+        self.assertEqual(to_upload_dict['referenced_model'], TestProject2ExtensionTable)
+        self.assertEqual(len(to_upload_dict['data']), 2)
+
+
+    def test_with_invalid_column_in_value(self):
+        key = 'TestProject2ExtensionTable_dict_list'
+        value = [
+            {'invalid_column': 'Invalid'}
+        ]
+        with self.assertRaises(ValueError):
+            self.manager._GeneralManager__getDataExtensionData(key, value)
+
+
+    # def test_get_data_extension_data_with_invalid_model(self):
+    #     key = 'NoneExistingModel'
+    #     value = [
+    #         {'name_extension' : 'extension1'},
+    #         {'name_extension' : 'extension2'}
+    #     ]
+    #     with self.assertRaises(ValueError):
+    #         self.manager._GeneralManager__getDataExtensionData(key, value)
+
+
+
+
+class TestGetEndDate(TestCase):
+
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager._GeneralManager__group_model_name = 'test_project_group'
+        self.test_project_group = TestProjectGroup.objects.create()
+        self.manager._GeneralManager__group_obj = self.test_project_group
+        self.manager.start_date = datetime(2023, 5, 15)
+
+
+    def test_get_end_date_with_newer_entry(self):
+        older_date = datetime(2023, 5, 15)
+        older_data = self.manager.data_model.objects.create(
+            test_project_group=self.test_project_group,
+            date=older_date,
+            project_number = '123'
+        )
+        newer_date = datetime(2023, 5, 16)
+        newer_data = self.manager.data_model.objects.create(
+            test_project_group=self.test_project_group,
+            date=newer_date,
+            project_number = '321'
+        )
+        # Check if __getEndDate returns the newer date
+        self.assertEqual(self.manager._GeneralManager__getEndDate(), newer_date)
+
+    def test_get_end_date_without_newer_entry(self):
+        older_date = datetime(2023, 5, 15)
+        older_data = self.manager.data_model.objects.create(
+            test_project_group=self.test_project_group,
+            date=older_date
+        )
+        # Check if __getEndDate returns None when there is no newer entry
+        self.assertIsNone(self.manager._GeneralManager__getEndDate())
+
+
+
+
+
+
+class TestWriteDataData(TestCase):
+    pass
+class TestWriteDataExtensionData(TestCase):
+    pass
+class TestGetToPushListForDataExtensionData(TestCase):
+    pass
+class TestSaveDataToDB(TestCase):
+    pass
+class setAllAttributesFromModel(TestCase):
+    pass
+class TestCreateDirectAttribute(TestCase):
+    pass
+class TestCreateReferenceAttribute(TestCase): ##ganze 7 unterfunktionen
+    pass
+class TestGetFieldsAndValues(TestCase):
+    pass
