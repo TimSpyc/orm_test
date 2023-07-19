@@ -1,6 +1,6 @@
 from .abstract_models import GroupTable, ReferenceTable, DataTable, DataExtensionTable
 from .caching_models import CacheManager, CacheIntermediate
-from .reference_models import User, Currency, NormType, PartType, SemiFinishedProductType, MaterialType
+from .reference_models import *
 from .managed_models import *
 
 from backend.src.manager.project_manager import Project, ProjectGroup
@@ -13,3 +13,4 @@ from backend.src.manager.part_recipient_manager import PartRecipient, PartRecipi
 from backend.src.manager.material_manager import Material, MaterialGroup
 from backend.src.manager.material_alloy_manager import MaterialAlloy, MaterialAlloyGroup
 from backend.src.manager.material_alloy_treatment_manager import MaterialAlloyTreatment, MaterialAlloyTreatmentGroup
+from backend.src.manager.part_sold_contract_manager import PartSoldContract, PartSoldContractGroup
