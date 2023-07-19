@@ -33,10 +33,10 @@ class TestProjectGroup2(models.Model):
 class TestProject3(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
-    test_project_group2 = models.ForeignKey(TestProjectGroup2, on_delete=models.CASCADE)
+    test_project_group2 = models.ForeignKey(TestProjectGroup2, on_delete=models.DO_NOTHING)
     date = models.DateTimeField(null=True, default=datetime.now())
     ap_no =models.IntegerField(null=True)
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
 
@@ -53,9 +53,9 @@ class TestProject(models.Model):
     """
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
-    test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.DO_NOTHING)
     date = models.DateTimeField(null=False, default=datetime.now())
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
     class Meta:
@@ -68,10 +68,10 @@ class TestProject(models.Model):
 class TestProject2(models.Model):
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False)
-    test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.CASCADE)
+    test_project_group = models.ForeignKey(TestProjectGroup, on_delete=models.DO_NOTHING)
     date = models.DateTimeField(null=False, default=datetime.now())
     ap_no =models.IntegerField(null=True)
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
     class Meta:
@@ -109,10 +109,10 @@ class TestProjectUser(models.Model):
     """
     A Django model representing a TestProject user, including their TestProject user group and TestProject user roles.
     """
-    test_project_user_group = models.ForeignKey(TestProjectUserGroup, on_delete=models.CASCADE)
+    test_project_user_group = models.ForeignKey(TestProjectUserGroup, on_delete=models.DO_NOTHING)
     test_project_user_role = models.ManyToManyField(TestProjectUserRole, blank=False)
     date = models.DateTimeField(null=True, default=datetime.now())
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
 
@@ -135,8 +135,8 @@ class TestProjectUserGroup2(models.Model):
 
 class TestProjectUser2(models.Model):
     name = models.CharField(max_length=255)
-    test_project_user_group2 = models.ForeignKey(TestProjectUserGroup2, on_delete=models.CASCADE)
+    test_project_user_group2 = models.ForeignKey(TestProjectUserGroup2, on_delete=models.DO_NOTHING)
     test_project_user_role = models.ManyToManyField(TestProjectUserRole,blank=False)
     date = models.DateTimeField(null=True, default=datetime.now())
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, null= True)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)

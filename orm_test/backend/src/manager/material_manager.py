@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, MaterialAlloyGroup, MaterialAlloyTreatmentGroup, NormGroup, ExtrusionPlant, MaterialType
+from backend.models import GroupTable, DataTable, MaterialAlloyGroup, MaterialAlloyTreatmentGroup, NormGroup, MaterialType
 from backend.src.auxiliary.manager import GeneralManager
 
 class MaterialGroup(GroupTable):
@@ -8,16 +8,16 @@ class MaterialGroup(GroupTable):
         return MaterialManager(self.id, search_date, use_cache)
     
     def __str__(self):
-        return f"MaterialGroup {self.number}"
+        return f"MaterialGroup {self.id}"
 
 class Material(DataTable):
-    material_group = models.ForeignKey(MaterialGroup, on_delete= models.CASCADE)
-    material_type = models.ForeignKey(MaterialType, on_delete= models.CASCADE)
-    material_alloy = models.ForeignKey(MaterialAlloyGroup, on_delete= models.CASCADE)
-    material_alloy_treatment = models.ForeignKey(MaterialAlloyTreatmentGroup, on_delete= models.CASCADE)
+    material_group = models.ForeignKey(MaterialGroup, on_delete= models.DO_NOTHING)
+    material_type = models.ForeignKey(MaterialType, on_delete= models.DO_NOTHING)
+    material_alloy = models.ForeignKey(MaterialAlloyGroup, on_delete= models.DO_NOTHING)
+    material_alloy_treatment = models.ForeignKey(MaterialAlloyTreatmentGroup, on_delete= models.DO_NOTHING)
     customer_norm = models.ManyToManyField(NormGroup, blank=False)
     remark = models.TextField()
-    extrusion_plant = models.ForeignKey(ExtrusionPlant, on_delete= models.CASCADE)
+    extrusion_plant = models.ForeignKey(SupplierGroup, on_delete= models.DO_NOTHING)
 
 
     @property

@@ -16,10 +16,10 @@ class NormGroup(GroupTable):
         
 
 class Norm(DataTable):
-    norm_type = models.ForeignKey(NormType, on_delete= models.CASCADE)
-    norm_group = models.ForeignKey(NormGroup, on_delete= models.CASCADE)
+    norm_type = models.ForeignKey(NormType, on_delete= models.DO_NOTHING)
+    norm_group = models.ForeignKey(NormGroup, on_delete= models.DO_NOTHING)
     description = models.CharField(max_length=255)
-    file_group = models.ForeignKey(FileGroup, on_delete= models.CASCADE)
+    file_group = models.ForeignKey(FileGroup, on_delete= models.DO_NOTHING)
 
     @property
     def group(self):

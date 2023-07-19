@@ -16,10 +16,10 @@ class PartGroup(GroupTable):
         return f"PartGroup {self.drawing_no}-{self.drawing_rev}"
 
 class Part(DataTable):
-    part_group = models.ForeignKey(PartGroup, on_delete= models.CASCADE)
+    part_group = models.ForeignKey(PartGroup, on_delete= models.DO_NOTHING)
     name = models.CharField(max_length=255)
-    part_type = models.ForeignKey(PartType, on_delete= models.CASCADE)
-    cross_section_group = models.ForeignKey(CrossSectionGroup, on_delete= models.CASCADE)
+    part_type = models.ForeignKey(PartType, on_delete= models.DO_NOTHING)
+    cross_section_group = models.ForeignKey(CrossSectionGroup, on_delete= models.DO_NOTHING)
     drawing_date = models.DateTimeField()
     customer_drawing_number = models.CharField(max_length=255)
     customer_drawing_revision = models.CharField(max_length=255)
@@ -32,10 +32,10 @@ class Part(DataTable):
     length = models.FloatField()
     tolerance = models.CharField(max_length=255)
     customer_tolerance = models.CharField(max_length=255)
-    semi_finished_product_type = models.ForeignKey(SemiFinishedProductType, on_delete= models.CASCADE)
-    material_group = models.ForeignKey(MaterialGroup, on_delete= models.CASCADE)
+    semi_finished_product_type = models.ForeignKey(SemiFinishedProductType, on_delete= models.DO_NOTHING)
+    material_group = models.ForeignKey(MaterialGroup, on_delete= models.DO_NOTHING)
     delivery_temper = models.CharField(max_length=255)
-    material_norm_customer = models.ForeignKey(NormGroup, on_delete= models.CASCADE)
+    material_norm_customer = models.ForeignKey(NormGroup, on_delete= models.DO_NOTHING)
 
     @property
     def group(self):

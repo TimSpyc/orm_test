@@ -13,7 +13,7 @@ class CrossSectionGroup(GroupTable):
         return CrossSectionManager(self.id, search_date, use_cache)
     
 class CrossSection(DataTable):
-    cross_section_tolerance_norm = models.ForeignKey(NormGroup, on_delete= models.CASCADE)
+    cross_section_tolerance_norm = models.ForeignKey(NormGroup, on_delete= models.DO_NOTHING)
     customer_tolerance = models.CharField(max_length=255)
     extrusion_plant_tooling_number = models.CharField(max_length=255)
     outer_contour_info_dict = models.JSONField()

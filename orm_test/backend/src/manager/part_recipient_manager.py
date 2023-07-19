@@ -12,7 +12,7 @@ class PartRecipientGroup(GroupTable):
         return f"PartRecipientGroup {self.part_number}"
 
 class PartRecipient(DataTable):
-    part_recipient_group = models.ForeignKey(PartRecipientGroup, on_delete= models.CASCADE)
+    part_recipient_group = models.ForeignKey(PartRecipientGroup, on_delete= models.DO_NOTHING)
     description = models.CharField(max_length=255)
 
     @property

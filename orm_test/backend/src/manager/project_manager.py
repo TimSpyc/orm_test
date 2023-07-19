@@ -21,7 +21,7 @@ class Project(DataTable):
     """
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False, null=True)
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
     @property
     def group(self):

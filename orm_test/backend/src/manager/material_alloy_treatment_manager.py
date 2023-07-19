@@ -16,7 +16,7 @@ class MaterialAlloyTreatmentGroup(GroupTable):
         return f"MaterialAlloyTreatmentGroup {self.id}"
     
 class MaterialAlloyTreatment(DataTable):
-    material_alloy_treatment_group = models.ForeignKey(MaterialAlloyTreatmentGroup, on_delete= models.CASCADE)
+    material_alloy_treatment_group = models.ForeignKey(MaterialAlloyTreatmentGroup, on_delete= models.DO_NOTHING)
     remark = models.TextField()
     
     @property

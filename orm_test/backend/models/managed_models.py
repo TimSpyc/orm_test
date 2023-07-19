@@ -9,8 +9,8 @@ class ProjectUserGroup(GroupTable):
     A Django model representing a project user group, which associates a
     user with a project group.
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
     class Meta:
         unique_together = ('user', 'project_group')
@@ -45,7 +45,7 @@ class ProjectUser(DataTable):
     """
     project_user_group = models.ForeignKey(
         ProjectUserGroup,
-        on_delete=models.CASCADE
+        on_delete=models.DO_NOTHING
     )
     project_user_role = models.ManyToManyField(ProjectUserRole, blank=False)
 
@@ -58,7 +58,7 @@ class DerivativeConstelliumGroup(GroupTable):
     A Django model representing a derivative Constellium group, which
     associates a derivative Constellium group with a project group.
     """
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
     def __str__(self):
         return f"{self.id}"
@@ -82,20 +82,20 @@ class DerivativeConstellium(DataTable):
     """
     derivative_constellium_group = models.ForeignKey(
         DerivativeConstelliumGroup,
-        on_delete=models.CASCADE
+        on_delete=models.DO_NOTHING
     )
     name = models.CharField(max_length=255)
     sop_date = models.DateField()
     eop_date = models.DateField()
     derivative_type = models.ForeignKey(
         DerivativeType,
-        on_delete=models.CASCADE
+        on_delete=models.DO_NOTHING
     )
     estimated_price = models.FloatField()
     estimated_weight = models.FloatField()
     prediction_accuracy = models.ForeignKey(
         PredictionAccuracy,
-        on_delete=models.CASCADE
+        on_delete=models.DO_NOTHING
     )
 
     def __str__(self):
@@ -115,7 +115,7 @@ class CustomerPlant(ReferenceTable):
     country = models.CharField(max_length=255)
     latitude = models.CharField(max_length=255)
     longitude = models.CharField(max_length=255)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING)
 
     def __str__(self):
         return f"{self.name} - {self.customer}"
@@ -137,22 +137,22 @@ class DerivativeLMCGroup(GroupTable):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
 
 class DerivativeLMC(DataTable):
-    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
-    revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.DO_NOTHING)
+    revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.DO_NOTHING)
     region = models.CharField(max_length=255)
     trade_region = models.CharField(max_length=255)
     country = models.CharField(max_length=255)
-    sales_group = models.ForeignKey(Customer, related_name='sales_groups', on_delete=models.CASCADE)
-    manufacturer = models.ForeignKey(Customer, related_name='manufacturers', on_delete=models.CASCADE)
-    local_make = models.ForeignKey(Customer, related_name='local_makes', on_delete=models.CASCADE)
+    sales_group = models.ForeignKey(Customer, related_name='sales_groups', on_delete=models.DO_NOTHING)
+    manufacturer = models.ForeignKey(Customer, related_name='manufacturers', on_delete=models.DO_NOTHING)
+    local_make = models.ForeignKey(Customer, related_name='local_makes', on_delete=models.DO_NOTHING)
     local_model_line = models.CharField(max_length=255)
     local_program_code = models.CharField(max_length=255)
     local_production_model = models.CharField(max_length=255)
-    global_make = models.ForeignKey(Customer, related_name='global_makes', on_delete=models.CASCADE)
+    global_make = models.ForeignKey(Customer, related_name='global_makes', on_delete=models.DO_NOTHING)
     global_production_model = models.CharField(max_length=255)
     gvw = models.CharField(max_length=255)
     platform = models.CharField(max_length=255)
-    plant = models.ForeignKey(CustomerPlant, on_delete=models.CASCADE)
+    plant = models.ForeignKey(CustomerPlant, on_delete=models.DO_NOTHING)
     production_type = models.CharField(max_length=255)
     vehicle_type = models.CharField(max_length=255, db_column='type')
     regional_size = models.CharField(max_length=255)
@@ -165,7 +165,7 @@ class DerivativeLMC(DataTable):
     eop_date = models.DateField()
     next_facelift = models.DateField()
     last_actual = models.DateField()
-    design_lead = models.ForeignKey(Customer, related_name='design_leads', on_delete=models.CASCADE)
+    design_lead = models.ForeignKey(Customer, related_name='design_leads', on_delete=models.DO_NOTHING)
     design_lead_location = models.CharField(max_length=255)
     design_lead_country = models.CharField(max_length=255)
 
@@ -173,7 +173,7 @@ class DerivativeLMC(DataTable):
         return f"{self.derivative_group_lmc} - {self.local_make} {self.local_model_line}"
 
 class DerivativeVolumeLMCGroup(GroupTable):
-    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE, null=False)
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.DO_NOTHING, null=False)
     date = models.DateField(null=False)
 
     class Meta:
@@ -183,8 +183,8 @@ class DerivativeVolumeLMCGroup(GroupTable):
         return f"Derivative Volume Group {self.id}: {self.derivative_group.lmc_full_code} - {self.date}"
 
 class DerivativeVolumeLMC(DataTable):
-    derivative_lmc_volume_group = models.ForeignKey(DerivativeVolumeLMCGroup, on_delete=models.CASCADE)
-    revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.CASCADE)
+    derivative_lmc_volume_group = models.ForeignKey(DerivativeVolumeLMCGroup, on_delete=models.DO_NOTHING)
+    revision_lmc = models.ForeignKey(RevisionLMC, on_delete=models.DO_NOTHING)
     volume = models.PositiveIntegerField()
 
     def __str__(self):
@@ -192,8 +192,8 @@ class DerivativeVolumeLMC(DataTable):
 
 
 class DerivativeVolumeLMCDerivativeConstelliumConnectionGroup(GroupTable):
-    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.CASCADE)
-    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+    derivative_lmc_group = models.ForeignKey(DerivativeLMCGroup, on_delete=models.DO_NOTHING)
+    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.DO_NOTHING)
 
     class Meta:
         unique_together = ('derivative_lmc_group', 'derivative_constellium_group')
@@ -203,7 +203,7 @@ class DerivativeVolumeLMCDerivativeConstelliumConnectionGroup(GroupTable):
 
 
 class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
-    derivative_volume_lmc_derivative_constellium_connection_group = models.ForeignKey(DerivativeVolumeLMCDerivativeConstelliumConnectionGroup, on_delete=models.CASCADE)
+    derivative_volume_lmc_derivative_constellium_connection_group = models.ForeignKey(DerivativeVolumeLMCDerivativeConstelliumConnectionGroup, on_delete=models.DO_NOTHING)
     take_rate = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])
 
     def __str__(self):
@@ -219,7 +219,7 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 #     pass
 
 # class ChangeRequestGroup(GroupTable):
-#     project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+#     project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 #     change_request_no = models.IntegerField()
 
 #     class Meta:
@@ -230,23 +230,23 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 
 
 # class ChangeRequest(DataTable):
-#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-#     derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.DO_NOTHING)
+#     derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.DO_NOTHING)
 #     customer_part_number = models.CharField(max_length=255)
 #     description = models.TextField()
 #     ECR_number = models.CharField(max_length=255)
 #     customer_approval = models.BooleanField(default=False)
 #     internal_approval = models.BooleanField(default=False)
-#     part_group_before_change = models.ForeignKey(PartGroup, on_delete=models.CASCADE)
-#     file_before_change = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
-#     part_group_after_change = models.ForeignKey(PartGroup, on_delete=models.CASCADE)
-#     file_after_change = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
-#     file_for_description = models.ForeignKey(FileGroup, on_delete=models.CASCADE)
+#     part_group_before_change = models.ForeignKey(PartGroup, on_delete=models.DO_NOTHING)
+#     file_before_change = models.ForeignKey(FileGroup, on_delete=models.DO_NOTHING)
+#     part_group_after_change = models.ForeignKey(PartGroup, on_delete=models.DO_NOTHING)
+#     file_after_change = models.ForeignKey(FileGroup, on_delete=models.DO_NOTHING)
+#     file_for_description = models.ForeignKey(FileGroup, on_delete=models.DO_NOTHING)
 
 
 # class ChangeRequestFeasibilityGroup(GroupTable):
-#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.DO_NOTHING)
+#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.DO_NOTHING)
 
 #     class Meta:
 #         unique_together = ('project_user_role', 'change_request_group')
@@ -256,14 +256,14 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 
 
 # class ChangeRequestFeasibility(DataTable):
-#     change_request_feasibility_group = models.ForeignKey(ChangeRequestFeasibilityGroup, on_delete=models.CASCADE)
+#     change_request_feasibility_group = models.ForeignKey(ChangeRequestFeasibilityGroup, on_delete=models.DO_NOTHING)
 #     confirmed = models.BooleanField(null=True)
 #     description = models.TextField()
 
 
 # class ChangeRequestCostGroup(GroupTable):
-#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.DO_NOTHING)
+#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.DO_NOTHING)
 
 #     class Meta:
 #         unique_together = ('change_request_group', 'project_user_role')
@@ -273,14 +273,14 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 
 
 # class ChangeRequestCost(DataTable):
-#     change_request_cost_group = models.ForeignKey(ChangeRequestCostGroup, on_delete=models.CASCADE)
+#     change_request_cost_group = models.ForeignKey(ChangeRequestCostGroup, on_delete=models.DO_NOTHING)
 #     description = models.TextField(null=True)
 #     cost_estimation = models.IntegerField(null=True)
 
 
 # class ChangeRequestRiskGroup(GroupTable):
-#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.CASCADE)
-#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.CASCADE)
+#     change_request_group = models.ForeignKey(ChangeRequestGroup, on_delete=models.DO_NOTHING)
+#     project_user_role = models.ForeignKey(ProjectUserRole, on_delete=models.DO_NOTHING)
 
 #     def __str__(self):
 #         return f"ChangeRequestRiskGroup {self.id}: {self.change_request_group.id}; {self.user.first_name} {self.user.last_name}"
@@ -297,9 +297,9 @@ class DerivativeVolumeLMCDerivativeConstelliumConnection(DataTable):
 
 
 # class ChangeRequestRisk(DataTable):
-#     change_request_risk_group = models.ForeignKey(ChangeRequestRiskGroup, on_delete=models.CASCADE)
-#     change_request_risk_probability = models.ForeignKey(ChangeRequestRiskProbability, on_delete=models.CASCADE)
-#     change_request_risk_impact = models.ForeignKey(ChangeRequestRiskImpact, on_delete=models.CASCADE)
+#     change_request_risk_group = models.ForeignKey(ChangeRequestRiskGroup, on_delete=models.DO_NOTHING)
+#     change_request_risk_probability = models.ForeignKey(ChangeRequestRiskProbability, on_delete=models.DO_NOTHING)
+#     change_request_risk_impact = models.ForeignKey(ChangeRequestRiskImpact, on_delete=models.DO_NOTHING)
 #     description = models.TextField()
 #     feedback = models.TextField()
 #     next_step = models.TextField()
@@ -314,9 +314,9 @@ class ProjectStaffCostTask(ReferenceTable):
 
 
 class ProjectStaffCostGroup(GroupTable):
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    project_staff_cost_task = models.ForeignKey(ProjectStaffCostTask, on_delete=models.CASCADE)
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    project_staff_cost_task = models.ForeignKey(ProjectStaffCostTask, on_delete=models.DO_NOTHING)
     work_date = models.BigIntegerField()
 
     class Meta:
@@ -327,7 +327,7 @@ class ProjectStaffCostGroup(GroupTable):
     
 
 class ProjectStaffCost(DataTable): 
-    project_staff_cost_group = models.ForeignKey(ProjectStaffCostGroup, on_delete=models.CASCADE)
+    project_staff_cost_group = models.ForeignKey(ProjectStaffCostGroup, on_delete=models.DO_NOTHING)
     hours = models.FloatField()
 
     def __str__(self):
@@ -338,7 +338,7 @@ class ScenarioGroup(GroupTable):
     """
     A Django model representing a scenario group.
     """
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user = models.ForeignKey('User', on_delete=models.DO_NOTHING)
 
     def __str__(self):
         return self.id

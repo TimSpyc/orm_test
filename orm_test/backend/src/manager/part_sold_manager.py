@@ -7,7 +7,7 @@ class PartSoldGroup(GroupTable):
     """
     A Django model representing a part sold group.
     """
-    part_recipient = models.ForeignKey(PartRecipientGroup, on_delete= models.CASCADE)
+    part_recipient = models.ForeignKey(PartRecipientGroup, on_delete= models.DO_NOTHING)
     customer_part_number_sap = models.CharField(max_length=255)
 
     class Meta:
@@ -20,13 +20,13 @@ class PartSoldGroup(GroupTable):
         return f"PartSoldGroup {self.id}"
     
 class PartSold(DataTable):
-    sap_number = models.ForeignKey(SapNumber, on_delete= models.CASCADE)
-    part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.CASCADE)
+    sap_number = models.ForeignKey(SapNumber, on_delete= models.DO_NOTHING)
+    part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.DO_NOTHING)
     customer_part_number = models.CharField(max_length=255)
     part_group = models.ManyToManyField(PartGroup,blank=False) 
-    customer_plant = models.ForeignKey(CustomerPlant, on_delete= models.CASCADE)
-    contract_group = models.ForeignKey(ContractGroup, on_delete= models.CASCADE)
-    currency = models.ForeignKey(Currency, on_delete= models.CASCADE)
+    customer_plant = models.ForeignKey(CustomerPlant, on_delete= models.DO_NOTHING)
+    contract_group = models.ForeignKey(ContractGroup, on_delete= models.DO_NOTHING)
+    currency = models.ForeignKey(Currency, on_delete= models.DO_NOTHING)
     description = models.TextField()
     validity_start_date = models.DateTimeField()
     validity_end_date = models.DateTimeField()

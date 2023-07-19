@@ -12,7 +12,7 @@ class SapNumberGroup(GroupTable):
         return f"SapNumber {self.sap_number}"
 
 class SapNumber(DataTable):
-    sap_number_group = models.ForeignKey(SapNumberGroup, on_delete= models.CASCADE)
+    sap_number_group = models.ForeignKey(SapNumberGroup, on_delete= models.DO_NOTHING)
     description = models.TextField()
     alu_net_weight = models.FloatField()
 
