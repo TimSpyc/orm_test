@@ -18,7 +18,8 @@ class PartSoldGroup(GroupTable):
 
     def __str__(self):
         return f"PartSoldGroup {self.id}"
-    
+
+
 class PartSold(DataTable):
     sap_number = models.ForeignKey(SapNumber, on_delete= models.DO_NOTHING)
     part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.DO_NOTHING)
@@ -36,13 +37,61 @@ class PartSold(DataTable):
     def group(self):
         return self.part_sold_group
 
+
+class PartSoldPriceComponent(DataExtensionTable):
+    part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
+    value = models.FloatField()
+    saveable = models.BooleanField(default=False)
+    part_sold_price_component_type = models.ForeignKey(PartSoldPriceComponentType, on_delete= models.DO_NOTHING)
+
+    class _meta:
+        unique_together = ('part_sold', 'part_sold_price_component_type')
+
+
+class PartSoldMaterialPriceComponent(DataExtensionTable):
+    part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
+    part_sold_material_price_type = models.ForeignKey(PartSoldMaterialPriceType, on_delete= models.DO_NOTHING)
+    basis = models.FloatField()
+    variable = models.BooleanField(default=True)
+    use_gross_weight = models.BooleanField(default=False)
+    saveable = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('part_sold_material_price_type', 'part_sold')
+
+
+class PartSoldMaterialWeight(DataExtensionTable):
+    part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
+    part_sold_material_type = models.ForeignKey(PartSoldMaterialType, on_delete= models.DO_NOTHING)
+    gross_weight = models.FloatField()
+    net_weight = models.FloatField()
+
+    class Meta:
+        unique_together = ('part_sold_material_price_type', 'part_sold')
+
+
+class PartSoldSaving(DataExtensionTable):
+    part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
+    saving_date = models.DateTimeField()
+    saving_rate = models.FloatField()
+    saving_unit = models.ForeignKey(SavingUnit, on_delete= models.DO_NOTHING)
+
+    class Meta:
+        unique_together = ('part_sold_material_price_type', 'part_sold')
+
+
 class PartSoldManager(GeneralManager):
     """
     A manager class for handling PartSold-related operations, extending the GeneralManager.
     """
     group_model = PartSoldGroup
     data_model = PartSold
-    data_extension_model_list = []
+    data_extension_model_list = [
+        PartSoldPriceComponent,
+        PartSoldMaterialPriceComponent,
+        PartSoldMaterialWeight,
+        PartSoldSaving
+    ]
 
     def __init__(self, project_group_id, search_date=None, use_cache=True):
         """

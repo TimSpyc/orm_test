@@ -60,3 +60,33 @@ class MaterialType(ReferenceTable):
 
     def __str__(self):
         return f'{self.name}'
+    
+class PartSoldPriceComponentType(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
+
+class PriceUploadSource(ReferenceTable):
+    name = models.CharField(max_length=255) 
+
+    def __str__(self):
+        return f'{self.name}'
+
+class SavingUnit(ReferenceTable):
+    name = models.CharField(max_length=255) 
+
+    def __str__(self):
+        return f'{self.name}'
+
+class PartSoldMaterialType(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
+
+class PartSoldMaterialPriceType(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
