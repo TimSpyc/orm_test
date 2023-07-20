@@ -24,7 +24,8 @@ class Watcher:
         Args:
             obj (object): The object to be added.
         """
-        self.dependent_object_list.append(obj)
+        if obj not in self.dependent_object_list:
+            self.dependent_object_list.append(obj)
 
     def inform(self) -> None:
         """
@@ -35,7 +36,8 @@ class Watcher:
         date = datetime.now()
 
         for obj in self.dependent_object_list:
-            obj.setCacheData(date)
+            # obj.setCacheData(date)
+            obj.expireCache(self.dependency, date)
         
         self.destroy()
 

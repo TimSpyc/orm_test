@@ -4,8 +4,9 @@ from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
 from backend.src.auxiliary.scenario_handler import ScenarioHandler
 from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
-from backend.src.auxiliary.manager import GeneralManager
+from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
 from django.core.cache import cache
+import copy
 
 
 class GeneralIntermediate:
@@ -34,6 +35,7 @@ class GeneralIntermediate:
             return super().__new__(cls)
 
         kwargs = cls.__makeArgsToKwargs(args, kwargs)
+        initial_kwargs = copy.deepcopy(kwargs)
 
         search_date = kwargs.pop('search_date', None)
         use_cache = kwargs.pop('use_cache', None)
@@ -59,6 +61,7 @@ class GeneralIntermediate:
         instance = super().__new__(cls)
         instance.__init__({**kwargs, 'search_date': search_date})
         instance._identification_dict = _identification_dict
+        instance._initial_kwargs = initial_kwargs
 
         return instance
 
@@ -195,7 +198,8 @@ class GeneralIntermediate:
         for dependency in self.dependencies:
             if (
                 not isinstance(dependency, GeneralIntermediate) or 
-                not isinstance(dependency, GeneralManager)
+                not isinstance(dependency, GeneralManager) or
+                not isinstance(dependency, ExternalDataManager)
             ):
                 raise TypeError(
                     f'''
@@ -261,7 +265,7 @@ class GeneralIntermediate:
         if self.end_date is None:
             id_string = CacheIntermediate.getIdString(self._identification_dict)
             cache.set(id_string, self)
-        CacheIntermediate.setEndDate(
+        CacheIntermediate.setCacheData(
             intermediate_name=self.__class__.__name__,
             _identification_dict=self._identification_dict,
             data=self,
@@ -269,13 +273,57 @@ class GeneralIntermediate:
             end_date=self.end_date
         )
 
-    def setEndDate(self, end_date: datetime):
-        if self.end_date is None:
-            self.end_date = end_date
-            CacheIntermediate.setEndDate(
+    def checkIfCacheNeedsToExpire(dependency: object, date: datetime) -> bool:
+        return True
+
+    def expireCache(self, dependency: object, date: datetime) -> None:
+        cache_needs_to_expire = self.checkIfCacheNeedsToExpire(
+            dependency,
+            date
+        )
+        if cache_needs_to_expire:
+            self.end_date = date
+            CacheIntermediate.setCacheData(
                 intermediate_name=self.__class__.__name__,
                 _identification_dict=self._identification_dict,
                 data=self,
                 start_date=self.start_date,
                 end_date=self.end_date
+            )
+            CacheHandler.update(self)
+        
+        else:
+
+            for i in enumerate(self.dependencies):
+                if self.dependencies[i] == dependency:
+                    self.dependencies[i] = self.__updateDependency(
+                        dependency,
+                        date
+                    )
+                    break
+            CacheHandler.add(self)
+            CacheIntermediate.setCacheData(
+                intermediate_name=self.__class__.__name__,
+                _identification_dict=self._identification_dict,
+                data=self,
+                start_date=self.start_date,
+                end_date=self.end_date
+            )
+
+    def __updateDependency(self, dependency: object, date: datetime) -> object:
+        if isinstance(dependency, GeneralIntermediate):
+            kwargs = dependency._initial_kwargs
+            kwargs['search_date'] = date
+            return dependency.__class__(**kwargs)
+        elif isinstance(dependency, GeneralManager):
+            group_id = dependency.group_id
+            return dependency.__class__(group_id, search_date=date)
+        elif isinstance(dependency, ExternalDataManager):
+            return dependency.__class__(search_date=date)
+        else:
+            raise TypeError(
+                f'''
+                The dependency {dependency} is not of type GeneralIntermediate,
+                GeneralManager or ExternalDataManager.
+                '''
             )
