@@ -197,7 +197,9 @@ class TestProjectUser2(models.Model):
 class TestProject2ExtensionTable(TestDataExtensionTable):
 
     name_extension = models.CharField(max_length=255)
+    price = models.IntegerField()
     test_project2 = models.ForeignKey(TestProject2, on_delete=models.CASCADE)
+
 
 
 # TestProjectManager.create(
