@@ -248,10 +248,35 @@ class GeneralManager:
         column: Field,
         model_obj: Model
     ) -> None:
+        """
+        Set a direct attribute on the instance using the data from the specified model object.
+
+        Args:
+            column_name (str):
+                The name of the attribute to be set on the instance.
+            column (Field):
+                The field representing the attribute in the model.
+            model_obj (Model):
+                The model object from which the data will be extracted.
+
+        Returns:
+            None
+
+        """
         setattr(self, column_name, getattr(model_obj, column.name))
 
     @staticmethod
     def __getFieldsAndValues(instance):
+        """
+        Get the fields and their values from a model instance.
+
+        Args:
+            instance (models.Model): The instance of a model.
+
+        Returns:
+            dict:
+                A dictionary containing the fields and their corresponding values from the model instance.
+        """   
         fields = {}
         for field in instance._meta.fields:
             value = getattr(instance, field.name)
@@ -1205,17 +1230,40 @@ class GeneralManager:
             new_data_model_obj
         )
 
+    # def __getLatestDataData(self):
+    #     group_model_name = transferToSnakeCase(self.group_model.__name__)
+    #     group_model_obj = self.__group_obj
+    #     latest_data = self.data_model.objects.filter(
+    #         **{group_model_name: group_model_obj}
+    #         ).values().latest('date')
+
+    #     if latest_data == []:
+    #         latest_data = {}
+
+    #     return latest_data
+    
     def __getLatestDataData(self):
         group_model_name = transferToSnakeCase(self.group_model.__name__)
         group_model_obj = self.__group_obj
-        latest_data = self.data_model.objects.filter(
-            **{group_model_name: group_model_obj}
-            ).values().latest('date')
-        if latest_data == []:
+        try:
+            latest_data = self.data_model.objects.filter(
+                **{group_model_name: group_model_obj}
+                ).values().latest('date')
+        except self.data_model.DoesNotExist:
             latest_data = {}
+
         return latest_data
     
     def __getLatestDataExtensionData(self):
+        """
+        Get the latest extension data for each data extension model.
+
+        Returns:
+            dict:
+                A dictionary containing the latest extension data for each data extension model.
+                The dictionary is in the following format:
+                {'TestProject2ExtensionTable': []}
+        """
         latest_extension_data = {}
         for data_extension_model in self.data_extension_model_list:
             data_extension_model_name = data_extension_model.__name__
@@ -1278,7 +1326,28 @@ class GeneralManager:
         latest_extension_data: dict,
         new_data_model_obj: Model
     ) -> dict:
+        """
+        Create a list of data to be pushed to the data extension model.
 
+        Args:
+            data_extension_model (Model):
+                The data extension model to which the data will be pushed.
+            data_extension_data_dict (dict):
+                Dictionary containing the new data to be updated 
+                in the data extension model.
+            latest_extension_data (dict):
+                Dictionary containing the latest data fetched from 
+                the data extension model.
+            new_data_model_obj (Model):
+                The new data model object to which the data belongs.
+
+        Returns:
+            list[dict]:
+                A list of dictionaries, each representing data to be 
+                pushed to the data extension model.
+                And the model Base to which the data extension model
+                is referencing to
+        """
         data_extension_model_name = data_extension_model.__name__
         data_table_name = transferToSnakeCase(
             new_data_model_obj.__class__.__name__
@@ -1448,6 +1517,7 @@ class GeneralManager:
         elif model_type == 'group_model':
             name = 'group table data'
             model = cls.group_model
+        
         raise ValueError(
             f''' 
             The given **kwargs are not sufficient.
@@ -1520,8 +1590,10 @@ class GeneralManager:
         if all(is_data_extension_data_uploadable):
             return True
         cls.__errorForInsufficientUploadData(
-            'data_extension_model_name', is_data_extension_data_uploadable
+            'data_extension_model_name', is_data_extension_data_uploadable 
         )
+       
+
 
     @classmethod
     def __getOrCreateGroupModel(cls, group_data_dict):
