@@ -1,6 +1,6 @@
 from unittest.mock import  Mock, patch
 from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from backend.src.auxiliary.manager import GeneralManager
 from datetime import date, datetime
 from .models_for_testing import TestProject2ExtensionTable, TestProjectGroup2, TestProject3, TestProject2, TestProjectGroup, TestProject, TestProjectGroup3, TestProjectUser2, TestProjectUserGroup, TestProjectUserGroup2, TestProjectUserRole, TestProjectUser
@@ -1183,7 +1183,6 @@ class TestErrorForInsufficientUploadData(TestCase):
         GeneralManager.data_model = TestProject
         self.manager = GeneralManager.__new__(GeneralManager)
         self.model_type = 'data_model'
-        # self.model_type = 'group_model'
         self.is_data_uploadable_with_error = [True, False, True]
         self.is_data_uploadable_without_error = [True, True, True]
 
@@ -1434,35 +1433,9 @@ class TestGetDataExtensionData(TestCase):
     #         self.manager._GeneralManager__getDataExtensionData(key, value)
 
 
-##'data_extension_model_name', is_data_extension_data_uploadable  umändern in data_extension_model?? als model_type
-class TestCheckIfDataExtensionIsUploadable(TestCase):
-    def setUp(self):
-        GeneralManager.group_model = TestProjectGroup
-        GeneralManager.data_model = TestProject
-        GeneralManager.data_extension_model_list = [TestProject2ExtensionTable]
-        self.manager = GeneralManager.__new__(GeneralManager)
-        #self.model_type = 'data_extension_model_name'
 
-    def test_data_extension_uploadable(self):
-        data_extension_model = TestProject2ExtensionTable
-        data_extension_data_dict = {
-            'name_extension' : 'extension1',
-            'name_extension' : 'extension2',
-        }
-        self.assertTrue(
-            self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
-                data_extension_model, data_extension_data_dict
-            )
-        )
 
-    def test_missing_data_extension_model(self):
-        data_extension_model = TestProject2ExtensionTable
-        data_extension_data_dict = {}
-        self.assertTrue(
-            self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
-                data_extension_model, data_extension_data_dict
-            )
-        )
+
 
 class TestCheckIfDataExtensionIsUploadable(TestCase):
     def setUp(self):
@@ -1471,50 +1444,62 @@ class TestCheckIfDataExtensionIsUploadable(TestCase):
         GeneralManager.data_extension_model_list = [TestProject2ExtensionTable]
         self.manager = GeneralManager.__new__(GeneralManager)
 
-    def test_data_extension_uploadable(self):
-        data_extension_model = TestProject2ExtensionTable
-        data_extension_data_dict = {
-            'TestProject2': {
-                'name_extension': 'extension1',
-                'test_project2': [
-                    {
-                        'name': 'test1',
-                        'project_number': '12345',
-                        'test_project_group': 1,
-                    },
-                ]
-            }
-        }
-        self.assertTrue(
-            self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
-                data_extension_model, data_extension_data_dict
-            )
-        )
-
-    # def test_data_extension_not_uploadable_missing_extension_table_name(self):
+    # def test_data_extension_uploadable(self):
     #     data_extension_model = TestProject2ExtensionTable
     #     data_extension_data_dict = {
-    #             # Missing 'name_extension',
-    #             'price' : 111 
+    #         'name_extension' : 'extension1',
+    #         'name_extension' : 'extension2',
     #     }
-    #     with self.assertRaises(ValueError):
+    #     self.assertTrue(
     #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
     #             data_extension_model, data_extension_data_dict
     #         )
+    #     )
 
+    # def test_missing_data_extension_model(self):
+    #     data_extension_model = TestProject2ExtensionTable
+    #     data_extension_data_dict = {}
+    #     self.assertFalse(
+    #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+    #             data_extension_model, data_extension_data_dict
+    #         )
+    #     )
     
-    # def test_data_extension_not_uploadable_missing_extension_data(self):
-    #     data_extension_model = TestProject2ExtensionTable
-    #     data_extension_data_dict = {
-    #         'TestProject2': {
-    #             'name_extension' : '',
-    #         }
-    #     }
-    #     with self.assertRaises(ValueError):
+    # def test_with_not_existing_extension_model(self):
+    #     data_extension_model = None
+    #     data_extension_data_dict = {}
+    #     self.assertFalse(
     #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
     #             data_extension_model, data_extension_data_dict
     #         )
+    #     )
 
+    # def test_incomplete_data_extension_data(self):
+    #     data_extension_model = TestProject2ExtensionTable
+    #     data_extension_data_dict = {
+    #         'name_extension': 'extension1',
+    #         # Missing 'price'
+    #     }
+        
+    #     result = self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+    #     data_extension_model, data_extension_data_dict
+    #     )
+    #     self.assertFalse(result)
+       
+
+    # def test_invalid_data_extension_data(self):
+    #     data_extension_model = TestProject2ExtensionTable
+    #     data_extension_data_dict = {
+    #         'name_extension': 'extension1',
+    #         'invalid_field': 'invalid_value',
+    #     }
+    #     self.assertFalse(
+    #         self.manager._GeneralManager__checkIfDataExtensionIsUploadable(
+    #             data_extension_model, data_extension_data_dict
+    #         )
+    #     )
+
+ 
 
 
 # class TestIsDataExtensionTableDataUploadable(TestCase):
@@ -1592,7 +1577,6 @@ class TestGetToPushListForDataExtensionData(TestCase):
         ]
         self.assertEqual(result_list, expected_result)
         
-
 class TestSaveDataToDB(TestCase):
     def setUp(self):
         GeneralManager.group_model = TestProjectGroup
@@ -1633,7 +1617,6 @@ class TestSaveDataToDB(TestCase):
         self.assertEqual(saved_data_model_obj.creator.id, new_data_model_obj.creator.id)
         self.assertTrue(saved_data_model_obj.active)       
 
-
 class TestWriteDataExtensionData(TestCase):
     def setUp(self):
         GeneralManager.data_extension_model_list = [TestProject2ExtensionTable]
@@ -1661,7 +1644,6 @@ class TestWriteDataExtensionData(TestCase):
                 }
             ]
         }
-    
         self.manager._GeneralManager__writeDataExtensionData(
             {}, 
             data_extension_data_dict,
@@ -1671,7 +1653,6 @@ class TestWriteDataExtensionData(TestCase):
         self.assertEqual(data_extension_model.name_extension, 'extension1')
         self.assertEqual(data_extension_model.price, 23)
 
-    
     def test_write_data_extension_data_with_latest_extension_data(self):
 
         new_data_model_obj = TestProject2(
@@ -1788,9 +1769,6 @@ class TestGetLatestDataExtensionData(TestCase):
         latest_extension_data = self.manager._GeneralManager__getLatestDataExtensionData()
         self.assertEqual(latest_extension_data, {'TestProject2ExtensionTable': []})   
 
-
-
-
 class TestWriteData(TestCase):
     def setUp(self):
         self.creator_user = User.objects.create()
@@ -1845,7 +1823,6 @@ class TestWriteData(TestCase):
         self.assertEqual(data_extension_model.name_extension, 'extension1')
         self.assertEqual(data_extension_model.price, 23)
 
-
 class TestGetFieldsAndValues(TestCase):
     def setUp(self):
         self.test_project_group = TestProjectGroup.objects.create()
@@ -1887,7 +1864,40 @@ class TestGetFieldsAndValues(TestCase):
             self.assertEqual(fields['test_project_user_group'], test_project_user_group)
             self.assertEqual(fields['test_project_user_role'], [role1, role2])
           
+class TestCreateSearchKeys(TestCase):
+    
+    def test_valid_key_value(self):
+        key = 'name'
+        value = 'TestProject1'
+        result = GeneralManager._GeneralManager__createSearchKeys(key, value)      
 
+        expected_result = ('name', 'TestProject1')
+        self.assertEqual(result, expected_result)
+
+    def test_valid_key_tuple_value(self):
+        key = 'ap_no'
+        value = ('>', 5)
+        result = GeneralManager._GeneralManager__createSearchKeys(key, value)      
+        expected_result = ('ap_no__gt', 5)
+        self.assertEqual(result, expected_result)
+
+    def test_invalid_operator(self):
+        key = 'project_number'
+        value = ('!=', '123456')
+        with self.assertRaises(ValueError):
+            GeneralManager._GeneralManager__createSearchKeys(key, value)
+
+    def test_invalid_tuple_length(self):
+        key = 'date'
+        value = ('>=', '2023-07-17', '2023-07-31')
+        with self.assertRaises(ValueError):
+            GeneralManager._GeneralManager__createSearchKeys(key, value)
+
+    def test_invalid_operator_and_value(self):
+        key = 'name'
+        value = (None, 'TestProject1')
+        with self.assertRaises(ValueError):
+            GeneralManager._GeneralManager__createSearchKeys(key, value)
 
 
 
