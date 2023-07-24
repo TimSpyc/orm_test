@@ -1617,10 +1617,15 @@ class GeneralManager:
         if model_type == 'data_model':
             name = 'data table data'
             model = cls.data_model
+
         elif model_type == 'group_model':
             name = 'group table data'
             model = cls.group_model
-        
+
+        elif model_type == 'data_extension_model': 
+            name = 'data extension table data'
+            model = cls.data_extension_model_list[0] 
+          
         raise ValueError(
             f''' 
             The given **kwargs are not sufficient.
@@ -1710,9 +1715,8 @@ class GeneralManager:
                 data_extension_model,
                 data_extension_data_dict
             )
-            is_data_extension_data_uploadable = all(
-                is_data_extension_data_uploadable, is_valid
-            )
+            is_data_extension_data_uploadable = is_data_extension_data_uploadable and is_valid
+            
         return is_data_extension_data_uploadable
 
     @classmethod
@@ -1739,19 +1743,31 @@ class GeneralManager:
         Raises:
             ValueError: If the data is insufficient for the data extension model
         """
+
         data_extension_model_name = data_extension_model.__name__
+        if not data_extension_data_dict:
+            return False
+       
         if data_extension_model_name not in data_extension_data_dict.keys():
             return True
+
         data_to_check = data_extension_data_dict[data_extension_model_name]
+
+        extension_model_fields = set([field.name for field in data_extension_model._meta.get_fields()])
+        data_columns = set(data_to_check.keys())
+
+        if not data_columns.issubset(extension_model_fields):
+            return False
 
         is_data_extension_data_uploadable = cls.__isDataUploadable(
             data_to_check, 
             data_extension_model
         )
+
         if all(is_data_extension_data_uploadable):
             return True
         cls.__errorForInsufficientUploadData(
-            'data_extension_model_name', is_data_extension_data_uploadable 
+            'data_extension_model', is_data_extension_data_uploadable 
         )
        
 
