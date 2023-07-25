@@ -70,7 +70,7 @@ class GeneralIntermediate:
         intermediate_name: str,
         identification_dict: dict,
         search_date: datetime
-    ) -> Optional[object]:
+    ) -> object | None:
         """
         Handles the cache for the given intermediate name, identification
         dictionary and search date. If the search date is None, the cache is
