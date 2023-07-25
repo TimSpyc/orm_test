@@ -1905,6 +1905,7 @@ class TestCreateSearchKeys(TestCase):
         with self.assertRaises(ValueError):
             GeneralManager._GeneralManager__createSearchKeys(key, value)
 
+
 class TestCreateDirectAttribute(TestCase):
     def setUp(self):
         self.manager = GeneralManager.__new__(GeneralManager)
