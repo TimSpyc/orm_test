@@ -1243,7 +1243,7 @@ class GeneralManager:
                 The group model instance to which the data belongs.
             latest_extension_data (dict);
                 Dictionary containing the latest extension data.
-            data_extension_data_dict (dict);
+            data_extension_data_dict (dict):
                 Dictionary containing the new extension data to be updated.
         Returns:
             None
@@ -1262,17 +1262,6 @@ class GeneralManager:
             new_data_model_obj
         )
 
-    # def __getLatestDataData(self):
-    #     group_model_name = transferToSnakeCase(self.group_model.__name__)
-    #     group_model_obj = self.__group_obj
-    #     latest_data = self.data_model.objects.filter(
-    #         **{group_model_name: group_model_obj}
-    #         ).values().latest('date')
-
-    #     if latest_data == []:
-    #         latest_data = {}
-
-    #     return latest_data
     
     def __getLatestDataData(self):
         """
@@ -1304,9 +1293,10 @@ class GeneralManager:
 
         Returns:
             dict:
-                A dictionary containing the latest extension data for each data extension model.
+                A dictionary containing the latest extension data for each 
+                data extension model.
                 The dictionary is in the following format:
-                {'TestProject2ExtensionTable': []}
+                  {'TestProject2ExtensionTable': []}
         """
         latest_extension_data = {}
         for data_extension_model in self.data_extension_model_list:
@@ -1320,7 +1310,9 @@ class GeneralManager:
             latest_extension_data[data_extension_model_name] = []
             for entry in latest_data:
                 data_dict = self.__getFieldsAndValues(entry)
-                latest_extension_data[data_extension_model_name].append(data_dict)
+                latest_extension_data[
+                    data_extension_model_name
+                    ].append(data_dict)
 
         return latest_extension_data
 
@@ -1387,10 +1379,9 @@ class GeneralManager:
 
         Returns:
             list[dict]:
-                A list of dictionaries, each representing data to be 
-                pushed to the data extension model.
-                And the model Base to which the data extension model
-                is referencing to
+                A list of dictionaries, containing the data to be pushed to 
+                the data extension model and the model Base to which the 
+                data extension model is referencing to
         """
         data_extension_model_name = data_extension_model.__name__
         data_table_name = transferToSnakeCase(
@@ -1621,7 +1612,7 @@ class GeneralManager:
         elif model_type == 'group_model':
             name = 'group table data'
             model = cls.group_model
-
+        ## TODO: Guck dir das data extension model nochmal an
         elif model_type == 'data_extension_model': 
             name = 'data extension table data'
             model = cls.data_extension_model_list[0] 
@@ -1753,7 +1744,8 @@ class GeneralManager:
 
         data_to_check = data_extension_data_dict[data_extension_model_name]
 
-        extension_model_fields = set([field.name for field in data_extension_model._meta.get_fields()])
+        ##TODO
+        extension_model_fields = set(cls.__getColumnNameList(data_extension_model))
         data_columns = set(data_to_check.keys())
 
         if not data_columns.issubset(extension_model_fields):
