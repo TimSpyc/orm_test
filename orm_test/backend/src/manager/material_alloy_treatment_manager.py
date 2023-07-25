@@ -6,7 +6,7 @@ class MaterialAlloyTreatmentGroup(GroupTable):
     temperature = models.FloatField()
     duration = models.FloatField()
 
-    class _meta:
+    class meta:
         unique_together = ('temperature', 'duration')
 
     def manager(self, search_date, use_cache):

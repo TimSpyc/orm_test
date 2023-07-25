@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, NormGroup
+from backend.models import GroupTable, DataTable #NormGroup
 from backend.src.auxiliary.manager import GeneralManager
 
 class MaterialAlloyGroup(GroupTable):
@@ -12,7 +12,7 @@ class MaterialAlloyGroup(GroupTable):
     
 class MaterialAlloy(DataTable):
     material_alloy_group = models.ForeignKey(MaterialAlloyGroup, on_delete= models.DO_NOTHING)
-    norm = models.ForeignKey(NormGroup, on_delete= models.DO_NOTHING)
+    norm = models.ForeignKey('NormGroup', on_delete= models.DO_NOTHING)
     chemical_symbol = models.CharField(max_length=255)
     internal_name = models.CharField(max_length=255, null=True)
     density = models.FloatField(null=True)
