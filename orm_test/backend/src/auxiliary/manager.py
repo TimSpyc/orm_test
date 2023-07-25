@@ -60,6 +60,7 @@ class ExternalDataManager:
     def getData(self, column_list: list, **kwargs: dict) -> QuerySet:
         return self.database_model.objects.filter(**kwargs).values(*column_list)
 
+
     def __getStartDate(self) -> datetime:
         return self.database_model.objects.filter(date__lte=self.search_date).order_by('-date').first()
 
@@ -181,7 +182,7 @@ class GeneralManager:
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
-    
+
     def __str__(self):
         return f'''
             {self.__class__.__name__} with group_id:{self.group_id}
@@ -393,6 +394,7 @@ class GeneralManager:
         data_source, column_name = self.__getDataSourceAndColumnBaseName(column, ref_type)
         attribute_name = f'{column_name}_manager'
         def method(self):
+
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group
@@ -401,6 +403,7 @@ class GeneralManager:
                     manager_list.append(manager)
             return manager_list
         return (method, attribute_name)
+
 
     def __getManagerFromGroupModel(self, column, model_obj, ref_type):
         """
@@ -430,12 +433,13 @@ class GeneralManager:
             column (Field): The field object containing column details.
             model_obj (Model): The model object containing the data.
             ref_type (str): The type of the reference.
-
+            
         Returns:
             tuple: A tuple containing the generated method and attribute name.
         """
         attribute_name = f'{column.name}_manager'
         def method(self):
+
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group
             manager = group_data.manager(self.search_date, self.use_cache)
@@ -479,7 +483,6 @@ class GeneralManager:
         except KeyError:
             raise ValueError('this is not implemented yet')
 
-
     def __createProperty(self, attribute_name: str, func):
         """
         Create a property with a given attribute name and function.
@@ -520,6 +523,7 @@ class GeneralManager:
         Returns:
             tuple[str, str]: A tuple consisting of the reference type and the table type.
         """
+
         if column.related_model:
             ref_table_type = column.related_model.table_type
             ref_type = column.get_internal_type()
@@ -529,6 +533,7 @@ class GeneralManager:
             ref_table_type = None
             ref_type = None
         return ref_table_type, ref_type
+    
 
     @classmethod
     def __getGroupModelName(cls) -> str:
@@ -703,6 +708,26 @@ class GeneralManager:
         key: str,
         value: any
     ) -> tuple[bool, str, any]:
+        """
+        Get data for DataExtensionTable models and organize it for uploading.
+
+        Args:
+            key (str): The key of the key-value pair to be processed.
+            value (any): The value associated with the key.
+
+        Returns:
+            tuple: A tuple containing: 
+                - bool: Whether value is meant for a DataExtensionTable model.
+                - str: The name of the DataExtensionTable model.
+                - any: A dictionary containing the data organized for uploading
+                        to the corresponding DataExtensionTable model.
+
+        Raises:
+            ValueError: 
+            If the provided column name references a non-existent model and 
+            If the provided data contains columns that do not exist in 
+            the referenced model.
+        """
         is_in_data_ext_model = False
         if not type(value) == list:
             return is_in_data_ext_model, key, value
@@ -751,6 +776,7 @@ class GeneralManager:
             to_upload_dict['data'].append(to_insert_dict)
 
         return is_in_data_ext_model, model_name, to_upload_dict
+
 
     @classmethod
     def __getFilteredManagerList(
@@ -816,9 +842,23 @@ class GeneralManager:
         
         return [{f'{group_model_name}_id': group_id,
                   'search_date': search_date} for group_id in group_id_list]
-
+    
     @staticmethod
     def __createSearchKeys(key, value):
+        """
+        Convert a search key-value pair to the correct query lookup format.
+
+        Args:
+            key (str): The name of the field for the search.
+            value (): The search value or a tuple with an operator and value.
+
+        Returns:
+            Tuple[str, Any]: A tuple with the field lookup string and value.
+
+        Raises:
+            ValueError: If the value is a tuple but has a valid operator or
+                 has an invalid length.
+        """
         if type(value) != tuple:
             return key, value
         if len(value) != 2:
@@ -868,7 +908,7 @@ class GeneralManager:
                 A list of manager objects created 
                 from the provided dictionary data.
         """
-        return [cls(**data, use_cache=use_cache) for data in creation_dict_list] 
+        return [cls(**data, use_cache=use_cache) for data in creation_dict_list]
 
     def __errorIfNotUpdatable(self) -> None:
         """
@@ -911,7 +951,7 @@ class GeneralManager:
                 - str: The updated column name if it references a model or 
                     many-to-many relationship or the original column name.
                 - bool: Whether the column references a model.
-                - bool: Whether the column references a many-to-many relationship.
+                - bool: Whether the column references a many-to-many relation.
         """
         db_column_exists = False
 
@@ -976,13 +1016,13 @@ class GeneralManager:
         possible_models: list
     ) -> tuple[str,bool]:
         """
-        Check if the given column name references a many-to-many relationship
-        in the provided column list. Many-to-many relationship columns 
-        must end with '_id_list'.
+        Check if the given column name references a DataTable Model in
+        the provided possible models list. DataExtensions relationship columns
+        must end with '_dict_list'.
 
         Args:
             column_name (str): The name of the column to check.
-            available_column_list (list): A list of available column names.
+            possible_models (list): A list of available models.
 
         Returns:
             Tuple: 
@@ -1259,7 +1299,8 @@ class GeneralManager:
                 group_model_column_list, 
                 **kwargs
                 )
-        is_data_extension_data_uploadable = self.__isDataExtensionUploadable(
+        is_data_extension_data_uploadable = self.\
+            __isDataExtensionTableDataUploadable(
             data_extension_data_dict
         )
         if not is_data_extension_data_uploadable:
@@ -1290,6 +1331,23 @@ class GeneralManager:
         latest_extension_data: dict,
         data_extension_data_dict: dict,
     ) -> None:
+        """
+        Write new data to the data model and data extension models.
+
+        Args:
+            latest_data (dict): The latest data fetched from the data model.
+            data_data_dict (dict): 
+                Dictionary containing the new data to be updated.
+            creator_user_id (int): The ID of the user who is making the update.
+            group_obj (GroupModel): 
+                The group model instance to which the data belongs.
+            latest_extension_data (dict);
+                Dictionary containing the latest extension data.
+            data_extension_data_dict (dict):
+                Dictionary containing the new extension data to be updated.
+        Returns:
+            None
+        """
 
         new_data_model_obj = cls.__writeDataData(
             latest_data_data,
@@ -1304,17 +1362,42 @@ class GeneralManager:
             new_data_model_obj
         )
 
+    
     def __getLatestDataData(self):
+        """
+        Get the latest data entry for the specified group model.
+
+        Returns:
+            dict: A dictionary containing the latest data entry 
+                for the group model. If no data is found, an empty 
+                dictionary is returned.
+
+        Raises:
+            DoesNotExist: 
+                If no data entry is found for the specified group model.
+        """
         group_model_name = transferToSnakeCase(self.group_model.__name__)
         group_model_obj = self.__group_obj
-        latest_data = self.data_model.objects.filter(
-            **{group_model_name: group_model_obj}
-            ).values().latest('date')
-        if latest_data == []:
+        try:
+            latest_data = self.data_model.objects.filter(
+                **{group_model_name: group_model_obj}
+                ).values().latest('date')
+        except self.data_model.DoesNotExist:
             latest_data = {}
+
         return latest_data
     
     def __getLatestDataExtensionData(self):
+        """
+        Get the latest extension data for each data extension model.
+
+        Returns:
+            dict:
+                A dictionary containing the latest extension data for each 
+                data extension model.
+                The dictionary is in the following format:
+                  {'TestProject2ExtensionTable': []}
+        """
         latest_extension_data = {}
         for data_extension_model in self.data_extension_model_list:
             data_extension_model_name = data_extension_model.__name__
@@ -1327,7 +1410,9 @@ class GeneralManager:
             latest_extension_data[data_extension_model_name] = []
             for entry in latest_data:
                 data_dict = self.__getFieldsAndValues(entry)
-                latest_extension_data[data_extension_model_name].append(data_dict)
+                latest_extension_data[
+                    data_extension_model_name
+                    ].append(data_dict)
 
         return latest_extension_data
 
@@ -1340,7 +1425,7 @@ class GeneralManager:
         group_obj: models.Model
     ) -> models.Model:
         """
-        Write new data to the data model and data extension models.
+        Write new data to the data model.
 
         Args:
             latest_data (dict): The latest data fetched from the data model.
@@ -1377,7 +1462,27 @@ class GeneralManager:
         latest_extension_data: dict,
         new_data_model_obj: Model
     ) -> dict:
+        """
+        Create a list of data to be pushed to the data extension model.
 
+        Args:
+            data_extension_model (Model):
+                The data extension model to which the data will be pushed.
+            data_extension_data_dict (dict):
+                Dictionary containing the new data to be updated 
+                in the data extension model.
+            latest_extension_data (dict):
+                Dictionary containing the latest data fetched from 
+                the data extension model.
+            new_data_model_obj (Model):
+                The new data model object to which the data belongs.
+
+        Returns:
+            list[dict]:
+                A list of dictionaries, containing the data to be pushed to 
+                the data extension model and the model Base to which the 
+                data extension model is referencing to
+        """
         data_extension_model_name = data_extension_model.__name__
         data_table_name = transferToSnakeCase(
             new_data_model_obj.__class__.__name__
@@ -1403,21 +1508,21 @@ class GeneralManager:
         cls,
         latest_extension_data: dict,
         data_extension_data_dict: dict,
-        new_data_model_obj: models.Model
+        new_data_model_obj: object
     ) -> None:
         """
-        Write new data to the data model and data extension models.
+        Write new data to the data extension models.
 
         Args:
             latest_extension_data (dict):
                 The latest data fetched from the data extension models.
             data_extension_data_dict (dict): 
                 Dictionary containing the new data to be updated.
-            creator_user_id (int): The ID of the user who is making the update.
-            group_obj (GroupModel): 
-                The group model instance to which the data belongs.
+            new_data_model_obj (object): 
+                The data model object.
         """
-        data_table_name = transferToSnakeCase(cls.data_model.__name__)
+
+        #data_table_name = transferToSnakeCase(cls.data_model.__name__)
         
         for data_extension_model in cls.data_extension_model_list:
             to_push_data_list = cls.__getToPushListForDataExtensionData(
@@ -1438,7 +1543,24 @@ class GeneralManager:
                 )
 
     @staticmethod
-    def __saveDataToDB(model_to_insert, new_data):
+    def __saveDataToDB(
+        model_to_insert: models.Model, 
+        new_data: dict
+        ) -> models.Model:
+        """
+        Save new data to the database using the specified model.
+
+        Args:
+            model_to_insert (Model): 
+                The model to which the new data will be inserted.
+            new_data (dict): 
+                A dictionary containing the new data to be 
+                inserted into the database.
+
+        Returns:
+            Model: 
+                The newly created model instance representing the saved data.
+        """
         many_to_many_dict = {}
         not_many_to_many_dict = {}
         
@@ -1475,7 +1597,17 @@ class GeneralManager:
         self.update(creator_user_id, active=False)
 
     @staticmethod
-    def __getNotNullFields(model):
+    def __getNotNullFields(model: models.Model) -> list:
+        """
+        Get a list of fields of the model that are marked as NOT NULL.
+
+        Args:
+            model (Model): The model for which to retrieve the NOT NULL fields
+
+        Returns:
+            list: A list containing the names of fields marked as NOT NULL
+            in the model.
+        """
         return [
             field.name for field in model._meta.get_fields()
             if not field.null and not field.auto_created and
@@ -1483,7 +1615,18 @@ class GeneralManager:
         ]
 
     @staticmethod
-    def __getUniqueFields(model):
+    def __getUniqueFields(model: models.Model) -> list:
+        """
+        Get a list of fields of the model that are part of a unique constraint.
+
+        Args:
+            model (Model): The model for which to retrieve the fields 
+            for unique constraints.
+
+        Returns:
+            list: A list containing the names of fields that are part of
+                unique constraints in the model.
+        """
         unique_fields = []
         for unique_field_tuple in model._meta.unique_together:
             unique_fields = [*unique_field_tuple, *unique_fields]
@@ -1532,7 +1675,6 @@ class GeneralManager:
             not_null_fields, 
             data_dict
             )
-
         return (
             contains_all_unique_fields,
             contains_all_not_null_fields,
@@ -1540,15 +1682,43 @@ class GeneralManager:
         )
 
     @classmethod
-    def __errorForInsufficientUploadData(cls, model_type: str, is_data_uploadable: list):
+    def __errorForInsufficientUploadData(
+        cls, model_type: str, 
+        is_data_uploadable: list
+        ):
+        """
+        Raise a ValueError if there is insufficient data to upload 
+        for the specified model.
+
+        Args:
+            model_type (str):
+                The type of the model, either 'data_model' or 'group_model'.
+            is_data_uploadable (list): A list of boolean values 
+                indicating these criterias:
+                                                
+                    1. Whether all unique fields are present in the data_dict
+                    2. Whether all not_null fields are present in the data_dict
+                    3. Whether all not_null fields in the data_dict contain data
+                       (no None values)
+
+        Raises:
+            ValueError: An error is raised with details of the insufficient 
+                data for the given model.
+        """
         if model_type == 'data_model':
             name = 'data table data'
             model = cls.data_model
+
         elif model_type == 'group_model':
             name = 'group table data'
             model = cls.group_model
+        ## TODO: Guck dir das data extension model nochmal an
+        elif model_type == 'data_extension_model': 
+            name = 'data extension table data'
+            model = cls.data_extension_model_list[0] 
+          
         raise ValueError(
-            f'''
+            f''' 
             The given **kwargs are not sufficient.
             Because {name}:
                 contains_all_unique_fields: {is_data_uploadable[0]}
@@ -1559,9 +1729,24 @@ class GeneralManager:
                 unique_fields = {cls.__getUniqueFields(model)}
             '''
         )
+   
 
     @classmethod
-    def __isDataDataUploadable(cls, data_data_dict):
+    def __isDataTableDataUploadable(cls, data_data_dict: dict):
+        """
+        Check if the data provided in the data_data_dict is uploadable 
+        to the data model.
+
+        Args:
+            data_data_dict (dict): A dictionary containing the new data to be 
+            updated in the data model.
+
+        Returns:
+            bool: True if the data is uploadable, False otherwise.
+
+        Raises:
+            ValueError: If the data is insufficient for the data model.
+        """
         is_data_data_uploadable = cls.__isDataUploadable(
                                     data_data_dict, 
                                     cls.data_model)
@@ -1572,7 +1757,21 @@ class GeneralManager:
         )
 
     @classmethod
-    def __isGroupDataUploadable(cls, group_data_dict):
+    def __isGroupTableDataUploadable(cls, group_data_dict: dict):
+        """
+        Check if the data provided in the group_data_dict is uploadable 
+        to the group model.
+
+        Args:
+            group_data_dict (dict): A dictionary containing the new data to 
+            be updated in the group model.
+
+        Returns:
+            bool: True if the data is uploadable, False otherwise.
+
+        Raises:
+            ValueError: If the data is insufficient for the group model.
+        """
         is_group_data_uploadable = cls.__isDataUploadable(
                                     group_data_dict, 
                                     cls.group_model)
@@ -1581,21 +1780,34 @@ class GeneralManager:
         cls.__errorForInsufficientUploadData(
             'group_model', is_group_data_uploadable
         )
+        return False
+
+
     
     @classmethod
-    def __isDataExtensionUploadable(
+    def __isDataExtensionTableDataUploadable(
         cls,
-        data_extension_data_dict
-    ):
+        data_extension_data_dict: dict
+    ) -> bool:
+        """
+        Check if the data provided in the data_extension_data_dict is uploadable
+        to data extension models.
+
+        Args:
+            data_extension_data_dict (dict): A dictionary containing the new 
+            data to be updated in the data extension model
+
+        Returns:
+            bool: True if the data is uploadable for all data extension models
+        """
         is_data_extension_data_uploadable = True
         for data_extension_model in cls.data_extension_model_list:
             is_valid = cls.__checkIfDataExtensionIsUploadable(
                 data_extension_model,
                 data_extension_data_dict
             )
-            is_data_extension_data_uploadable = all(
-                is_data_extension_data_uploadable, is_valid
-            )
+            is_data_extension_data_uploadable = is_data_extension_data_uploadable and is_valid
+            
         return is_data_extension_data_uploadable
 
     @classmethod
@@ -1604,26 +1816,71 @@ class GeneralManager:
         data_extension_model: Model,
         data_extension_data_dict: dict
     ):
+        """
+        Check if the data provided in the data_extension_data_dict is uploadable
+        to a specific data extension model.
+
+        Args:
+            data_extension_model (Model): 
+                The data extension model to which the data will be pushed.
+            data_extension_data_dict (dict):
+                 Dictionary containing the new data to be updated in the 
+                 data extension model.
+
+        Returns:
+            bool: True if the data is uploadable for the specific 
+                data extension model
+
+        Raises:
+            ValueError: If the data is insufficient for the data extension model
+        """
+
         data_extension_model_name = data_extension_model.__name__
+        if not data_extension_data_dict:
+            return False
+       
         if data_extension_model_name not in data_extension_data_dict.keys():
             return True
+
         data_to_check = data_extension_data_dict[data_extension_model_name]
+
+        ##TODO
+        extension_model_fields = set(cls.__getColumnNameList(data_extension_model))
+        data_columns = set(data_to_check.keys())
+
+        if not data_columns.issubset(extension_model_fields):
+            return False
+
         is_data_extension_data_uploadable = cls.__isDataUploadable(
             data_to_check, 
             data_extension_model
         )
+
         if all(is_data_extension_data_uploadable):
             return True
         cls.__errorForInsufficientUploadData(
-            'data_extension_model_name', is_data_extension_data_uploadable
+            'data_extension_model', is_data_extension_data_uploadable 
         )
+       
+
 
     @classmethod
-    def __getOrCreateGroupModel(cls, group_data_dict):
+    def __getOrCreateGroupModel(cls, group_data_dict: dict) -> models.Model:
+        """
+        Get or create a group model instance based on the provided data.
+
+        Args:
+            group_data_dict (dict): 
+                Dictionary containing the data for the group model instance.
+
+        Returns:
+            GroupModel: 
+                The group model instance that was either retrieved or created.
+        """
         unique_fields = cls.group_model._meta.unique_together
 
         if len(unique_fields) == 0:
-            group_obj = cls.group_model.object.create(
+            group_obj = cls.group_model.objects.create(
                 **group_data_dict
             )
         else:
@@ -1661,9 +1918,14 @@ class GeneralManager:
             group_model_column_list, 
             **kwargs)
 
-        is_group_data_uploadable = cls.__isGroupDataUploadable(group_data_dict)
-        is_data_data_uploadable = cls.__isDataDataUploadable(data_data_dict)
-        is_data_extension_data_uploadable = cls.__isDataExtensionUploadable(
+        is_group_data_uploadable = cls.__isGroupTableDataUploadable(
+            group_data_dict
+            )
+        is_data_data_uploadable = cls.__isDataTableDataUploadable(
+            data_data_dict
+            )
+        is_data_extension_data_uploadable = cls.\
+            __isDataExtensionTableDataUploadable(
             data_extension_data_dict
         )
 
@@ -1679,7 +1941,7 @@ class GeneralManager:
                 data_data_dict,
                 creator_user_id, 
                 group_obj,
-                datetime.now(),
+                #datetime.now(),
                 {},
                 data_extension_data_dict,
             )
