@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Max, Q
 import pickle, json
 from datetime import datetime
+from hashlib import md5
 
 class CacheManager(models.Model):
     """
@@ -17,7 +18,7 @@ class CacheManager(models.Model):
         unique_together = ('manager_name', 'group_id', 'date')
 
     @classmethod
-    def get_cache_data(
+    def getCacheData(
         cls,
         manager_name: str,
         group_model_obj: models.Model,
@@ -68,7 +69,7 @@ class CacheManager(models.Model):
         return None
 
     @classmethod
-    def set_cache_data(
+    def setCacheData(
         cls,
         manager_name: str,
         group_id: int,
@@ -118,7 +119,7 @@ class CacheIntermediate(models.Model):
         )
 
     @classmethod
-    def get_cache_data(
+    def getCacheData(
         cls,
         intermediate_name: str,
         identification_dict: dict,
@@ -153,7 +154,7 @@ class CacheIntermediate(models.Model):
         return None
 
     @classmethod
-    def set_cache_data(
+    def setCacheData(
         cls,
         intermediate_name: str,
         identification_dict: dict,
@@ -176,9 +177,9 @@ class CacheIntermediate(models.Model):
             intermediate_name=intermediate_name,
             identification=cls.getIdString(identification_dict),
             start_date=start_date,
-            end_date=end_date
         )
         entry.data=pickle.dumps(data)
+        entry.end_date = end_date
         entry.save()
 
     @staticmethod
@@ -192,4 +193,5 @@ class CacheIntermediate(models.Model):
         Returns:
             str: The sorted JSON string of the identification dictionary.
         """
-        return json.dumps(identification_dict, sort_keys=True)
+        id_json = json.dumps(identification_dict, sort_keys=True)
+        return md5(id_json).hexdigest()

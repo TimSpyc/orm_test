@@ -3,8 +3,11 @@ from backend.models import CacheIntermediate
 from datetime import datetime
 from backend.src.auxiliary.exceptions import MissingAttributeError
 from backend.src.auxiliary.scenario_handler import ScenarioHandler
-from backend.src.auxiliary.cache_handler import CacheHandler
-from backend.src.auxiliary.manager import GeneralManager
+from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
+from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
+from django.core.cache import cache
+import copy
+
 
 class GeneralIntermediate:
     """
@@ -32,6 +35,7 @@ class GeneralIntermediate:
             return super().__new__(cls)
 
         kwargs = cls.__makeArgsToKwargs(args, kwargs)
+        initial_kwargs = copy.deepcopy(kwargs)
 
         search_date = kwargs.pop('search_date', None)
         use_cache = kwargs.pop('use_cache', None)
@@ -41,21 +45,62 @@ class GeneralIntermediate:
 
         kwargs['relevant_scenarios'] = rel_scenario
         intermediate_name = cls.__name__
-
+        identification_dict = {
+            'intermediate_name': intermediate_name,
+            'kwargs': kwargs
+        }
         if use_cache:
-            cached_instance = CacheIntermediate.get_cache_data(
-                intermediate_name=intermediate_name,
-                identification_dict=kwargs,
-                date=search_date
+            cached_instance = cls.__handleCache(
+                intermediate_name,
+                identification_dict,
+                search_date
             )
             if cached_instance:
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__({**kwargs, 'search_date': search_date})
-        instance.identification_dict = kwargs
+        instance._identification_dict = identification_dict
+        instance._initial_kwargs = initial_kwargs
 
         return instance
+
+    @staticmethod
+    def __handleCache(
+        intermediate_name: str,
+        identification_dict: dict,
+        search_date: datetime
+    ) -> object | None:
+        """
+        Handles the cache for the given intermediate name, identification
+        dictionary and search date. If the search date is None, the cache is
+        checked for a cached instance of the given identification dictionary.
+        If a cached instance is found, it is returned. Otherwise, the cache
+        is checked for a cached instance of the given intermediate name,
+        identification dictionary and search date. If a cached instance is
+        found, it is returned. Otherwise, None is returned.
+
+        Args:
+            intermediate_name (str): The name of the intermediate.
+            identification_dict (dict): The identification dictionary of the
+                intermediate.
+            search_date (datetime): The search date.
+
+        Returns:
+            Optional[object]: The cached instance if found, None otherwise.
+        """
+        if search_date is None:
+            id_string = CacheIntermediate.getIdString(identification_dict)
+            cached_instance = cache.get(id_string)
+            if cached_instance:
+                return cached_instance
+        cached_instance = CacheIntermediate.getCacheData(
+            intermediate_name=intermediate_name,
+            identification_dict=identification_dict,
+            date=search_date
+        )
+        if cached_instance:
+            return cached_instance
 
     def __init__(
         self,
@@ -73,8 +118,8 @@ class GeneralIntermediate:
             kwargs (dict): Additional keyword arguments to use when
                 initializing the instance.
         """
-        self.identification_dict: dict
-        self.scenario_handler : ScenarioHandler(scenario_dict)
+        self._identification_dict: dict
+        self.scenario_handler = ScenarioHandler(scenario_dict)
         self.dependencies = dependencies
         self.search_date = search_date
         self.__checkIfDependenciesAreFilled()
@@ -82,6 +127,7 @@ class GeneralIntermediate:
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
         CacheHandler.add(self)
+        self.updateCache()
 
     def __eq__(self, other: object) -> bool:
         """
@@ -99,10 +145,10 @@ class GeneralIntermediate:
             return False
 
         own_id_string = CacheIntermediate.getIdString(
-            self.identification_dict
+            self._identification_dict
         )
         other_id_string = CacheIntermediate.getIdString(
-            other.identification_dict
+            other._identification_dict
         )
         
         return (
@@ -174,7 +220,8 @@ class GeneralIntermediate:
         for dependency in self.dependencies:
             if (
                 not isinstance(dependency, GeneralIntermediate) or 
-                not isinstance(dependency, GeneralManager)
+                not isinstance(dependency, GeneralManager) or
+                not isinstance(dependency, ExternalDataManager)
             ):
                 raise TypeError(
                     f'''
@@ -237,15 +284,112 @@ class GeneralIntermediate:
         return relevant_scenarios, scenario_handler
 
     def updateCache(self):
-        CacheIntermediate.set_cache_data(
+        """
+        Updates the cache with the current data. If the end date is not set,
+        the cache is updated with the current data. Otherwise, the cache is
+        updated with the current data and the end date is set to the current
+        date.
+        """
+        if self.end_date is None:
+            id_string = CacheIntermediate.getIdString(self._identification_dict)
+            cache.set(id_string, self)
+        CacheIntermediate.setCacheData(
             intermediate_name=self.__class__.__name__,
-            identification_dict=self.identification_dict,
+            _identification_dict=self._identification_dict,
             data=self,
             start_date=self.start_date,
             end_date=self.end_date
         )
 
-    def setEndDate(self, end_date: datetime):
-        if self.end_date is None:
-            self.end_date = end_date
-            self.updateCache()
+    def checkIfCacheNeedsToExpire(
+        self,
+        dependency: object,
+        date: datetime
+    ) -> bool:
+        """
+        Checks if the cache needs to expire based on the given dependency and
+        date. Replace this function for custom cache expiration logic.
+
+        Args:
+            dependency (object): The dependency to check.
+            date (datetime): The date to check.
+
+        Returns:
+            bool: True if the cache needs to expire, False otherwise.
+        """
+        return True
+
+    def expireCache(self, dependency: object, date: datetime) -> None:
+        """
+        Expires the cache if it needs to expire based on the given dependency
+        and date. If the cache needs to expire, the end date is set to the
+        current date and the cache is updated. Otherwise, the dependency is
+        updated and the cache is added.
+
+        Args:
+            dependency (object): The dependency to check.
+            date (datetime): The date to check.
+
+        Returns:
+            None
+        """
+        cache_needs_to_expire = self.checkIfCacheNeedsToExpire(
+            dependency,
+            date
+        )
+        if cache_needs_to_expire:
+            self.end_date = date
+            CacheIntermediate.setCacheData(
+                intermediate_name=self.__class__.__name__,
+                _identification_dict=self._identification_dict,
+                data=self,
+                start_date=self.start_date,
+                end_date=self.end_date
+            )
+            CacheHandler.update(self)
+        
+        else:
+
+            for i in enumerate(self.dependencies):
+                if self.dependencies[i] == dependency:
+                    self.dependencies[i] = self.__updateDependency(
+                        dependency,
+                        date
+                    )
+                    break
+            CacheHandler.add(self)
+            CacheIntermediate.setCacheData(
+                intermediate_name=self.__class__.__name__,
+                _identification_dict=self._identification_dict,
+                data=self,
+                start_date=self.start_date,
+                end_date=self.end_date
+            )
+
+    def __updateDependency(self, dependency: object, date: datetime) -> object:
+        """
+        Updates the given dependency based on the given date.
+
+        Args:
+            dependency (object): The dependency to update.
+            date (datetime): The date to update.
+
+        Returns:
+            object: The updated dependency.
+        """
+        if isinstance(dependency, GeneralIntermediate):
+            kwargs = dependency._initial_kwargs
+            kwargs['search_date'] = date
+            return dependency.__class__(**kwargs)
+        elif isinstance(dependency, GeneralManager):
+            group_id = dependency.group_id
+            return dependency.__class__(group_id, search_date=date)
+        elif isinstance(dependency, ExternalDataManager):
+            return dependency.__class__(search_date=date)
+        else:
+            raise TypeError(
+                f'''
+                The dependency {dependency} is not of type GeneralIntermediate,
+                GeneralManager or ExternalDataManager.
+                '''
+            )

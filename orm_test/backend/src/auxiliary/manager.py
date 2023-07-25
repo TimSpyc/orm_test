@@ -10,6 +10,7 @@ from django.db.models.query import QuerySet
 from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
+from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
 
 
 def transferToSnakeCase(name):
@@ -43,39 +44,6 @@ def noneValueInNotNullField(not_null_fields, data_dict):
     
     return bool(set(not_null_fields).intersection(set(data_is_none_list)))
 
-def updateCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(self, *args, **kwargs):
-        result = func(self, *args, **kwargs)
-        self.updateCache()
-
-        return result
-    return wrapper
-
-def createCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(cls, *args, **kwargs):
-        result = func(cls, *args, **kwargs)
-        cls.updateCache(result)
-
-        return result
-    return wrapper
 
 class ExternalDataManager:
 
@@ -85,13 +53,28 @@ class ExternalDataManager:
         self.search_date = search_date
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
+        self._identification_dict = {
+            'database_model': self.database_model,
+        }
 
-    def getData(self, column_list: list, filter_dict: dict):
-        pass
-    def __getStartDate(self):
-        pass
-    def __getEndDate(self):
-        pass
+    def getData(self, column_list: list, **kwargs: dict) -> QuerySet:
+        return self.database_model.objects.filter(**kwargs).values(*column_list)
+
+
+    def __getStartDate(self) -> datetime:
+        return self.database_model.objects.filter(date__lte=self.search_date).order_by('-date').first()
+
+    def __getEndDate(self) -> datetime:
+        return self.database_model.objects.filter(date__gt=self.search_date).order_by('date').first()
+
+    def create(self, **kwargs: dict):
+        self.database_model.objects.create(**kwargs)
+        CacheHandler.update(self)
+
+    def bulkCreate(self, data_list: list):
+        self.database_model.objects.bulk_create(data_list)
+        CacheHandler.update(self)
+
 
 class GeneralManager:
     """
@@ -102,6 +85,15 @@ class GeneralManager:
         group_model (Model): The group model class associated with this manager.
         data_model (Model): The data model class associated with this manager.
     """
+
+    MANY_TO_ONE = 'ManyToOneRel'
+    MANY_TO_MANY = 'ManyToManyField'
+    FOREIGN_KEY = 'ForeignKey'
+    GROUP_TABLE = 'GroupTable'
+    DATA_TABLE = 'DataTable'
+    DATA_EXTENSION_TABLE = 'DataExtensionTable'
+    REFERENCE_TABLE = 'ReferenceTable'
+
     group_model: Model
     data_model: Model
     data_extension_model_list: list[Model]
@@ -181,6 +173,12 @@ class GeneralManager:
 
         self.start_date = data_obj.date
         self.end_date = self.__getEndDate()
+        self._identification_dict = {
+            'group_id': self.group_id,
+            'manager_name': self.__class__.__name__,
+            'start_date': self.start_date,
+            'end_date': self.end_date
+        }
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
@@ -224,59 +222,112 @@ class GeneralManager:
         model_obj: Model,
         ignore_list: list = []
     ) -> None:
+        """
+        Set all attributes from the given model object onto the current object.
 
+        Args:
+            model_obj (Model): The model object from which to fetch the attributes.
+            ignore_list (list): A list of attributes to be ignored.
+
+        Returns:
+            None
+        """
         for column in model_obj._meta.get_fields():
             ref_table_type, ref_type = self.__getRefAndTableType(column)
-            if ref_table_type == 'ManyToOneRel':
-                column_name = transferToSnakeCase(column.related_model.__name__)
-            else:
-                column_name = column.name
+            column_name = column.name
 
             if self.__isIgnored(column_name, ignore_list):
                 continue
 
-            if ref_table_type is None:
-                self.__createDirectAttribute(column_name, column, model_obj)
+            if ref_table_type in [None, 'ReferenceTable', 'DataExtensionTable']:
+                self.__createDirectAttribute(ref_table_type, ref_type, column, model_obj)
+
             else:
-                self.__createReferenceAttribute(
+                self.__createManagerProperty(
                     column_name, column, model_obj, ref_table_type, ref_type
                 )
 
     def __createDirectAttribute(
         self,
-        column_name: str,
+        ref_table_type: str,
+        ref_type: str,
         column: Field,
         model_obj: Model
     ) -> None:
         """
-        Set a direct attribute on the instance using the data from 
-        the specified model object.
+        Create a direct attribute on the current object based on the given parameters.
 
         Args:
-            column_name (str):
-                The name of the attribute to be set on the instance.
-            column (Field):
-                The field representing the attribute in the model.
-            model_obj (Model):
-                The model object from which the data will be extracted.
+            ref_table_type (str): The type of the reference table.
+            ref_type (str): The type of reference.
+            column (Field): The field that represents the attribute.
+            model_obj (Model): The model object that holds the data.
+
         Returns:
             None
-
         """
-        setattr(self, column_name, getattr(model_obj, column.name))
+        methods = {
+            self.REFERENCE_TABLE: self.__assignAttribute,
+            self.DATA_EXTENSION_TABLE: self.__assignExtensionDataDictAttribute,
+            None: self.__assignAttribute
+        }
+        try:
+            methods[ref_table_type](column, model_obj, ref_type)
+        except KeyError:
+            raise ValueError('this is not implemented yet')
+
+    def __assignAttribute(self, column, model_obj, ref_type = None):
+        """
+        Assign the attribute from the model object to the current object.
+
+        Args:
+            column: The column of the attribute in the model object.
+            model_obj: The model object to get the attribute from.
+            ref_type: The type of the reference. Not necessary here
+                only to use the same method signature as in the extension
+                data dict attribute.
+
+        Returns:
+            None
+        """
+        setattr(self, column.name, getattr(model_obj, column.name))
+
+    def __assignExtensionDataDictAttribute(self, column, model_obj, ref_type):
+        """
+        Assign the dictionary attribute from the extension data in the model object to the current object.
+
+        Args:
+            column: The column of the attribute in the model object.
+            model_obj: The model object to get the attribute from.
+            ref_type: The type of the reference.
+
+        Returns:
+            None
+        """
+        if ref_type == self.MANY_TO_ONE:
+            column_name = transferToSnakeCase(column.related_model.__name__)
+            column_data = f'{column.name}_set'
+        else:
+            column_name = column.name
+            column_data = f'{column.name}_set'
+        attribute_name = f'{column_name}_dict_list'
+        values = [
+            self.__getFieldsAndValues(instance)
+            for instance in getattr(model_obj, column_data).all()
+        ]
+        setattr(self, attribute_name, values)
 
     @staticmethod
     def __getFieldsAndValues(instance):
         """
-        Get the fields and their values from a model instance.
+        Retrieve all fields and their values from an instance.
 
         Args:
-            instance (models.Model): The instance of a model.
+            instance: The instance to get fields and values from.
 
         Returns:
-            dict:
-                A dictionary containing the fields and their corresponding values from the model instance.
-        """   
+            dict: A dictionary containing field names as keys and their values.
+        """
         fields = {}
         for field in instance._meta.fields:
             value = getattr(instance, field.name)
@@ -287,130 +338,176 @@ class GeneralManager:
             )
         return fields
 
-    def __createReferenceAttribute(
-        self,
-        column_name: str,
-        column: Field,
-        model_obj: Model,
-        ref_table_type: str,
-        ref_type: str
-    ) -> None:
+    def __getDataSourceAndColumnBaseName(self, column, ref_type):
+        """
+        Retrieve the data source and column base name from the given column and reference type.
+
+        Args:
+            column: The column of the attribute.
+            ref_type: The type of the reference.
+
+        Returns:
+            tuple: A tuple containing the data source and column base name.
+        """
+        if ref_type == self.MANY_TO_ONE:
+            data_source = f'{column.name}_set'
+            column_name = transferToSnakeCase(column.related_model.__name__)
+        else:
+            data_source = column.name
+            column_name = column.name
         
-        def getManagerListFromGroupModelManyToOne(self):
-            return [
-                group_data.manager(self.search_date, self.use_cache)
-                for group_data in getattr(model_obj, f'{column.name}_set').all()
-            ]
-        
-        def getManagerListFromDataModelManyToOne(self):
+        return data_source, column_name
+
+    def __getManagerListFromGroupModel(self, column, model_obj, ref_type):
+        """
+        Generate a method that gets the list of managers from a group model, and return it along with an attribute name.
+
+        Args:
+            column: The column of the attribute.
+            model_obj: The model object.
+            ref_type: The type of the reference.
+
+        Returns:
+            tuple: A tuple containing the generated method and an attribute name.
+        """
+        data_source, column_name = self.__getDataSourceAndColumnBaseName(column, ref_type)
+        attribute_name = column_name.replace('group', 'manager_list')
+        method = lambda self: [
+            group_data.manager(self.search_date, self.use_cache)
+            for group_data in getattr(model_obj, data_source).all()
+        ]
+        return (method, attribute_name)
+
+    def __getManagerListFromDataModel(self, column, model_obj, ref_type):
+        """
+        Generate a method to obtain a list of managers from a data model and 
+        return it along with a corresponding attribute name.
+
+        Args:
+            column (Field): The field object containing column details.
+            model_obj (Model): The model object containing the data.
+            ref_type (str): The type of the reference.
+
+        Returns:
+            tuple: A tuple containing the generated method and attribute name.
+        """
+        data_source, column_name = self.__getDataSourceAndColumnBaseName(column, ref_type)
+        attribute_name = f'{column_name}_manager'
+        def method(self):
+
             manager_list = []
-            for data_data in getattr(model_obj, f'{column.name}_set').all(): 
+            for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group
                 manager = group_data.manager(self.search_date, self.use_cache)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
             return manager_list
+        return (method, attribute_name)
 
-        def getManagerListFromGroupModel():
-            return [
-                group_data.manager(self.search_date, self.use_cache)
-                for group_data in getattr(model_obj, column.name).all()
-            ]
-        
-        def getManagerListFromDataModel():
-            manager_list = []
-            for data_data in getattr(model_obj, column.name).all(): 
-                group_data = data_data.group
-                manager = group_data.manager(self.search_date, self.use_cache)
-                if manager.id == data_data.id:
-                    manager_list.append(manager)
-            return manager_list
 
-        def getExtensionDataDict():
-            return [
-                self.__getFieldsAndValues(instance)
-                for instance in getattr(model_obj, column.name).all()
-            ]
+    def __getManagerFromGroupModel(self, column, model_obj, ref_type):
+        """
+        Generate a method to obtain a manager from a group model and 
+        return it along with a corresponding attribute name.
 
-        def getManagerFromGroupModel():
+        Args:
+            column (Field): The field object containing column details.
+            model_obj (Model): The model object containing the data.
+            ref_type (str): The type of the reference.
+
+        Returns:
+            tuple: A tuple containing the generated method and attribute name.
+        """
+        attribute_name = f'{column.name}_manager'
+        def method(self):
             group_data = getattr(model_obj, column.name)
             return group_data.manager(self.search_date, self.use_cache)
+        return (method, attribute_name)
 
-        def getManagerFromDataModel():
+    def __getManagerFromDataModel(self, column, model_obj, ref_type):
+        """
+        Generate a method to obtain a manager from a data model and 
+        return it along with a corresponding attribute name.
+
+        Args:
+            column (Field): The field object containing column details.
+            model_obj (Model): The model object containing the data.
+            ref_type (str): The type of the reference.
+            
+        Returns:
+            tuple: A tuple containing the generated method and attribute name.
+        """
+        attribute_name = f'{column.name}_manager'
+        def method(self):
+
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group
             manager = group_data.manager(self.search_date, self.use_cache)
             if manager.id == data_data.id:
                 return manager
+        return (method, attribute_name)
 
-        if ref_type == 'ManyToOneRel':
-            if ref_table_type == 'GroupTable':
-                attribute_name = column_name.replace('group', 'manager_list')
-                self.__createProperty(
-                    attribute_name,
-                    getManagerListFromGroupModelManyToOne
-                )
-            elif ref_table_type == 'DataTable':
-                attribute_name = f'{column_name}_manager'
-                if self.data_model == column.related_model:
-                    return
-                self.__createProperty(
-                    attribute_name,
-                    getManagerListFromDataModelManyToOne
-                )
-            else:
-                raise ValueError('this is not implemented yet')
-        elif ref_type == 'ManyToManyField': 
-            if ref_table_type == 'GroupTable':
-                attribute_name = column_name.replace('group', 'manager_list')
-                self.__createProperty(
-                    attribute_name,
-                    getManagerListFromGroupModel
-                )
-            elif ref_table_type == 'DataExtensionTable':
-                attribute_name = f'{column_name}_dict_list'
-                setattr(self, attribute_name, getExtensionDataDict())
+    def __createManagerProperty(
+        self,
+        column: Field,
+        model_obj: Model,
+        ref_table_type: str,
+        ref_type: str
+    ) -> None:
+        """
+        Create a property for manager based on the type of reference table and reference type.
 
-            elif ref_table_type == 'DataTable':
-                if self.data_model == column.related_model:
-                    return
-                attribute_name = f"{column_name}_manager"
-                self.__createProperty(
-                    attribute_name,
-                    getManagerListFromDataModel
-                )
-            else:
-                raise ValueError('this is not implemented yet')
-        elif ref_type == 'ForeignKey':
-            if ref_table_type == 'GroupTable':
-                attribute_name = column_name.replace('group', 'manager')
-                self.__createProperty(
-                    attribute_name,
-                    getManagerFromGroupModel
-                )
-            elif ref_table_type == 'ReferenceTable':
-                foreign_key_object = getattr(model_obj, column.name)
-                setattr(self, column_name, foreign_key_object)
-            elif ref_table_type == 'DataTable':
-                if self.data_model == column.related_model:
-                    return
-                attribute_name = f"{column_name}_manager"
-                self.__createProperty(
-                    attribute_name,
-                    getManagerFromDataModel
-                )
-            elif ref_table_type == 'DataExtensionTable':
-                raise ValueError(
-                    'Your database model is not correctly implemented!!'
-                )
-            else:
-                raise ValueError('this is not implemented yet')
+        Args:
+            column (Field): The field object containing column details.
+            model_obj (Model): The model object containing the data.
+            ref_table_type (str): The type of the reference table.
+            ref_type (str): The type of the reference.
+
+        Returns:
+            None
+        """
+        methods = {
+            (self.MANY_TO_ONE, self.GROUP_TABLE): self.__getManagerListFromGroupModel,
+            (self.MANY_TO_ONE, self.DATA_TABLE): self.__getManagerListFromDataModel,
+            (self.MANY_TO_MANY, self.GROUP_TABLE): self.__getManagerListFromGroupModel,
+            (self.MANY_TO_MANY, self.DATA_TABLE): self.__getManagerListFromDataModel,
+            (self.FOREIGN_KEY, self.GROUP_TABLE): self.__getManagerFromGroupModel,
+            (self.FOREIGN_KEY, self.DATA_TABLE): self.__getManagerFromDataModel,
+        }
+
+        try:
+            attribute_name, method = (
+                methods[(ref_type, ref_table_type)](column, model_obj, ref_type)
+            )
+            self.__createProperty(attribute_name, method)
+        except KeyError:
+            raise ValueError('this is not implemented yet')
 
     def __createProperty(self, attribute_name: str, func):
+        """
+        Create a property with a given attribute name and function.
+
+        Args:
+            attribute_name (str): The name of the attribute to create.
+            func (function): The function to assign to the property.
+
+        Returns:
+            None
+        """
         setattr(self.__class__, attribute_name, property(func))
 
     @staticmethod
     def __isIgnored(key: str, ignore_list: list) -> bool:
+        """
+        Checks if a key is to be ignored in the given list.
+
+        Args:
+            key (str): The key to be checked.
+            ignore_list (list): The list of keys to ignore.
+
+        Returns:
+            bool: True if the key is to be ignored, False otherwise.
+        """
         if key in ignore_list:
             return True
         return False
@@ -418,15 +515,15 @@ class GeneralManager:
     @staticmethod
     def __getRefAndTableType(column: Field) -> tuple[str, str]:
         """
-        Get the reference table type and field type of a column.
+        Returns the reference type and the table type of a given field.
 
         Args:
-            column (Field): The field object to analyze.
+            column (Field): The field to be examined.
 
         Returns:
-            tuple[str, str]: A tuple containing the ref table type and ref type.
-         """
-        
+            tuple[str, str]: A tuple consisting of the reference type and the table type.
+        """
+
         if column.related_model:
             ref_table_type = column.related_model.table_type
             ref_type = column.get_internal_type()
@@ -1206,21 +1303,24 @@ class GeneralManager:
             __isDataExtensionTableDataUploadable(
             data_extension_data_dict
         )
-        if is_data_extension_data_uploadable:
-            latest_data_data = self.__getLatestDataData()
-            latest_extension_data = self.__getLatestDataExtensionData()
+        if not is_data_extension_data_uploadable:
+            return
 
-            self.__writeData(
-                latest_data_data,
-                data_data_dict,
-                creator_user_id, 
-                self.__group_obj,
-                latest_extension_data,
-                data_extension_data_dict,
-            )
+        latest_data_data = self.__getLatestDataData()
+        latest_extension_data = self.__getLatestDataExtensionData()
 
-            self.__init__(self.group_id)
-    
+        self.__writeData(
+            latest_data_data,
+            data_data_dict,
+            creator_user_id, 
+            self.__group_obj,
+            latest_extension_data,
+            data_extension_data_dict,
+        )
+
+        CacheHandler.update(self)
+        self.__init__(self.group_id)
+
     @classmethod
     def __writeData(
         cls, 
@@ -1915,7 +2015,7 @@ class GeneralManager:
         if self.search_date is None:
             self.__setManagerObjectDjangoCache()
 
-        CacheManager.set_cache_data(
+        CacheManager.setCacheData(
             self.__class__.__name__, 
             self.group_id, self, 
             self.start_date)
@@ -1931,7 +2031,7 @@ class GeneralManager:
             cached_instance = cache.get(f"{manager_name}|{group_id}")
             if cached_instance:
                 return cached_instance
-        cached_instance = CacheManager.get_cache_data(
+        cached_instance = CacheManager.getCacheData(
             manager_name, 
             group_model_obj, 
             group_model_name, 

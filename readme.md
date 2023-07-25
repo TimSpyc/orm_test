@@ -4,8 +4,8 @@ Table for topic (e.g. ProjectUser). It contains all unique information to search
 GroupTables inherit from GroupTable Class and name ends with "Group"
 ```python
     class ProjectUserGroup(GroupTable):
-        user = models.ForeignKey(User, on_delete=models.CASCADE)
-        project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+        user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+        project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
         class Meta:
             unique_together = ('user', 'project_group')
@@ -18,16 +18,16 @@ GroupTables inherit from GroupTable Class and name ends with "Group"
 Table for data storage of user changeable data. Always contains the following columns: date, creator, active. There is only ONE Data Table for each Topic.
 ```python
     class DerivativeConstellium(models.Model):
-        derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.CASCADE)
+        derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete=models.DO_NOTHING)
         name = models.CharField(max_length=255)
         sop_date = models.DateField()
         eop_date = models.DateField()
-        derivative_type = models.ForeignKey(DerivativeType, on_delete=models.CASCADE)
+        derivative_type = models.ForeignKey(DerivativeType, on_delete=models.DO_NOTHING)
         estimated_price = models.FloatField()
         estimated_weight = models.FloatField()
-        prediction_accuracy = models.ForeignKey(PredictionAccuracy, on_delete=models.CASCADE)
+        prediction_accuracy = models.ForeignKey(PredictionAccuracy, on_delete=models.DO_NOTHING)
         date = models.DateTimeField()
-        creator = models.ForeignKey(User, on_delete=models.CASCADE)
+        creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
         active = models.BooleanField()
 
         def __str__(self):
@@ -40,7 +40,7 @@ Table for data storage of user changeable data. Always contains the following co
 ```python
     class DerivativeConstellium(models.Model):
         ...
-        derivative_type = models.ForeignKey(DerivativeType, on_delete=models.CASCADE)
+        derivative_type = models.ForeignKey(DerivativeType, on_delete=models.DO_NOTHING)
         project_user_role = models.ManyToManyField(ProjectUserRole, blank=True)
         ...
 ```
@@ -53,7 +53,7 @@ Extension Table for many to one data in data table. It will always be incremente
         volume_customer_group = models.ForeignKey(VolumeCustomerGroup)
         description = models.TextField()
         date = models.DateTimeField()
-        creator = models.ForeignKey(User, on_delete=models.CASCADE)
+        creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
         active = models.BooleanField()
 
     class VolumeCustomerExtension(models.Model):
@@ -99,7 +99,7 @@ class Project(DataTable):
     """
     name = models.CharField(max_length=255)
     project_number = models.CharField(max_length=255, unique=False, null=True)
-    project_group = models.ForeignKey(ProjectGroup, on_delete=models.CASCADE)
+    project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
     @property
     def group(self):

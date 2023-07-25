@@ -8,7 +8,7 @@ class TestWatcher(TestCase):
     def setUp(self):
         # Mocking dependency object
         self.dependency_mock = Mock()
-        self.dependency_mock.identification_dict = {'id': 1}
+        self.dependency_mock._identification_dict = {'id': 1}
 
         self.watcher = Watcher(self.dependency_mock)
 
@@ -40,7 +40,7 @@ class TestCacheHandler(TestCase):
 
     def setUp(self):
         self.dependency_mock = Mock()
-        self.dependency_mock.identification_dict = {'id': 1}
+        self.dependency_mock._identification_dict = {'id': 1}
         self.cache_handler = CacheHandler()
 
     def test_add(self):

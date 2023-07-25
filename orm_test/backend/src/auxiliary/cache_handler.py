@@ -4,14 +4,14 @@ from backend.models import CacheIntermediate
 from datetime import datetime
 
 class Watcher:
-    def __init__(self, dependency: object) -> None:
+    def __init__(self, dependency: object, id_string: str) -> None:
         """
         Args:
             dependency (object): The dependency object this Watcher is
                 responsible for.
         """
         self.dependency = dependency
-        self.identification = json.dumps(dependency.identification_dict)
+        self.identification = id_string
         self.dependent_object_list = []
 
     def __repr__(self) -> None:
@@ -24,7 +24,8 @@ class Watcher:
         Args:
             obj (object): The object to be added.
         """
-        self.dependent_object_list.append(obj)
+        if obj not in self.dependent_object_list:
+            self.dependent_object_list.append(obj)
 
     def inform(self) -> None:
         """
@@ -35,7 +36,8 @@ class Watcher:
         date = datetime.now()
 
         for obj in self.dependent_object_list:
-            obj.setEndDate(date)
+            # obj.setCacheData(date)
+            obj.expireCache(self.dependency, date)
         
         self.destroy()
 
@@ -102,11 +104,11 @@ class CacheHandler:
             Watcher: The watcher for the given dependency.
         """
 
-        identification = json.dumps(dependency.identification_dict)
-        if identification not in self.watch_dict.keys():
-            self.watch_dict[identification] = Watcher(dependency)
+        id_string = CacheIntermediate.getIdString(dependency._identification_dict)
+        if id_string not in self.watch_dict.keys():
+            self.watch_dict[id_string] = Watcher(dependency, id_string)
         
-        return self.watch_dict[identification]
+        return self.watch_dict[id_string]
 
     def __startUpCacheHandler(self) -> None:
         """
@@ -128,3 +130,41 @@ class CacheHandler:
         """
         self = CacheHandler()
         self.watch_dict.pop(identification, None)
+
+
+
+def updateCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for object methods.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        self.updateCache()
+
+        return result
+    return wrapper
+
+def createCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for class methods.
+    
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(cls, *args, **kwargs):
+        result = func(cls, *args, **kwargs)
+        cls.updateCache(result)
+
+        return result
+    return wrapper
