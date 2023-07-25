@@ -25,7 +25,7 @@ class DataTable(models.Model):
     creator, and active status.
     """
     date = models.DateTimeField()
-    creator = models.ForeignKey("User", on_delete=models.CASCADE)
+    creator = models.ForeignKey("User", on_delete=models.DO_NOTHING)
     active = models.BooleanField(default=True)
     table_type = 'DataTable'
     class Meta:

@@ -177,25 +177,6 @@ class CacheIntermediate(models.Model):
             intermediate_name=intermediate_name,
             identification=cls.getIdString(identification_dict),
             start_date=start_date,
-            end_date=end_date
-        )
-        entry.data=pickle.dumps(data)
-        entry.save()
-
-    @classmethod
-    def setEndDate(
-        cls,
-        intermediate_name: str,
-        identification_dict: dict,
-        data: object,
-        start_date: datetime,
-        end_date: datetime | None
-    ) -> None:
-        entry = cls.objects.get(
-            intermediate_name=intermediate_name,
-            identification=cls.getIdString(identification_dict),
-            start_date=start_date,
-            end_date=None
         )
         entry.data=pickle.dumps(data)
         entry.end_date = end_date
