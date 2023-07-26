@@ -11,7 +11,7 @@ class PartSoldCustomerPriceGroup(GroupTable):
     price_date = models.DateTimeField()
     
     class Meta:
-        unique_together = ('part_sold', 'price_date')
+        unique_together = ('part_sold_group', 'price_date')
 
     def __str__(self):
         return f"PartSoldCustomerPriceGroup {self.part_sold_group} {self.price_date}"

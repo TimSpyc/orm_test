@@ -67,7 +67,7 @@ class PartSoldMaterialWeight(DataExtensionTable):
     net_weight = models.FloatField()
 
     class Meta:
-        unique_together = ('part_sold_material_price_type', 'part_sold')
+        unique_together = ('part_sold_material_type', 'part_sold')
 
 
 class PartSoldSaving(DataExtensionTable):
@@ -76,8 +76,8 @@ class PartSoldSaving(DataExtensionTable):
     saving_rate = models.FloatField()
     saving_unit = models.ForeignKey('SavingUnit', on_delete= models.DO_NOTHING)
 
-    class Meta:
-        unique_together = ('part_sold_material_price_type', 'part_sold')
+    # class Meta:
+    #     unique_together = ('part_sold_material_price_type', 'part_sold')
 
 
 class PartSoldManager(GeneralManager):
