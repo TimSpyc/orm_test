@@ -17,7 +17,7 @@ class Material(DataTable):
     material_alloy_treatment = models.ForeignKey('MaterialAlloyTreatmentGroup', on_delete= models.DO_NOTHING)
     customer_norm = models.ManyToManyField('NormGroup', blank=False)
     remark = models.TextField()
-    extrusion_plant = models.ForeignKey('SupplierGroup', on_delete= models.DO_NOTHING)
+    #extrusion_plant = models.ForeignKey('SupplierGroup', on_delete= models.DO_NOTHING)
 
 
     @property
