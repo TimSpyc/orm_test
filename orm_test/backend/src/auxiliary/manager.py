@@ -244,7 +244,7 @@ class GeneralManager:
 
             else:
                 self.__createManagerProperty(
-                    column_name, column, model_obj, ref_table_type, ref_type
+                    column, model_obj, ref_table_type, ref_type
                 )
 
     def __createDirectAttribute(
@@ -276,7 +276,7 @@ class GeneralManager:
         except KeyError:
             raise ValueError('this is not implemented yet')
 
-    def __assignAttribute(self, column, model_obj, ref_type = None):
+    def __assignAttribute(self, column: Field, model_obj, ref_type = None):
         """
         Assign the attribute from the model object to the current object.
 
@@ -292,7 +292,7 @@ class GeneralManager:
         """
         setattr(self, column.name, getattr(model_obj, column.name))
 
-    def __assignExtensionDataDictAttribute(self, column, model_obj, ref_type):
+    def __assignExtensionDataDictAttribute(self, column : Field, model_obj, ref_type):
         """
         Assign the dictionary attribute from the extension data in the model object to the current object.
 
@@ -306,7 +306,7 @@ class GeneralManager:
         """
         if ref_type == self.MANY_TO_ONE:
             column_name = transferToSnakeCase(column.related_model.__name__)
-            column_data = f'{column.name}_set'
+            column_data = f'{column.name.lower()}_set'
         else:
             column_name = column.name
             column_data = f'{column.name}_set'
@@ -329,16 +329,23 @@ class GeneralManager:
             dict: A dictionary containing field names as keys and their values.
         """
         fields = {}
-        for field in instance._meta.fields:
-            value = getattr(instance, field.name)
-            fields[field.name] = value
-        for field in instance._meta.many_to_many:
-            fields[field.name] = list(
-                getattr(instance, field.name).all()
-            )
-        return fields
+        if hasattr(instance, '_meta'):
 
-    def __getDataSourceAndColumnBaseName(self, column, ref_type):
+            for field in instance._meta.fields:
+                value = getattr(instance, field.name)
+                fields[field.name] = value
+
+            for field in instance._meta.many_to_many:
+                fields[field.name] = list(
+                    getattr(instance, field.name).all()
+                )
+        else:
+            fields = instance
+        
+        return fields
+   
+
+    def __getDataSourceAndColumnBaseName(self, column: Field, ref_type):
         """
         Retrieve the data source and column base name from the given column and reference type.
 
@@ -355,7 +362,7 @@ class GeneralManager:
         else:
             data_source = column.name
             column_name = column.name
-        
+   
         return data_source, column_name
 
     def __getManagerListFromGroupModel(self, column, model_obj, ref_type):
@@ -378,7 +385,7 @@ class GeneralManager:
         ]
         return (method, attribute_name)
 
-    def __getManagerListFromDataModel(self, column, model_obj, ref_type):
+    def __getManagerListFromDataModel(self, column: Field, model_obj, ref_type):
         """
         Generate a method to obtain a list of managers from a data model and 
         return it along with a corresponding attribute name.
@@ -393,8 +400,8 @@ class GeneralManager:
         """
         data_source, column_name = self.__getDataSourceAndColumnBaseName(column, ref_type)
         attribute_name = f'{column_name}_manager'
-        def method(self):
 
+        def method(self):
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group
@@ -405,7 +412,7 @@ class GeneralManager:
         return (method, attribute_name)
 
 
-    def __getManagerFromGroupModel(self, column, model_obj, ref_type):
+    def __getManagerFromGroupModel(self, column: Field, model_obj, ref_type):
         """
         Generate a method to obtain a manager from a group model and 
         return it along with a corresponding attribute name.
@@ -476,7 +483,7 @@ class GeneralManager:
         }
 
         try:
-            attribute_name, method = (
+            method, attribute_name = (
                 methods[(ref_type, ref_table_type)](column, model_obj, ref_type)
             )
             self.__createProperty(attribute_name, method)
@@ -495,6 +502,7 @@ class GeneralManager:
             None
         """
         setattr(self.__class__, attribute_name, property(func))
+
 
     @staticmethod
     def __isIgnored(key: str, ignore_list: list) -> bool:
