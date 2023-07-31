@@ -2,13 +2,11 @@
 FROM python:3.11
 
 # Set the working directory to /workspace
+COPY ./ /workspace
 WORKDIR /workspace
 
-# Copy the requirements file and project.pth to the container
-COPY orm_test/requirements.txt orm_test/project.pth /workspace/
-
 # Install the Python dependencies
-RUN pip install -r /workspace/requirements.txt
+RUN pip install -r requirements.txt
 
 # Set the environment variable for Django settings
 RUN echo "export DJANGO_SETTINGS_MODULE=orm_test.settings" >> /root/.bashrc
@@ -20,10 +18,10 @@ ENV SHELL /bin/bash
 ENV PATH "/usr/local/bin:$PATH"
 ENV PYTHONPATH "${PYTHONPATH}:/workspace:/workspace/orm_test"
 
-# Set the locale to English
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+# # Set the locale to English
+# ENV LANG en_US.UTF-8
+# ENV LANGUAGE en_US:en
+# ENV LC_ALL en_US.UTF-8
 
 # Install Visual Studio Code extensions
 RUN apt-get update \
