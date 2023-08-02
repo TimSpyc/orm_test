@@ -49,5 +49,5 @@ class PartManager(GeneralManager):
     data_model = Part
     data_extension_model_list = []
 
-    def __init__(self, sap_number_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=sap_number_group_id, search_date=search_date, use_cache=use_cache)
+    def __init__(self, part_group_id, search_date=None, use_cache=True):
+        super().__init__(group_id=part_group_id, search_date=search_date, use_cache=use_cache)

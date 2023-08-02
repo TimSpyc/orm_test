@@ -101,24 +101,24 @@ class DerivativeConstellium(DataTable):
     def __str__(self):
         return self.name
 
-class Customer(ReferenceTable):
-    company_name = models.CharField(max_length=255)
-    group_name = models.CharField(max_length=255)
+# class Customer(ReferenceTable):
+#     company_name = models.CharField(max_length=255)
+#     group_name = models.CharField(max_length=255)
 
-    def __str__(self):
-        return f"{self.company_name} ({self.group_name})"
+#     def __str__(self):
+#         return f"{self.company_name} ({self.group_name})"
 
-class CustomerPlant(ReferenceTable):
-    city = models.CharField(max_length=255)
-    address = models.CharField(max_length=255)
-    postcode = models.CharField(max_length=255)
-    country = models.CharField(max_length=255)
-    latitude = models.CharField(max_length=255)
-    longitude = models.CharField(max_length=255)
-    customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING)
+# class CustomerPlant(ReferenceTable):
+#     city = models.CharField(max_length=255)
+#     address = models.CharField(max_length=255)
+#     postcode = models.CharField(max_length=255)
+#     country = models.CharField(max_length=255)
+#     latitude = models.CharField(max_length=255)
+#     longitude = models.CharField(max_length=255)
+#     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING)
 
-    def __str__(self):
-        return f"{self.name} - {self.customer}"
+#     def __str__(self):
+#         return f"{self.name} - {self.customer}"
 
 class RevisionLMC(ReferenceTable):
     revision_date = models.DateField()

@@ -43,6 +43,15 @@ class PartType(ReferenceTable):
     def __str__(self):
         return f'{self.name}'
 
+class PartPosition(ReferenceTable):
+    """
+    A Django model representing a PartPosition with a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'
+
 class SemiFinishedProductType(ReferenceTable):
     """
     A Django model representing a SemiFinishedProductType with a name.
