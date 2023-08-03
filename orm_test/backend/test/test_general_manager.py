@@ -1,6 +1,7 @@
 import logging
 from unittest.mock import  Mock, patch
 from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
+from backend.test.test_property_managers import newAbc, newAbcGroup, newAbcManager, newKunden, newKundenGroup, newProject, newProjectGroup, newProjectUser, newProjectUserGroup, newProjectUserRoles
 from django.test import TestCase
 from backend.src.auxiliary.manager import GeneralManager
 from datetime import date, datetime
@@ -20,17 +21,7 @@ class TestProjectManager(GeneralManager):
             search_date=search_date,
             use_cache=use_cache
             )
-class TestProject2Manager(GeneralManager):
-    group_model = TestProjectGroup
-    data_model = TestProject2
-    data_extension_model_list: list = [TestProject2ExtensionTable]
 
-    def __init__(self, test_project_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=test_project_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
         
 class TestProjectUserManager(GeneralManager):
     group_model = TestProjectUserGroup
@@ -44,6 +35,7 @@ class TestProjectUserManager(GeneralManager):
             search_date=search_date,
             use_cache=use_cache
             )    
+
 
 class TestSearchForColumn(TestCase):
     def setUp(self):
@@ -1895,9 +1887,6 @@ class TestCreateSearchKeys(TestCase):
 
 
 
-
-
-
 ###### NEW ######################
 
 class TestGetDataSourceAndColumnBaseName(TestCase):
@@ -2115,89 +2104,240 @@ class TestCreateDirectAttribute(TestCase):
             },])
 
 
-# class TestCreateProperty(TestCase):
 
-#     def setUp(self):
-#         # GeneralManager.group_model = TestProjectGroup
-#         # GeneralManager.data_model = TestProject2
-#         # GeneralManager.data_extension_model_list = [TestProject2ExtensionTable]
-#         self.manager = GeneralManager.__new__(GeneralManager)
-
-#     def test_function(self):
-#         return "Hello, World!"
+class TestCreateProperty(TestCase):
+    def setUp(self):
+        self.manager = GeneralManager.__new__(GeneralManager)
     
-#     def test_create_property(self):
-#         self.manager._GeneralManager__createProperty('test_property', self.test_function)
+    def test_create_property(self):
+        def test_function(self):
+            return "Test Django"
+        self.manager._GeneralManager__createProperty('test_property', test_function)
 
-#         self.assertTrue(hasattr(self.manager, 'test_property'))
-#         self.assertTrue(callable(self.manager.test_property))
-#         self.assertEqual(self.manager.test_property(), "Hello, World!")
+        self.assertTrue(hasattr(self.manager, 'test_property'))
+        self.assertEqual(self.manager.test_property, "Test Django")
 
-
-# class TestGetManagerListFromGroupModel(TestCase):
-#     def setUp(self):
-#         self.manager = GeneralManager.__new__(GeneralManager)
-#         self.test_project_group1 = TestProjectGroup.objects.create()
-#         self.test_project_group2 = TestProjectGroup.objects.create()
-#         self.test_project_group3 = TestProjectGroup.objects.create()
-#         self.test_project1 = TestProject2.objects.create(
-#             test_project_group = self.test_project_group1,
-#             name =  'test1',
-#             project_number = '1')
-        
-#         self.test_project2 = TestProject2.objects.create(
-#             test_project_group = self.test_project_group2,
-#             name =  'test2',
-#             project_number = '12')
-        
-#     def test_get_manager_list_from_group_model(self):
-#         column_name = 'testproject2'
-#         column = TestProjectGroup._meta.get_field(column_name)
-#         ref_type = GeneralManager.MANY_TO_ONE  
-
-#         method, attribute_name = self.manager._GeneralManager__getManagerListFromGroupModel(
-#             column,
-#             self.test_project_group1,
-#             ref_type
-#         )
-#         manager1 = GeneralManager(group_id=self.test_project_group1.id)
-#         manager2 = GeneralManager(group_id=self.test_project_group2.id)
-  
-#         getattr(self.test_project_group1, column_name).add(manager1, manager2)
-#         result = method(self.manager)
-#         expected_manager_list = [manager1, manager2]
-#         self.assertEqual(result, expected_manager_list)
-#         self.assertEqual(attribute_name, 'test_project2_manager_list')
 
 
 class TestGetManagerFromGroupModel(TestCase):
     def setUp(self):
         self.manager = GeneralManager.__new__(GeneralManager)
-        self.test_project_group = TestProjectGroup.objects.create()
-        self.test_project = TestProject2.objects.create(
-            test_project_group=self.test_project_group,
-            name='Test Project',
-            project_number='123456'
-        )
-        self.manager.group_id = self.test_project_group.id
-        self.manager.group_model = TestProjectGroup
-        self.manager.search_date = datetime(2023, 1, 1)
+        self.creator = User.objects.create()
+        self.manager.search_date = datetime(2023,7,28)
         self.manager.use_cache = False
 
+        self.new_kunden_group = newKundenGroup.objects.create()
+        self.new_kunden = newKunden.objects.create(
+            name= 'test1',
+            new_kunden_group = self.new_kunden_group,
+            date= datetime(2020, 1, 1),
+            creator_id = self.creator.id
+            )
+        self.new_abc_group = newAbcGroup.objects.create()
+        self.new_abc = newAbc.objects.create(
+            new_abc_group = self.new_abc_group,
+            date= datetime(2020, 2, 2),
+            creator_id = self.creator.id
+            )
+        self.new_project_group = newProjectGroup.objects.create(new_abc_group= self.new_abc_group)
+        self.new_project = newProject.objects.create(
+            name='testProject',
+            new_project_group = self.new_project_group,
+            new_kunden = self.new_kunden,
+            date= datetime(2020, 3, 3),
+            creator_id = self.creator.id
+            )
+
     def test_get_manager_from_group_model(self):
-        column_name = 'test_project_group_id'
-        column = TestProject2._meta.get_field(column_name)
+        column_name = 'new_abc_group_id'
+        column = newProjectGroup._meta.get_field(column_name)
+        model_obj = self.new_project_group
         ref_type = GeneralManager.FOREIGN_KEY
 
         method, attribute_name = self.manager._GeneralManager__getManagerFromGroupModel(
             column,
-            self.test_project,
+            model_obj,
             ref_type
         )
-
-        setattr(self.test_project, column_name, self.test_project_group.id)
-        self.test_project.save()
+        setattr(self.new_project, column_name, self.new_project_group.id)
+        self.new_project.save()
 
         result = method(self.manager)
-        self.assertEqual(result, self.test_project_group)
-        self.assertEqual(attribute_name, 'test_project_group_manager')
+        self.assertEqual(attribute_name, 'new_abc_group_manager')
+        self.assertEqual(result.group_id, self.new_abc_group.id)
+        self.assertEqual(result.search_date, datetime(2023,7,28))
+
+
+class TestGetManagerFromDataModel(TestCase):
+    def setUp(self):
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.creator = User.objects.create()
+        self.manager.search_date = datetime(2023,7,28)
+        self.manager.use_cache = False
+
+        self.new_kunden_group = newKundenGroup.objects.create()
+        self.new_kunden = newKunden.objects.create(
+            name= 'test1',
+            new_kunden_group = self.new_kunden_group,
+            date= datetime(2020, 1, 1),
+            creator_id = self.creator.id
+            )
+        self.new_abc_group = newAbcGroup.objects.create()
+        self.new_abc = newAbc.objects.create(
+            new_abc_group = self.new_abc_group,
+            date= datetime(2020, 2, 2),
+            creator_id = self.creator.id
+            )
+        self.new_project_group = newProjectGroup.objects.create(new_abc_group= self.new_abc_group)
+        self.new_project = newProject.objects.create(
+            name='testProject',
+            new_project_group = self.new_project_group,
+            new_kunden = self.new_kunden,
+            date= datetime(2020, 3, 3),
+            creator_id = self.creator.id
+            )
+
+    def test_get_manager_from_data_model(self):
+        column_name = 'new_kunden_id'
+        column = newProject._meta.get_field(column_name)
+        model_obj = self.new_project
+        ref_type = GeneralManager.FOREIGN_KEY
+
+        method, attribute_name = self.manager._GeneralManager__getManagerFromDataModel(
+            column,
+            model_obj,
+            ref_type
+        )
+        setattr(self.new_project, column_name, self.new_project_group.id)
+        self.new_project.save()
+        result = method(self.manager)
+        self.assertEqual(attribute_name, 'new_kunden_manager')
+        self.assertEqual(result.group_id, self.new_kunden.id)
+        self.assertEqual(result.search_date, datetime(2023,7,28))
+
+
+
+# class TestGetManagerListFromGroupModel(TestCase):
+#     def setUp(self):
+#         self.manager = GeneralManager.__new__(GeneralManager)
+#         self.creator = User.objects.create()
+#         self.manager.search_date = datetime(2023,7,28)
+#         self.manager.use_cache = False
+
+#         self.new_kunden_group = newKundenGroup.objects.create()
+#         self.new_kunden = newKunden.objects.create(
+#             name= 'test1',
+#             new_kunden_group = self.new_kunden_group,
+#             date= datetime(2020, 1, 1),
+#             creator_id = self.creator.id
+#             )
+#         self.new_abc_group = newAbcGroup.objects.create()
+#         self.new_abc = newAbc.objects.create(
+#             new_abc_group = self.new_abc_group,
+#             date= datetime(2020, 2, 2),
+#             creator_id = self.creator.id
+#             )
+#         self.new_project_group = newProjectGroup.objects.create(new_abc_group= self.new_abc_group)
+#         self.new_project = newProject.objects.create(
+#             name='testProject',
+#             new_project_group = self.new_project_group,
+#             new_kunden = self.new_kunden,
+#             date= datetime(2020, 3, 3),
+#             creator_id = self.creator.id
+#             )
+#         self.new_project_user_group = newProjectUserGroup.objects.create(
+#             new_project_group = self.new_project_group
+#         )
+#         self.new_project_user = newProjectUser.objects.create(
+#             new_project_user_group = self.new_project_user_group,
+#             date= datetime(2020, 2, 2),
+#             creator_id = self.creator.id
+#         )
+#         self.new_project_user.new_project_user_role1 = newProjectUserRoles.objects.create(role='role1')
+#         self.new_project_user.new_project_user_role2 = newProjectUserRoles.objects.create(role='role2')
+
+
+#     def test_get_manager_from_group_model(self):
+#         column_name = 'newprojectusergroup'
+
+#         column = newProjectGroup._meta.get_field(column_name)
+#         model_obj = self.new_project_group
+#         ref_type = GeneralManager.MANY_TO_ONE
+
+#         method, attribute_name = self.manager._GeneralManager__getManagerListFromGroupModel(
+#             column,
+#             model_obj,
+#             ref_type
+#         )
+#         # print('dkjjjf', method, attribute_name)
+#         # setattr(self.new_project, column_name, self.new_project_group.id)
+#         # self.new_project.save()
+
+#         result = method(self.manager)
+#         self.assertEqual(attribute_name, 'new_project_user_manager_list')
+#         self.assertEqual(result.group_id, self.new_project_user_group.id)
+#         self.assertEqual(result.search_date, datetime(2023,7,28))
+
+
+# class TestGetManagerListFromDataModel(TestCase):
+#     def setUp(self):
+#         self.manager = GeneralManager.__new__(GeneralManager)
+#         self.creator = User.objects.create()
+#         self.manager.search_date = datetime(2023,7,28)
+#         self.manager.use_cache = False
+
+#         self.new_kunden_group = newKundenGroup.objects.create()
+#         self.new_kunden = newKunden.objects.create(
+#             name= 'test1',
+#             new_kunden_group = self.new_kunden_group,
+#             date= datetime(2020, 1, 1),
+#             creator_id = self.creator.id
+#             )
+#         self.new_abc_group = newAbcGroup.objects.create()
+#         self.new_abc = newAbc.objects.create(
+#             new_abc_group = self.new_abc_group,
+#             date= datetime(2020, 2, 2),
+#             creator_id = self.creator.id
+#             )
+#         self.new_project_group = newProjectGroup.objects.create(new_abc_group= self.new_abc_group)
+#         self.new_project = newProject.objects.create(
+#             name='testProject',
+#             new_project_group = self.new_project_group,
+#             new_kunden = self.new_kunden,
+#             date= datetime(2020, 3, 3),
+#             creator_id = self.creator.id
+#             )
+#         self.new_project_user_group = newProjectUserGroup.objects.create(
+#             new_project_group = self.new_project_group
+#         )
+#         self.new_project_user = newProjectUser.objects.create(
+#             new_project_user_group = self.new_project_user_group,
+#             date= datetime(2020, 2, 2),
+#             creator_id = self.creator.id,
+#         )
+#         self.new_project_user.new_kunden_many_to_many.add(self.new_kunden)
+#         self.new_project_user.new_project_user_role1 = newProjectUserRoles.objects.create(role='role1')
+#         self.new_project_user.new_project_user_role2 = newProjectUserRoles.objects.create(role='role2')
+
+
+#     def test_get_manager_list_from_data_model(self):
+#         column_name = 'newkunden'
+
+#         column = newKunden._meta.get_field(column_name)
+#         model_obj = self.new_project_group
+#         ref_type = GeneralManager.MANY_TO_MANY
+
+#         method, attribute_name = self.manager._GeneralManager__getManagerListFromDataModel(
+#             column,
+#             model_obj,
+#             ref_type
+#         )
+#         print('dkjjjf', method, attribute_name)
+#         setattr(self.new_project, column_name, self.new_project_group.id)
+#         self.new_project.save()
+
+#         result = method(self.manager)
+#         self.assertEqual(attribute_name, 'new_project_user_manager_list')
+#         self.assertEqual(result.group_id, self.new_project_user_group.id)
+#         self.assertEqual(result.search_date, datetime(2023,7,28))
+    
