@@ -4,7 +4,6 @@ from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime, date
 
 class PriceIntermediate(GeneralIntermediate):
-    relevant_scenario_keys = []
 
     def __init__(
         self,
