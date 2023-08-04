@@ -39,7 +39,7 @@ class GeneralIntermediate:
         initial_kwargs = copy.deepcopy(kwargs)
 
         search_date = kwargs.pop('search_date', None)
-        use_cache = kwargs.pop('use_cache', None)
+        use_cache = kwargs.pop('use_cache', True)
         scenario_dict = kwargs.pop('scenario_dict', {})
 
         rel_scenario, _ = cls.__cleanScenarioDict(scenario_dict)
