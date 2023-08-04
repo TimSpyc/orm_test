@@ -17,7 +17,7 @@ class newAbc(TestDataTable):
     
     @property
     def group(self):
-        return self.abc_group
+        return self.new_abc_group
     
     class Meta:
         app_label = 'backend'           
@@ -132,11 +132,41 @@ class newProjectUserRoles(TestReferenceTable):
 
     class Meta:
         app_label = 'backend'    
+
+class newXyzGroup(TestGroupTable):
+
+    def manager(self, search_date, use_cache):
+        return newXyzManager(self.id, search_date, use_cache) 
+    class Meta:
+        app_label = 'backend'
+
+class newXyz(TestDataTable):
+    new_xyz_group = models.ForeignKey(newXyzGroup, on_delete=models.DO_NOTHING)
+    
+    @property
+    def group(self):
+        return self.new_xyz_group
+    class Meta:
+        app_label = 'backend'           
+
+
+class newXyzManager(GeneralManager):
+    group_model = newXyzGroup
+    data_model = newXyz
+    data_extension_model_list: list = []
+
+    def __init__(self, new_project_user_group_id, search_date=None, use_cache=True):
+        super().__init__(
+            group_id=new_project_user_group_id,
+            search_date=search_date,
+            use_cache=use_cache
+            )
     
 class newProjectUser(TestDataTable):
-    new_kunden = models.ForeignKey(newKunden, on_delete=models.DO_NOTHING, null=True) ##macht kein sinn weil ein kunde kann nicht beliebig viele projectuser haben
+    new_kunden = models.ForeignKey(newKunden, on_delete=models.DO_NOTHING, null=True)
     new_project_user_group = models.ForeignKey(newProjectUserGroup, on_delete=models.DO_NOTHING)
     new_project_user_role = models.ManyToManyField(newProjectUserRoles, blank=False)
+    new_xyz = models.ManyToManyField(newXyz,null=True)
     
     @property
     def group(self):
@@ -157,7 +187,6 @@ class newProjectUserManager(GeneralManager):
             use_cache=use_cache
             )
         
-
 
 
 
