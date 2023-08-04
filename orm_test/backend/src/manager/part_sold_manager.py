@@ -3,11 +3,12 @@ from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionT
 from backend.src.auxiliary.manager import GeneralManager
 from backend.models import SapNumber, PartGroup, CustomerGroup, PartSoldContractGroup, Currency, PartRecipientGroup, PartSoldPriceComponentType, PartSoldMaterialPriceType, PartSoldMaterialType, SavingUnit
 
+
 class PartSoldGroup(GroupTable):
     """
     A Django model representing a part sold group.
     """
-    part_recipient = models.ForeignKey(PartRecipientGroup, on_delete= models.DO_NOTHING)
+    part_recipient = models.ForeignKey('PartRecipientGroup', on_delete= models.DO_NOTHING)
     customer_part_number_sap = models.CharField(max_length=255)
 
     class Meta:
@@ -21,7 +22,7 @@ class PartSoldGroup(GroupTable):
 
 
 class PartSold(DataTable):
-    sap_number = models.ForeignKey(SapNumber, on_delete= models.DO_NOTHING)
+    sap_number = models.ForeignKey('SapNumber', on_delete= models.DO_NOTHING)
     part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.DO_NOTHING)
     customer_part_number = models.CharField(max_length=255)
     part_group = models.ManyToManyField(PartGroup,blank=False) 
@@ -42,15 +43,15 @@ class PartSoldPriceComponent(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
     value = models.FloatField()
     saveable = models.BooleanField(default=False)
-    part_sold_price_component_type = models.ForeignKey(PartSoldPriceComponentType, on_delete= models.DO_NOTHING)
+    part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
 
-    class _meta:
+    class meta:
         unique_together = ('part_sold', 'part_sold_price_component_type')
 
 
 class PartSoldMaterialPriceComponent(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
-    part_sold_material_price_type = models.ForeignKey(PartSoldMaterialPriceType, on_delete= models.DO_NOTHING)
+    part_sold_material_price_type = models.ForeignKey('PartSoldMaterialPriceType', on_delete= models.DO_NOTHING)
     basis = models.FloatField()
     variable = models.BooleanField(default=True)
     use_gross_weight = models.BooleanField(default=False)
@@ -62,22 +63,22 @@ class PartSoldMaterialPriceComponent(DataExtensionTable):
 
 class PartSoldMaterialWeight(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
-    part_sold_material_type = models.ForeignKey(PartSoldMaterialType, on_delete= models.DO_NOTHING)
+    part_sold_material_type = models.ForeignKey('PartSoldMaterialType', on_delete= models.DO_NOTHING)
     gross_weight = models.FloatField()
     net_weight = models.FloatField()
 
     class Meta:
-        unique_together = ('part_sold_material_price_type', 'part_sold')
+        unique_together = ('part_sold_material_type', 'part_sold')
 
 
 class PartSoldSaving(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
     saving_date = models.DateTimeField()
     saving_rate = models.FloatField()
-    saving_unit = models.ForeignKey(SavingUnit, on_delete= models.DO_NOTHING)
+    saving_unit = models.ForeignKey('SavingUnit', on_delete= models.DO_NOTHING)
 
-    class Meta:
-        unique_together = ('part_sold_material_price_type', 'part_sold')
+    # class Meta:
+    #     unique_together = ('part_sold_material_price_type', 'part_sold')
 
 
 class PartSoldManager(GeneralManager):

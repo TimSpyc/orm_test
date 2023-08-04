@@ -132,7 +132,8 @@ class GeneralManager:
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        cls.updateCache(instance)
+        if use_cache:
+            cls.updateCache(instance)
 
         return instance
 
@@ -226,7 +227,8 @@ class GeneralManager:
         Set all attributes from the given model object onto the current object.
 
         Args:
-            model_obj (Model): The model object from which to fetch the attributes.
+            model_obj (Model): 
+                The model object from which to fetch the attributes.
             ignore_list (list): A list of attributes to be ignored.
 
         Returns:
@@ -240,11 +242,14 @@ class GeneralManager:
                 continue
 
             if ref_table_type in [None, 'ReferenceTable', 'DataExtensionTable']:
-                self.__createDirectAttribute(ref_table_type, ref_type, column, model_obj)
+                self.__createDirectAttribute(
+                    ref_table_type, 
+                    ref_type, column,
+                    model_obj)
 
             else:
                 self.__createManagerProperty(
-                    column_name, column, model_obj, ref_table_type, ref_type
+                    column, model_obj, ref_table_type, ref_type
                 )
 
     def __createDirectAttribute(
@@ -255,7 +260,8 @@ class GeneralManager:
         model_obj: Model
     ) -> None:
         """
-        Create a direct attribute on the current object based on the given parameters.
+        Create a direct attribute on the current object
+        based on the given parameters.
 
         Args:
             ref_table_type (str): The type of the reference table.
@@ -276,7 +282,12 @@ class GeneralManager:
         except KeyError:
             raise ValueError('this is not implemented yet')
 
-    def __assignAttribute(self, column, model_obj, ref_type = None):
+    def __assignAttribute(
+            self, 
+            column: Field, 
+            model_obj: object, 
+            ref_type = None
+            ) -> None: 
         """
         Assign the attribute from the model object to the current object.
 
@@ -292,9 +303,15 @@ class GeneralManager:
         """
         setattr(self, column.name, getattr(model_obj, column.name))
 
-    def __assignExtensionDataDictAttribute(self, column, model_obj, ref_type):
+    def __assignExtensionDataDictAttribute(
+            self, 
+            column : Field, 
+            model_obj: object, 
+            ref_type
+            ) -> None:
         """
-        Assign the dictionary attribute from the extension data in the model object to the current object.
+        Assign the dictionary attribute from the extension data in 
+        the model object to the current object.
 
         Args:
             column: The column of the attribute in the model object.
@@ -306,7 +323,7 @@ class GeneralManager:
         """
         if ref_type == self.MANY_TO_ONE:
             column_name = transferToSnakeCase(column.related_model.__name__)
-            column_data = f'{column.name}_set'
+            column_data = f'{column.name.lower()}_set'
         else:
             column_name = column.name
             column_data = f'{column.name}_set'
@@ -329,18 +346,26 @@ class GeneralManager:
             dict: A dictionary containing field names as keys and their values.
         """
         fields = {}
-        for field in instance._meta.fields:
-            value = getattr(instance, field.name)
-            fields[field.name] = value
-        for field in instance._meta.many_to_many:
-            fields[field.name] = list(
-                getattr(instance, field.name).all()
-            )
-        return fields
+        if hasattr(instance, '_meta'):
 
-    def __getDataSourceAndColumnBaseName(self, column, ref_type):
+            for field in instance._meta.fields:
+                value = getattr(instance, field.name)
+                fields[field.name] = value
+
+            for field in instance._meta.many_to_many:
+                fields[field.name] = list(
+                    getattr(instance, field.name).all()
+                )
+        else:
+            fields = instance
+        
+        return fields
+   
+
+    def __getDataSourceAndColumnBaseName(self, column: Field, ref_type):
         """
-        Retrieve the data source and column base name from the given column and reference type.
+        Retrieve the data source and column base name from 
+        the given column and reference type.
 
         Args:
             column: The column of the attribute.
@@ -355,12 +380,18 @@ class GeneralManager:
         else:
             data_source = column.name
             column_name = column.name
-        
+   
         return data_source, column_name
 
-    def __getManagerListFromGroupModel(self, column, model_obj, ref_type):
+    def __getManagerListFromGroupModel(
+            self, 
+            column : Field, 
+            model_obj: object, 
+            ref_type
+            ):
         """
-        Generate a method that gets the list of managers from a group model, and return it along with an attribute name.
+        Generate a method that gets the list of managers from a group model, 
+        and return it along with an attribute name.
 
         Args:
             column: The column of the attribute.
@@ -368,17 +399,31 @@ class GeneralManager:
             ref_type: The type of the reference.
 
         Returns:
-            tuple: A tuple containing the generated method and an attribute name.
+            tuple:
+                A tuple containing the generated method and an attribute name.
         """
-        data_source, column_name = self.__getDataSourceAndColumnBaseName(column, ref_type)
+        data_source, column_name = self.__getDataSourceAndColumnBaseName(
+            column,
+            ref_type
+            )
+
         attribute_name = column_name.replace('group', 'manager_list')
+
         method = lambda self: [
             group_data.manager(self.search_date, self.use_cache)
+            #(group_data, self.search_date, self.use_cache, group_data.manager)
+
             for group_data in getattr(model_obj, data_source).all()
         ]
+      
         return (method, attribute_name)
 
-    def __getManagerListFromDataModel(self, column, model_obj, ref_type):
+    def __getManagerListFromDataModel(
+            self, 
+            column: Field, 
+            model_obj: object, 
+            ref_type
+            ):
         """
         Generate a method to obtain a list of managers from a data model and 
         return it along with a corresponding attribute name.
@@ -391,10 +436,13 @@ class GeneralManager:
         Returns:
             tuple: A tuple containing the generated method and attribute name.
         """
-        data_source, column_name = self.__getDataSourceAndColumnBaseName(column, ref_type)
+        data_source, column_name = self.__getDataSourceAndColumnBaseName(
+            column, 
+            ref_type
+            )
         attribute_name = f'{column_name}_manager'
-        def method(self):
 
+        def method(self):
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group
@@ -405,7 +453,12 @@ class GeneralManager:
         return (method, attribute_name)
 
 
-    def __getManagerFromGroupModel(self, column, model_obj, ref_type):
+    def __getManagerFromGroupModel(
+            self, 
+            column: Field, 
+            model_obj: object, 
+            ref_type
+            ):
         """
         Generate a method to obtain a manager from a group model and 
         return it along with a corresponding attribute name.
@@ -424,7 +477,12 @@ class GeneralManager:
             return group_data.manager(self.search_date, self.use_cache)
         return (method, attribute_name)
 
-    def __getManagerFromDataModel(self, column, model_obj, ref_type):
+    def __getManagerFromDataModel(
+            self, 
+            column: Field, 
+            model_obj: object, 
+            ref_type
+            ):
         """
         Generate a method to obtain a manager from a data model and 
         return it along with a corresponding attribute name.
@@ -455,7 +513,8 @@ class GeneralManager:
         ref_type: str
     ) -> None:
         """
-        Create a property for manager based on the type of reference table and reference type.
+        Create a property for manager based on the type of reference table 
+        and reference type.
 
         Args:
             column (Field): The field object containing column details.
@@ -476,14 +535,14 @@ class GeneralManager:
         }
 
         try:
-            attribute_name, method = (
+            method, attribute_name = (
                 methods[(ref_type, ref_table_type)](column, model_obj, ref_type)
             )
             self.__createProperty(attribute_name, method)
         except KeyError:
             raise ValueError('this is not implemented yet')
 
-    def __createProperty(self, attribute_name: str, func):
+    def __createProperty(self, attribute_name: str, func) -> None:
         """
         Create a property with a given attribute name and function.
 
@@ -495,6 +554,7 @@ class GeneralManager:
             None
         """
         setattr(self.__class__, attribute_name, property(func))
+
 
     @staticmethod
     def __isIgnored(key: str, ignore_list: list) -> bool:
@@ -521,7 +581,8 @@ class GeneralManager:
             column (Field): The field to be examined.
 
         Returns:
-            tuple[str, str]: A tuple consisting of the reference type and the table type.
+            tuple[str, str]: 
+                A tuple consisting of the reference type and the table type.
         """
 
         if column.related_model:
@@ -768,7 +829,8 @@ class GeneralManager:
                     raise ValueError(
                         f'''
                         You can't create data that is not available in DB.
-                        {key} has no corresponding db column in model {referenced_model}.
+                        {key} has no corresponding db column in model 
+                        {referenced_model}.
                         '''
                     )
                 to_insert_dict[key] = value
@@ -810,7 +872,8 @@ class GeneralManager:
         )
 
         group_search_dict_with_operators = {
-            cls.__createSearchKeys(key, value)[0]: cls.__createSearchKeys(key, value)[1]
+            cls.__createSearchKeys(
+            key, value)[0]: cls.__createSearchKeys(key, value)[1]
             for key, value in group_search_dict.items()
         }
 

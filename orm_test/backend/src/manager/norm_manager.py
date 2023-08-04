@@ -1,11 +1,11 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, FileGroup, NormType
+from backend.models import GroupTable, DataTable, NormType #FileGroup
 from backend.src.auxiliary.manager import GeneralManager
 
 class NormGroup(GroupTable):
     number = models.CharField(max_length=255)
 
-    class _meta:
+    class meta:
         unique_together = ('number')
 
     def __str__(self):
@@ -19,7 +19,7 @@ class Norm(DataTable):
     norm_type = models.ForeignKey(NormType, on_delete= models.DO_NOTHING)
     norm_group = models.ForeignKey(NormGroup, on_delete= models.DO_NOTHING)
     description = models.CharField(max_length=255)
-    file_group = models.ForeignKey(FileGroup, on_delete= models.DO_NOTHING)
+    #file_group = models.ForeignKey('FileGroup', on_delete= models.DO_NOTHING)
 
     @property
     def group(self):

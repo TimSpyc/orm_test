@@ -99,6 +99,13 @@ class CacheManager(models.Model):
         entry.save()
 
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
+    
+
 class CacheIntermediate(models.Model):
     """
     A Django model representing cache entries, which store the
@@ -193,5 +200,5 @@ class CacheIntermediate(models.Model):
         Returns:
             str: The sorted JSON string of the identification dictionary.
         """
-        id_json = json.dumps(identification_dict, sort_keys=True)
-        return md5(id_json).hexdigest()
+        id_json = json.dumps(identification_dict, sort_keys=True, cls=DateTimeEncoder)
+        return md5(id_json.encode()).hexdigest()
