@@ -18,6 +18,7 @@ class GeneralIntermediate:
     methods for comparing instances and verifying their dependencies.
     """
     relevant_scenario_keys: list
+
     
     def __new__(cls, *args: list, **kwargs: dict) -> object:
         """
