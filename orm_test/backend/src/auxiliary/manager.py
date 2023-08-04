@@ -132,7 +132,8 @@ class GeneralManager:
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        cls.updateCache(instance)
+        if use_cache:
+            cls.updateCache(instance)
 
         return instance
 
@@ -410,8 +411,11 @@ class GeneralManager:
 
         method = lambda self: [
             group_data.manager(self.search_date, self.use_cache)
+            #(group_data, self.search_date, self.use_cache, group_data.manager)
+
             for group_data in getattr(model_obj, data_source).all()
         ]
+      
         return (method, attribute_name)
 
     def __getManagerListFromDataModel(
