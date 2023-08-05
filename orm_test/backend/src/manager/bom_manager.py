@@ -55,9 +55,23 @@ class BillOfMaterialManager(GeneralManager):
             use_cache=use_cache
         )
 
-        self.product_development_bom = self.getBillOfMaterialDetails('pd')
-        self.process_development_bom = self.getBillOfMaterialDetails('ai')
-        self.logistics_bom = self.getBillOfMaterialDetails('lg')
+        self.product_development_bom = self.getBillOfMaterialStructure('pd')
+        self.process_development_bom = self.getBillOfMaterialStructure('ai')
+        self.logistics_bom = self.getBillOfMaterialStructure('lg')
+
+        self.updateCache()
+
+    def getBillOfMaterialStructure(
+        self,
+        bom_type: str,
+    ):
+        head_node = self.__getHeadNode()
+        key_tuple = self.__selectBomType(bom_type)
+        bill_of_material_structure = self.__getBillOfMaterialStructure(
+            head_node,
+            key_tuple
+        )
+        return bill_of_material_structure
 
     def getBillOfMaterialDetails(
         self,
@@ -66,6 +80,11 @@ class BillOfMaterialManager(GeneralManager):
     ) -> dict:
         key_tuple = self.__selectBomType(bom_type)
         head_node = self.__getHeadNode(head_part_group_id)
+        direct_child_node_list = self.__getChildNodeList(
+            head_node,
+            key_tuple,
+            must_be_direct_child=True
+        )
         leaf_node_list = self.__getChildNodeList(
             head_node,
             key_tuple,
@@ -78,6 +97,7 @@ class BillOfMaterialManager(GeneralManager):
 
         bill_of_material_detail_dict = {
             'head_node': head_node,
+            'direct_child_node_list': direct_child_node_list,
             'leaf_node_list': leaf_node_list,
             'structure': bill_of_material_structure
         }
@@ -120,7 +140,8 @@ class BillOfMaterialManager(GeneralManager):
         self,
         head_node: dict,
         key_tuple: tuple,
-        must_be_leaf: bool
+        must_be_leaf: bool = False, 
+        must_be_direct_child: bool = False
     ) -> list:
         left_value, right_value = key_tuple
         node_list = []
@@ -128,13 +149,33 @@ class BillOfMaterialManager(GeneralManager):
             left_node_value = node[left_value] if not None else 0
             right_node_value = node[right_value] if not None else 0
             
-            is_inside = (
-                left_node_value > head_node[left_value] and
-                right_node_value < head_node[right_value]
+            head_node_left_value: head_node[left_value] if not None else 0
+            head_node_right_value: head_node[right_value] if not None else 0
+
+            is_inside = self.__checkIfIsInside(
+                head_node_left_value,
+                head_node_right_value,
+                left_node_value,
+                right_node_value
             )
-            if must_be_leaf:
-                is_leaf = left_node_value +1 == right_node_value
-            if is_inside and (not must_be_leaf or is_leaf):
+            if not is_inside:
+                continue
+
+            is_leaf = self.__checkIfIsLeafNode(
+                left_node_value,
+                right_node_value
+            )
+            is_direct_child = self.__checkIfIsDirectChildNode(
+                self.bill_of_material_structure_dict_list,
+                head_node_left_value,
+                head_node_right_value,
+                left_node_value,
+                right_node_value
+            )
+            if (
+                (not must_be_leaf or is_leaf) and
+                (not must_be_direct_child or is_direct_child)
+            ):
                 node_list.append({
                     **node,
                     'left': node[left_value],
@@ -146,6 +187,43 @@ class BillOfMaterialManager(GeneralManager):
                 })
         return node_list
 
+    @staticmethod
+    def __checkIfIsInside(
+        head_node_left_value: int,
+        head_node_right_value: int,
+        left_node_value: int,
+        right_node_value: int
+    ) -> bool:
+        return (
+                left_node_value > head_node_left_value and
+                right_node_value < head_node_right_value
+            )
+
+    @staticmethod
+    def __checkIfIsDirectChildNode(
+        all_node_list,
+        head_node_left_value: int,
+        head_node_right_value: int,
+        left_node_value: int,
+        right_node_value: int
+    ):
+        for node in all_node_list:
+            is_greater_than_own_node = (
+                node['left'] < left_node_value and
+                node['right'] > right_node_value
+            )
+            is_smaller_than_head_node = (
+                node['left'] > head_node_left_value and
+                node['right'] < head_node_right_value
+            )
+            if is_greater_than_own_node and is_smaller_than_head_node:
+                return False
+        return True
+
+    @staticmethod
+    def __checkIfIsLeafNode(left_node_value, right_node_value):
+        return left_node_value +1 == right_node_value
+
     def __getBillOfMaterialStructure(
         self,
         head_node: dict,
@@ -154,7 +232,6 @@ class BillOfMaterialManager(GeneralManager):
         relevant_node_list = self.__getChildNodeList(
             head_node,
             key_tuple,
-            must_be_leaf=False
         )
         relevant_node_list = self.__addHeadNodeToRelevantNodeList(
             head_node,

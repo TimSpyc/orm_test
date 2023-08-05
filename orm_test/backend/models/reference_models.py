@@ -99,3 +99,9 @@ class PartSoldMaterialPriceType(ReferenceTable):
 
     def __str__(self):
         return f'{self.name}'
+
+class MaterialType(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}'

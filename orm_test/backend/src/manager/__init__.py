@@ -11,3 +11,4 @@ from .part_manager import PartManager
 from .part_recipient_manager import PartRecipientManager
 from .project_manager import ProjectManager
 from .sap_number_manager import SapNumberManager
+from .bom_manager import BillOfMaterialManager

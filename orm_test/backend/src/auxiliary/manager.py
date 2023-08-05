@@ -1757,7 +1757,7 @@ class GeneralManager:
             model_type (str):
                 The type of the model, either 'data_model' or 'group_model'.
             is_data_uploadable (list): A list of boolean values 
-                indicating these criterias:
+                indicating these criteria:
                                                 
                     1. Whether all unique fields are present in the data_dict
                     2. Whether all not_null fields are present in the data_dict
