@@ -187,11 +187,22 @@ class WeightIntermediate(GeneralIntermediate):
         date: datetime
     ) -> bool:
         if isinstance(dependency, PartManager):
-            return not dependency.weight == dependency.__init__(
-                dependency.group_id,
-                search_date=date,
-                use_cache=self.use_cache
-            ).weight
+            weight_changed = (
+                not dependency.weight == dependency.__init__(
+                    dependency.group_id,
+                    search_date=date,
+                    use_cache=self.use_cache
+                ).weight
+            )
+            material_changed = (
+                not dependency.material_manager.material_type == \
+                    dependency.__init__(
+                        dependency.group_id,
+                        search_date=date,
+                        use_cache=self.use_cache
+                    ).material_manager.material_type
+            )
+            return weight_changed or material_changed
         elif isinstance(dependency, BillOfMaterialManager):
             new_bom = dependency.__init__(
                 dependency.group_id,
