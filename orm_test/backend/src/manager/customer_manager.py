@@ -29,7 +29,7 @@ class CustomerMaterialCondition(DataExtensionTable):
     part_sold_material_price_type = models.ForeignKey(PartSoldMaterialPriceType, on_delete= models.DO_NOTHING)
     month_range = models.IntegerField()
     month_offset = models.IntegerField()
-
+    share_the_pain_factor = models.FloatField()
 
 class CustomerManager(GeneralManager):
     group_model = CustomerGroup
