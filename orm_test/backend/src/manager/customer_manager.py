@@ -30,6 +30,8 @@ class CustomerMaterialCondition(DataExtensionTable):
     month_range = models.IntegerField()
     month_offset = models.IntegerField()
     share_the_pain_factor = models.FloatField()
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
 
 class CustomerManager(GeneralManager):
     group_model = CustomerGroup
