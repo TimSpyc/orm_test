@@ -20,7 +20,8 @@ class Currency(ReferenceTable):
     A Django model representing a Currency with a name, symbol, and exchange rate.
     """
     name = models.CharField(max_length=255)
-    symbol = models.CharField(max_length=255)
+    abbreviation = models.CharField(max_length=3)
+    symbol = models.CharField(max_length=2)
 
     def __str__(self):
         return f'{self.name}'
