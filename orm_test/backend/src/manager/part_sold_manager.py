@@ -30,8 +30,8 @@ class PartSold(DataTable):
     contract_group = models.ForeignKey(PartSoldContractGroup, on_delete= models.DO_NOTHING)
     currency = models.ForeignKey(Currency, on_delete= models.DO_NOTHING)
     description = models.TextField()
-    validity_start_date = models.DateTimeField()
-    validity_end_date = models.DateTimeField()
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
     cbd_date = models.DateTimeField()
 
     @property
@@ -44,9 +44,8 @@ class PartSoldPriceComponent(DataExtensionTable):
     value = models.FloatField()
     saveable = models.BooleanField(default=False)
     part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
-
-    class meta:
-        unique_together = ('part_sold', 'part_sold_price_component_type')
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
 
 
 class PartSoldMaterialPriceComponent(DataExtensionTable):
@@ -55,10 +54,11 @@ class PartSoldMaterialPriceComponent(DataExtensionTable):
     basis = models.FloatField()
     variable = models.BooleanField(default=True)
     use_gross_weight = models.BooleanField(default=False)
-    saveable = models.BooleanField(default=False)
+    current_saveable = models.BooleanField(default=False)
+    basis_saveable = models.BooleanField(default=False)
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
 
-    class Meta:
-        unique_together = ('part_sold_material_price_type', 'part_sold')
 
 
 class PartSoldMaterialWeight(DataExtensionTable):
@@ -76,9 +76,6 @@ class PartSoldSaving(DataExtensionTable):
     saving_date = models.DateTimeField()
     saving_rate = models.FloatField()
     saving_unit = models.ForeignKey('SavingUnit', on_delete= models.DO_NOTHING)
-
-    # class Meta:
-    #     unique_together = ('part_sold_material_price_type', 'part_sold')
 
 
 class PartSoldManager(GeneralManager):
