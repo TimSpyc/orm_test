@@ -1,7 +1,6 @@
 from .abstract_models import GroupTable, ReferenceTable, DataTable, DataExtensionTable, ExternalDataTable
 from .caching_models import CacheManager, CacheIntermediate
 from .reference_models import *
-from .managed_models import *
 
 from backend.src.manager.project_manager import Project, ProjectGroup
 from backend.src.manager.sap_number_manager import SapNumber, SapNumberGroup

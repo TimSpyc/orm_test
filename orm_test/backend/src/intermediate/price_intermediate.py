@@ -49,8 +49,8 @@ class PriceIntermediate(GeneralIntermediate):
         )
 
         self._price_component_development: list | None = None
-        self._max_price_date: date | None = None
-        self._min_price_date: date | None = None
+        self._max_price_date: date
+        self._min_price_date: date
 
     @property
     def current_price(self) -> float:
@@ -58,10 +58,10 @@ class PriceIntermediate(GeneralIntermediate):
         return self.get_price(current_date)
 
     def get_price(self, date: date) -> float:
-        if date > self.max_price_date:
-            date = self.max_price_date
-        elif date < self.min_price_date:
-            date = self.min_price_date
+        if date > self._max_price_date:
+            date = self._max_price_date
+        elif date < self._min_price_date:
+            date = self._min_price_date
 
         year_month = date.strftime("%Y-%m")
         for price_data in self.price_component_development:

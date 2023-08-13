@@ -1,9 +1,9 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, DataExtensionTable, DerivativeConstelliumGroup, PartGroup, PartPosition
+from backend.models import GroupTable, DataTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class BillOfMaterialGroup(GroupTable):
-    derivative_constellium_group = models.ForeignKey(DerivativeConstelliumGroup, on_delete= models.DO_NOTHING)
+    derivative_constellium_group = models.ForeignKey('DerivativeConstelliumGroup', on_delete= models.DO_NOTHING)
 
     def manager(self, search_date, use_cache):
         return BillOfMaterialManager(self.id, search_date, use_cache)
@@ -27,8 +27,8 @@ class BillOfMaterial(DataTable):
 
 
 class BillOfMaterialStructure(DataExtensionTable):
-    part_group = models.ForeignKey(PartGroup, on_delete= models.DO_NOTHING)
-    part_position = models.ManyToManyField(PartPosition, blank=True)
+    part_group = models.ForeignKey('PartGroup', on_delete= models.DO_NOTHING)
+    part_position = models.ManyToManyField('PartPosition', blank=True)
     cumulated_quantity = models.FloatField()
     left_value_product_development = models.FloatField(null=True)
     right_value_product_development = models.FloatField(null=True)

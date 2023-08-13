@@ -1,7 +1,6 @@
 from django.db import models
 from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
-from backend.models import SapNumber, PartGroup, CustomerGroup, PartSoldContractGroup, Currency, PartRecipientGroup, PartSoldPriceComponentType, PartSoldMaterialPriceType, PartSoldMaterialType, SavingUnit
 
 
 class PartSoldGroup(GroupTable):
@@ -25,10 +24,10 @@ class PartSold(DataTable):
     sap_number = models.ForeignKey('SapNumber', on_delete= models.DO_NOTHING)
     part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.DO_NOTHING)
     customer_part_number = models.CharField(max_length=255)
-    part_group = models.ManyToManyField(PartGroup,blank=False) 
-    customer_group = models.ForeignKey(CustomerGroup, on_delete= models.DO_NOTHING)
-    contract_group = models.ForeignKey(PartSoldContractGroup, on_delete= models.DO_NOTHING)
-    currency = models.ForeignKey(Currency, on_delete= models.DO_NOTHING)
+    part_group = models.ManyToManyField('PartGroup',blank=False) 
+    customer_group = models.ForeignKey('CustomerGroup', on_delete= models.DO_NOTHING)
+    contract_group = models.ForeignKey('PartSoldContractGroup', on_delete= models.DO_NOTHING)
+    currency = models.ForeignKey('Currency', on_delete= models.DO_NOTHING)
     description = models.TextField()
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)

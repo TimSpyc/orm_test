@@ -106,3 +106,51 @@ class MaterialType(ReferenceTable):
 
     def __str__(self):
         return f'{self.name}'
+
+
+class DerivativeType(ReferenceTable):
+    """
+    A Django model representing a derivative type, which includes a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class PredictionAccuracy(ReferenceTable):
+    """
+    A Django model representing a prediction accuracy, which includes a name.
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectUserRole(ReferenceTable):
+    """
+    A Django model representing a project user role, which includes a role
+    name.
+    """
+    role_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.role_name
+
+
+class RevisionLMC(ReferenceTable):
+    revision_date = models.DateField()
+
+    def __str__(self):
+        return self.revision_date.strftime('%Y-%m')
+    
+    class Meta:
+        get_latest_by = "revision_date"
+
+class ProjectStaffCostTask(ReferenceTable):
+    name = models.CharField(max_length=30)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
