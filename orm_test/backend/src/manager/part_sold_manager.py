@@ -21,14 +21,14 @@ class PartSoldGroup(GroupTable):
 
 
 class PartSold(DataTable):
-    sap_number = models.ForeignKey('SapNumber', on_delete= models.DO_NOTHING)
     part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.DO_NOTHING)
+    sap_number = models.ForeignKey('SapNumber', on_delete= models.DO_NOTHING, null=True)
     customer_part_number = models.CharField(max_length=255)
-    part_group = models.ManyToManyField('PartGroup',blank=False) 
+    part_group = models.ManyToManyField('PartGroup',blank=True) 
     customer_group = models.ForeignKey('CustomerGroup', on_delete= models.DO_NOTHING)
     contract_group = models.ForeignKey('PartSoldContractGroup', on_delete= models.DO_NOTHING)
     currency = models.ForeignKey('Currency', on_delete= models.DO_NOTHING)
-    description = models.TextField()
+    description = models.TextField(null=True)
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
     cbd_date = models.DateTimeField()
@@ -59,10 +59,9 @@ class PartSoldMaterialPriceComponent(DataExtensionTable):
     validity_end_date = models.DateTimeField(null=True)
 
 
-
 class PartSoldMaterialWeight(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
-    part_sold_material_type = models.ForeignKey('PartSoldMaterialType', on_delete= models.DO_NOTHING)
+    part_sold_material_type = models.ForeignKey('MaterialType', on_delete= models.DO_NOTHING)
     gross_weight = models.FloatField()
     net_weight = models.FloatField()
 

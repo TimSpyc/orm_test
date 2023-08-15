@@ -7,14 +7,19 @@ if __name__ == '__main__':
 
 from backend.src.auxiliary import db
 import random
-import user
-import project
-import derivative_lmc 
-import derivative_lmc_volume
+from example_db.data_creation.reference_models import fillReferenceTables
+import example_db.data_creation.user as user
+import example_db.data_creation.project as project
+import example_db.data_creation.derivative_lmc as derivative_lmc 
+import example_db.data_creation.derivative_lmc_volume as derivative_lmc_volume
 
 db.truncate_all_tables()
 
 print("Start")
+
+fillReferenceTables()
+
+print("Done with Reference Tables")
 
 for _ in range(random.randint(5, 500)):
     user.createFakeUser()

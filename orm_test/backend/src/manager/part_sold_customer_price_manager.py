@@ -1,7 +1,7 @@
 from django.db import models
 from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
-#from backend.models import PartSoldGroup, PartSoldPriceComponentType
+# from backend.models import PartSoldGroup, PartSoldPriceComponentType
 
 class PartSoldCustomerPriceGroup(GroupTable):
     """
@@ -18,11 +18,11 @@ class PartSoldCustomerPriceGroup(GroupTable):
     
 class PartSoldCustomerPrice(DataTable):
     part_sold_customer_price_group = models.ForeignKey(PartSoldCustomerPriceGroup, on_delete= models.DO_NOTHING)
-    value = models.FloatField()
 
 class PartSoldCustomerPriceComponent(DataExtensionTable):
     part_sold_customer_price = models.ForeignKey(PartSoldCustomerPrice, on_delete= models.DO_NOTHING)
     part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
+    value = models.FloatField()
 
 
 class PartSoldCustomerPriceManager(GeneralManager):

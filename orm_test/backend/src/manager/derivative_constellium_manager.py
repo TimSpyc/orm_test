@@ -28,8 +28,6 @@ class DerivativeConstellium(DataTable):
         on_delete=models.DO_NOTHING
     )
     name = models.CharField(max_length=255)
-    sop_date = models.DateField()
-    eop_date = models.DateField()
     derivative_type = models.ForeignKey(
         'DerivativeType',
         on_delete=models.DO_NOTHING

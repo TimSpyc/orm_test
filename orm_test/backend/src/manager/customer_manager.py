@@ -1,6 +1,5 @@
 from backend.src.auxiliary.manager import GeneralManager
 from backend.models.abstract_models import GroupTable, DataTable, DataExtensionTable
-from backend.models import PartSoldMaterialPriceType
 from django.db import models
 
 class CustomerGroup(GroupTable):
@@ -26,7 +25,7 @@ class Customer(DataTable):
 
 class CustomerMaterialCondition(DataExtensionTable):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    part_sold_material_price_type = models.ForeignKey(PartSoldMaterialPriceType, on_delete= models.DO_NOTHING)
+    part_sold_material_price_type = models.ForeignKey("PartSoldMaterialPriceType", on_delete= models.DO_NOTHING)
     month_range = models.IntegerField()
     month_offset = models.IntegerField()
     share_the_pain_factor = models.FloatField()

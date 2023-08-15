@@ -17,7 +17,7 @@ class MaterialAlloyTreatmentGroup(GroupTable):
     
 class MaterialAlloyTreatment(DataTable):
     material_alloy_treatment_group = models.ForeignKey(MaterialAlloyTreatmentGroup, on_delete= models.DO_NOTHING)
-    remark = models.TextField()
+    remark = models.TextField(default=None, null=True)
     
     @property
     def group(self):

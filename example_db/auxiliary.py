@@ -64,7 +64,7 @@ def modelCreationDict(
     return new_data_dict
 
 
-def deactivateLastObjectRandom(data_model: Model, chance_for_no_change: float = 0.7):
+def deactivateLastObjectRandomly(data_model: Model, chance_for_no_change: float = 0.7):
     if randomChoice(chance_for_no_change):
         data_model.active = 0
         data_model.save()
@@ -78,3 +78,7 @@ def randomChoice(chance_for_false):
 def randomLetters(length = 4):
     letters = string.ascii_letters
     return ''.join(random.choice(letters) for _ in range(length))
+
+
+def drawingNumberGenerator(drawing_type: str) -> str:
+    return f'AS_{random.randint(1,99):02}_{drawing_type}_{random.randint(10000,99999):05}'

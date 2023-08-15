@@ -14,7 +14,7 @@ class DerivativeLmcGroup(GroupTable):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
     
     def manager(self, search_date, use_cache):
-        return DerivativeLMCManager(self.id, search_date, use_cache)
+        return DerivativeLmcManager(self.id, search_date, use_cache)
 
 class DerivativeLmc(DataTable):
     derivative_lmc_group = models.ForeignKey(DerivativeLmcGroup, on_delete=models.DO_NOTHING)
@@ -57,7 +57,7 @@ class DerivativeLmc(DataTable):
         return self.derivative_group_lmc
     
 
-class DerivativeLMCManager(GeneralManager):
+class DerivativeLmcManager(GeneralManager):
 
     group_model = DerivativeLmcGroup
     data_model = DerivativeLmc
@@ -75,7 +75,7 @@ class DerivativeLMCManager(GeneralManager):
             use_cache=use_cache
         )
 
-class DerivativeLMCVolume(ExternalDataTable):
+class DerivativeLmcVolume(ExternalDataTable):
     derivative_lmc_group = models.ForeignKey(DerivativeLmcGroup, on_delete=models.DO_NOTHING)
     volume = models.PositiveIntegerField()
     date = models.DateField()
@@ -91,8 +91,8 @@ class DerivativeLMCVolume(ExternalDataTable):
             for lmc_revision: {self.lmc_revision}
         """
 
-class DerivativeLMCVolumeManager(ExternalDataManager):
-    database_model = DerivativeLMCVolume
+class DerivativeLmcVolumeManager(ExternalDataManager):
+    database_model = DerivativeLmcVolume
 
     def __init__(
         self,

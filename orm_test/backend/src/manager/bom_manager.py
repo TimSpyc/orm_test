@@ -27,6 +27,7 @@ class BillOfMaterial(DataTable):
 
 
 class BillOfMaterialStructure(DataExtensionTable):
+    bill_of_material = models.ForeignKey(BillOfMaterial, on_delete= models.DO_NOTHING)
     part_group = models.ForeignKey('PartGroup', on_delete= models.DO_NOTHING)
     part_position = models.ManyToManyField('PartPosition', blank=True)
     cumulated_quantity = models.FloatField()
