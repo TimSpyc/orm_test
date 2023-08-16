@@ -7,12 +7,12 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomDateTime, modelCreationDict, getRandomUser, deactivateLastObjectRandom
+from auxiliary import getRandomDateTime, modelCreationDict, getRandomUser, deactivateLastObjectRandomly
 from backend.models import ProjectGroup, Project
 
 fake = Faker()
 
-def createFakeProjectWithHistory():
+def populateProjectWithHistory():
     proj_group = ProjectGroup()
     proj_group.save()
 
@@ -31,4 +31,4 @@ def createFakeProjectWithHistory():
 
         proj = Project(**modelCreationDict(proj_dict, Project, proj_group))
         proj.save()
-    deactivateLastObjectRandom(proj)
+    deactivateLastObjectRandomly(proj)

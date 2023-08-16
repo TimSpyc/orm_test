@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference
+from auxiliary import deactivateLastObjectRandomly
 from backend.models import PartRecipient, PartRecipientGroup
 
 fake = Faker()
@@ -21,3 +21,4 @@ def populatePartRecipient():
         description = fake.name()
     )
     part_recipient.save()
+    deactivateLastObjectRandomly(part_recipient)

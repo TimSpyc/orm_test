@@ -8,7 +8,7 @@ if __name__ == '__main__':
 from faker import Faker
 import random
 from backend.models import MaterialAlloyTreatment, MaterialAlloyTreatmentGroup
-from datetime import date
+from auxiliary import deactivateLastObjectRandomly
 
 fake = Faker()
 
@@ -24,4 +24,6 @@ def populateMaterialAlloyTreatment():
         material_alloy_treatment_group = material_alloy_treatment_group,
     )
     material_alloy_treatment.save()
+
+    deactivateLastObjectRandomly(material_alloy_treatment)
     

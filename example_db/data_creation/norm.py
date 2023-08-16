@@ -6,7 +6,7 @@ if __name__ == '__main__':
     django.setup()
 
 from faker import Faker
-from auxiliary import getRandomReference
+from auxiliary import getRandomReference, deactivateLastObjectRandomly
 from backend.models import Norm, NormGroup, NormType
 
 fake = Faker()
@@ -20,4 +20,5 @@ def populateNorm():
         description = fake.text(max_nb_chars=255),
         norm_type = getRandomReference(NormType)
     )
-    return norm
+    
+    deactivateLastObjectRandomly(norm)

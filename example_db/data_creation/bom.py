@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference
+from auxiliary import getRandomReference, deactivateLastObjectRandomly
 from backend.models import BillOfMaterialGroup, BillOfMaterial, BillOfMaterialStructure, DerivativeConstelliumGroup, PartPosition, PartGroup
 
 fake = Faker()
@@ -55,6 +55,8 @@ def populateBillOfMaterial():
             bom_structure_element.left_value_product_development = element["left"]
             bom_structure_element.right_value_product_development = element["right"]
             bom_structure_element.save()
+
+        deactivateLastObjectRandomly(bill_of_material)
         
 def nested_set_from_list(data, max_depth=3, max_children=3):
     nodes = []

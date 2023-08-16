@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference
+from auxiliary import getRandomReference, deactivateLastObjectRandomly
 from backend.models import CustomerPlantGroup, CustomerPlant, CustomerGroup, PartRecipientGroup
 
 fake = Faker()
@@ -33,3 +33,5 @@ def populateCustomerPlant():
     for _ in range(random.randint(0, 5)):
         customer_plant['part_recipient_group'].add(getRandomReference(PartRecipientGroup))
     customer_plant.save()
+
+    deactivateLastObjectRandomly(customer_plant)

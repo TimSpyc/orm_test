@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomDateTime, modelCreationDict, randomLetters, getRandomReference
+from auxiliary import getRandomDateTime, modelCreationDict, randomLetters, getRandomReference, deactivateLastObjectRandomly
 from backend.models import DerivativeLmcGroup, DerivativeLmc, RevisionLMC, CustomerGroup, CustomerPlantGroup
 from datetime import date
 
@@ -79,3 +79,5 @@ def populateDerivativeLmc():
     if der_lmc is None:
         lmc_data = get_lmc_data(lmc_rev_date)
         DerivativeLmc(**modelCreationDict(lmc_data, DerivativeLmc, der_lmc_group)).save()
+
+    deactivateLastObjectRandomly(der_lmc)

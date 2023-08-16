@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference
+from auxiliary import getRandomReference, deactivateLastObjectRandomly
 from backend.models import Material, MaterialGroup, NormGroup, MaterialType, MaterialAlloyGroup, MaterialAlloyTreatmentGroup
 
 fake = Faker()
@@ -28,3 +28,4 @@ def populateMaterial():
         material.add(customer_norm = getRandomReference(NormGroup))
     
     material.save()
+    deactivateLastObjectRandomly(material)

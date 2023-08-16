@@ -8,7 +8,7 @@ if __name__ == '__main__':
 from faker import Faker
 import random
 from datetime import date
-from auxiliary import getRandomReference
+from auxiliary import deactivateLastObjectRandomly
 from backend.models import CustomerGroup, Customer, CustomerMaterialCondition, PartSoldMaterialPriceType
 
 fake = Faker()
@@ -81,3 +81,5 @@ def populateCustomer():
                 'validity_start_date': start_date,
                 'validity_end_date': None
             }).save()
+
+    deactivateLastObjectRandomly(customer)

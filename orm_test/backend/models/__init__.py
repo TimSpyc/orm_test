@@ -7,7 +7,7 @@ from backend.src.manager.cross_section_manager import CrossSection, CrossSection
 from backend.src.manager.customer_manager import Customer, CustomerGroup, CustomerMaterialCondition
 from backend.src.manager.customer_plant_manager import CustomerPlant, CustomerPlantGroup
 from backend.src.manager.derivative_constellium_manager import DerivativeConstellium, DerivativeConstelliumGroup, DerivativeConstelliumDerivativeLmcConnection
-from backend.src.manager.derivative_lmc_manager import DerivativeLmc, DerivativeLmcGroup
+from backend.src.manager.derivative_lmc_manager import DerivativeLmc, DerivativeLmcGroup, DerivativeLmcVolume
 from backend.src.manager.material_alloy_manager import MaterialAlloy, MaterialAlloyGroup
 from backend.src.manager.material_alloy_treatment_manager import MaterialAlloyTreatment, MaterialAlloyTreatmentGroup
 from backend.src.manager.material_manager import Material, MaterialGroup

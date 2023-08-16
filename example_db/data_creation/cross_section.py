@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import drawingNumberGenerator, getRandomReference
+from auxiliary import drawingNumberGenerator, getRandomReference, deactivateLastObjectRandomly
 from backend.models import CrossSectionGroup, CrossSection, NormGroup
 
 fake = Faker()
@@ -27,3 +27,5 @@ def populateCrossSection():
         extrusion_plant_tooling_number = fake.text(max_nb_chars=255),
     )
     cross_section.save()
+
+    deactivateLastObjectRandomly(cross_section)

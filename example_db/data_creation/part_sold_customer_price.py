@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference
+from auxiliary import getRandomReference, deactivateLastObjectRandomly
 from backend.models import PartSoldCustomerPrice, PartSoldCustomerPriceGroup, PartSoldCustomerPriceComponent, PartSoldPriceComponentType, PartSoldGroup
 
 fake = Faker()
@@ -33,3 +33,5 @@ def populatePartSoldCustomerPrice():
         )
 
         part_sold_price_component.save()
+
+    deactivateLastObjectRandomly(part_sold_customer_price)
