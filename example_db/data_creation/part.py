@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, drawingNumberGenerator, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, drawingNumberGenerator, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import (
     Part,
     PartGroup,
@@ -51,7 +51,9 @@ def populatePart():
         semi_finished_product_type = getRandomReference(SemiFinishedProductType),
         material_group = getRandomReference(MaterialGroup),
         delivery_temper = fake.name(),
-        material_norm_customer = getRandomReference(NormGroup)
+        material_norm_customer = getRandomReference(NormGroup),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     part.save()
 

@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import (
     ProjectStaffCost,
     ProjectStaffCostGroup,
@@ -30,7 +30,9 @@ def populateProjectStaffCost():
 
     project_staff_cost = ProjectStaffCost(
         project_staff_cost_group = project_staff_cost_group,
-        hours = random.uniform(0, 10)
+        hours = random.uniform(0, 10),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     project_staff_cost.save()
 

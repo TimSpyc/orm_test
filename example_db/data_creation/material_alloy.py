@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import MaterialAlloy, MaterialAlloyGroup, NormGroup
 
 fake = Faker()
@@ -22,6 +22,8 @@ def populateMaterialAlloy():
         chemical_symbol = fake.word(),
         internal_name = fake.word(),
         density = random.choice(2.7, 2.7, 2.7, 7.85, 8.9),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     material_alloy.save()
 

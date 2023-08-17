@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import (
     PartSold,
     PartSoldGroup,
@@ -47,7 +47,9 @@ def populatePartSold():
         description = random.choice(fake.text(), None),
         validity_start_date = random.choice(start_date, None),
         validity_end_date = random.choice(end_date, None),
-        cbd_date = fake.date_time()
+        cbd_date = fake.date_time(),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     part_sold.save()
 

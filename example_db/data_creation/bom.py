@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import BillOfMaterialGroup, BillOfMaterial, BillOfMaterialStructure, DerivativeConstelliumGroup, PartPosition, PartGroup
 
 fake = Faker()
@@ -26,6 +26,8 @@ def populateBillOfMaterial():
             "start_of_production_date": start_of_production_date,
             "end_of_production_date": end_of_production_date,
             "description": fake.text(),
+            "creator": getRandomUser(),
+            "date": getRandomDateTime()
         })
 
         bill_of_material.save()

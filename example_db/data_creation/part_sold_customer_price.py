@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import PartSoldCustomerPrice, PartSoldCustomerPriceGroup, PartSoldCustomerPriceComponent, PartSoldPriceComponentType, PartSoldGroup
 
 fake = Faker()
@@ -30,6 +30,8 @@ def populatePartSoldCustomerPrice():
             part_sold_customer_price = part_sold_customer_price,
             part_sold_price_component_type = getRandomReference(PartSoldPriceComponentType),
             value = fake.pyfloat(left_digits=2, right_digits=2, positive=True),
+            creator = getRandomUser(),
+            date = getRandomDateTime()
         )
 
         part_sold_price_component.save()

@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import PartSoldPriceUpload, PartSoldPriceUploadGroup, PartSoldGroup
 
 fake = Faker()
@@ -26,7 +26,9 @@ def populatePartSoldPriceUpload():
         uploaded = fake.date_time_between(start_date=valid_from_date, end_date='now'),
         price = random.uniform(1, 175.5),
         description = fake.text(),
-        source = random.choice(['customer', 'calculated', 'other'])
+        source = random.choice(['customer', 'calculated', 'other']),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
 
     part_sold_price_upload.save()

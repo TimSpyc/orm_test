@@ -9,7 +9,7 @@ from faker import Faker
 import random
 from backend.models import DerivativeLmcGroup, DerivativeLmc, RevisionLMC, DerivativeLmcVolume
 from dateutil.relativedelta import relativedelta
-from auxiliary import deactivateLastObjectRandomly
+from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 
 fake = Faker()
 
@@ -50,7 +50,7 @@ def populateLmcVolume(derivative_lmc_group_model):
                     derivative_lmc_group = derivative_lmc_group_model,
                     volume = volume,
                     date = date,
-                    lmc_revision = lmc_rev_date
+                    lmc_revision = lmc_rev_date,
                 )
     
     deactivateLastObjectRandomly(der_lmc_obj)

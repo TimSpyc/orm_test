@@ -8,7 +8,7 @@ if __name__ == '__main__':
 from faker import Faker
 import random
 from backend.models import PartSoldContract, PartSoldContractGroup
-from auxiliary import deactivateLastObjectRandomly
+from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 
 fake = Faker()
 
@@ -22,6 +22,8 @@ def populatePartSoldContract():
     part_sold_contract = PartSoldContract(
         part_sold_contract_group = part_sold_contract_group,
         description = fake.text(max_nb_chars=2000, ext_word_list=None),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     part_sold_contract.save()
 

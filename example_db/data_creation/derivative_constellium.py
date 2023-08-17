@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly, prevOrNewData
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, prevOrNewData, getRandomUser, getRandomDateTime
 from backend.models import DerivativeConstelliumDerivativeLmcConnection, DerivativeConstellium, DerivativeConstelliumGroup, DerivativeType, PredictionAccuracy, DerivativeLmcGroup, ProjectGroup
 
 fake = Faker()
@@ -52,6 +52,8 @@ def populateDerivativeConstelliumWithDerivativeLmcConnection():
                 derivative_constellium_group,
                 DerivativeConstellium
             ),
+            "creator": getRandomUser(),
+            "date": getRandomDateTime()
         })
         
         derivative_constellium.save()

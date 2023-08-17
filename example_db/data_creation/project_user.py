@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import (
     ProjectUserGroup,
     ProjectUser,
@@ -27,7 +27,9 @@ def populateProjectUser():
 
     project_user = ProjectUser(
         project_user_group = project_user_group,
-        project_user_role = getRandomReference(ProjectUserRole)
+        project_user_role = getRandomReference(ProjectUserRole),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
 
     project_user.save()

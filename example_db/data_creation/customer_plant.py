@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import CustomerPlantGroup, CustomerPlant, CustomerGroup, PartRecipientGroup
 
 fake = Faker()
@@ -27,6 +27,8 @@ def populateCustomerPlant():
         "latitude": fake.latitude(),
         "longitude": fake.longitude(),
         "customer_plant_group": customer_plant_group,
+        "creator": getRandomUser(),
+        "date": getRandomDateTime()
     })
     
     customer_plant.save()

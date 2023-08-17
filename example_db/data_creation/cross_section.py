@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import drawingNumberGenerator, getRandomReference, deactivateLastObjectRandomly
+from auxiliary import drawingNumberGenerator, getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import CrossSectionGroup, CrossSection, NormGroup
 
 fake = Faker()
@@ -25,6 +25,8 @@ def populateCrossSection():
         cross_section_tolerance_norm = getRandomReference(NormGroup),
         customer_tolerance = fake.text(max_nb_chars=255),
         extrusion_plant_tooling_number = fake.text(max_nb_chars=255),
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     cross_section.save()
 

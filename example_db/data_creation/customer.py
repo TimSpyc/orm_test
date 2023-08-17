@@ -8,7 +8,7 @@ if __name__ == '__main__':
 from faker import Faker
 import random
 from datetime import date
-from auxiliary import deactivateLastObjectRandomly
+from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
 from backend.models import CustomerGroup, Customer, CustomerMaterialCondition, PartSoldMaterialPriceType
 
 fake = Faker()
@@ -26,7 +26,9 @@ def populateCustomer():
     customer_group.save()
 
     customer = Customer(
-        customer_group = customer_group
+        customer_group = customer_group,
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     customer.save()
 
