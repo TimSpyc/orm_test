@@ -33,10 +33,10 @@ class BillOfMaterialStructure(DataExtensionTable):
     cumulated_quantity = models.FloatField()
     left_value_product_development = models.FloatField(null=True)
     right_value_product_development = models.FloatField(null=True)
-    left_value_process_development = models.FloatField(default=left_value_product_development, null=True)
-    right_value_process_development = models.FloatField(default=right_value_product_development, null=True)
-    left_value_logistics = models.FloatField(default=left_value_product_development, null=True)
-    right_value_logistics = models.FloatField(default=left_value_process_development, null=True)
+    left_value_process_development = models.FloatField(null=True)
+    right_value_process_development = models.FloatField(null=True)
+    left_value_logistics = models.FloatField(null=True)
+    right_value_logistics = models.FloatField(null=True)
 
 
 class BillOfMaterialManager(GeneralManager):

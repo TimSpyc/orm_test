@@ -22,6 +22,8 @@ def populatePartSoldCustomerPrice():
 
     part_sold_customer_price = PartSoldCustomerPrice(
         part_sold_customer_price_group = part_sold_customer_price_group,
+        creator = getRandomUser(),
+        date = getRandomDateTime()
     )
     part_sold_customer_price.save()
 
@@ -30,8 +32,6 @@ def populatePartSoldCustomerPrice():
             part_sold_customer_price = part_sold_customer_price,
             part_sold_price_component_type = getRandomReference(PartSoldPriceComponentType),
             value = fake.pyfloat(left_digits=2, right_digits=2, positive=True),
-            creator = getRandomUser(),
-            date = getRandomDateTime()
         )
 
         part_sold_price_component.save()

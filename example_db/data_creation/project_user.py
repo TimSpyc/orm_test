@@ -27,10 +27,12 @@ def populateProjectUser():
 
     project_user = ProjectUser(
         project_user_group = project_user_group,
-        project_user_role = getRandomReference(ProjectUserRole),
         creator = getRandomUser(),
         date = getRandomDateTime()
     )
 
     project_user.save()
+    for _ in range(random.randint(0,5)):
+        project_user.project_user_role.add(getRandomReference(ProjectUserRole))
+
     deactivateLastObjectRandomly(project_user)

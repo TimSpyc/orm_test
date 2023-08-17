@@ -336,3 +336,4 @@ def fillReferenceTables():
     createPredictionAccuracies()
     createProjectUserRoles()
     createProjectStaffCostTasks()
+    createFakeRevisionsLmc(2010, 2020)

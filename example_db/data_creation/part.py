@@ -22,7 +22,7 @@ fake = Faker()
 
 def populatePart():
     part_group = PartGroup(
-        drawing_number = random.choice(drawingNumberGenerator('E'), drawingNumberGenerator('Z')),
+        drawing_number = random.choice([drawingNumberGenerator('E'), drawingNumberGenerator('Z')]),
         drawing_revision = random.randint(1, 100)
     )
     part_group.save()

@@ -33,7 +33,7 @@ def populateCustomerPlant():
     
     customer_plant.save()
     for _ in range(random.randint(0, 5)):
-        customer_plant['part_recipient_group'].add(getRandomReference(PartRecipientGroup))
+        customer_plant.part_recipient_group.add(getRandomReference(PartRecipientGroup))
     customer_plant.save()
 
     deactivateLastObjectRandomly(customer_plant)

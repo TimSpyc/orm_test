@@ -78,6 +78,7 @@ def populateDerivativeLmc():
 
     if der_lmc is None:
         lmc_data = get_lmc_data(lmc_rev_date)
-        DerivativeLmc(**modelCreationDict(lmc_data, DerivativeLmc, der_lmc_group)).save()
-
+        der_lmc = DerivativeLmc(**modelCreationDict(lmc_data, DerivativeLmc, der_lmc_group))
+        der_lmc.save()
+    
     deactivateLastObjectRandomly(der_lmc)

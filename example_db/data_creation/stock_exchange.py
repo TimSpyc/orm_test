@@ -9,14 +9,14 @@ from faker import Faker
 import random
 from auxiliary import getRandomDateTime, getRandomUser, deactivateLastObjectRandomly
 from backend.models import StockExchangeData
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 
 fake = Faker()
 
 def populateStockExchangeData():
     start_date = fake.date_between(start_date='-10y', end_date='today')
-    end_date = datetime.now()
-    date = start_date
+    end_date = date.today()
+    iter_date = start_date
     aluminum_cash_to_M_plus_1 = random.uniform(1000, 5000)
     copper_sett = random.uniform(1000, 5000)
     zinc_sett = random.uniform(1000, 5000)
@@ -37,8 +37,8 @@ def populateStockExchangeData():
     premium_us_midwest_duty_paid_usd_lb_avg = random.uniform(100, 500) + premium_rotterdam_p1020A_duty_paid_usd_t_avg
     premium_japan_P1020A_duty_paid_usd_t_avg = random.uniform(100, 500) + premium_rotterdam_p1020A_duty_paid_usd_t_avg
 
-    while date < end_date:
-        date += timedelta(days=1)
+    while iter_date < end_date:
+        iter_date += timedelta(days=1)
 
         aluminum_cash_to_M_plus_1 *= random.uniform(0.98, 1.02)
         aluminum_sett = aluminum_cash_to_M_plus_1 * random.uniform(0.98, 1.02)
@@ -97,7 +97,7 @@ def populateStockExchangeData():
         premium_us_midwest_duty_paid_usd_lb_high = premium_us_midwest_duty_paid_usd_lb_avg * random.uniform(1.01, 1.10)
         premium_japan_P1020A_duty_paid_usd_t_low = premium_japan_P1020A_duty_paid_usd_t_avg * random.uniform(0.90, 0.99)
         premium_japan_P1020A_duty_paid_usd_t_high = premium_japan_P1020A_duty_paid_usd_t_avg * random.uniform(1.01, 1.10)
-        stock_exchange_date = date
+        stock_exchange_date = iter_date
 
         stock_exchange_data = StockExchangeData(
             aluminum_cash_to_M_plus_1 = aluminum_cash_to_M_plus_1,

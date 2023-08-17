@@ -44,9 +44,9 @@ def populatePartSold():
         customer_group = getRandomReference(CustomerGroup),
         contract_group = getRandomReference(PartSoldContractGroup),
         currency = getRandomReference(Currency),
-        description = random.choice(fake.text(), None),
-        validity_start_date = random.choice(start_date, None),
-        validity_end_date = random.choice(end_date, None),
+        description = random.choice([fake.text(), None]),
+        validity_start_date = random.choice([start_date, None]),
+        validity_end_date = random.choice([end_date, None]),
         cbd_date = fake.date_time(),
         creator = getRandomUser(),
         date = getRandomDateTime()
@@ -59,8 +59,8 @@ def populatePartSold():
             value = random.uniform(0, 100),
             saveable = random.choice([True, False]),
             part_sold_price_component_type = getRandomReference(PartSoldPriceComponentType),
-            validity_start_date = random.choice(start_date, None),
-            validity_end_date = random.choice(end_date, None)
+            validity_start_date = random.choice([start_date, None]),
+            validity_end_date = random.choice([end_date, None])
         )
         part_sold_price_component.save()
     
@@ -73,8 +73,8 @@ def populatePartSold():
             use_gross_weight = random.choice([True, False]),
             current_saveable = random.choice([True, False]),
             basis_saveable = random.choice([True, False]),
-            validity_start_date = random.choice(start_date, None),
-            validity_end_date = random.choice(end_date, None)
+            validity_start_date = random.choice([start_date, None]),
+            validity_end_date = random.choice([end_date, None])
         )
         part_sold_material_price_component.save()
 

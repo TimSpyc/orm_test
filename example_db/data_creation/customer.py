@@ -38,8 +38,8 @@ def populateCustomer():
                 'customer': customer,
                 'part_sold_material_price_type': part_sold_material_price_type,
                 'month_range': random.randint(1, 24),
-                'month_offset': random.choice(1, 3, 6, 9, 12, 18),
-                'share_the_pain_factor': random.choice(random.randint(1, 10) / 10, 1, 1, 1),
+                'month_offset': random.choice([1, 3, 6, 9, 12, 18]),
+                'share_the_pain_factor': random.choice([random.randint(1, 10) / 10, 1, 1, 1]),
                 'validity_start_date': None,
                 'validity_end_date': None
             }).save()
@@ -57,7 +57,7 @@ def populateCustomer():
                 'part_sold_material_price_type': part_sold_material_price_type,
                 'month_range': random.randint(1, 24),
                 'month_offset': [1, 3, 6, 9, 12, 18][random.randint(0, 5)],
-                'share_the_pain_factor': random.choice(random.randint(1, 10) / 10, 1, 1, 1),
+                'share_the_pain_factor': random.choice([random.randint(1, 10) / 10, 1, 1, 1]),
                 'validity_start_date': None,
                 'validity_end_date': start_date
             }).save()
@@ -68,7 +68,7 @@ def populateCustomer():
                 'part_sold_material_price_type': part_sold_material_price_type,
                 'month_range': random.randint(1, 24),
                 'month_offset': [1, 3, 6, 9, 12, 18][random.randint(0, 5)],
-                'share_the_pain_factor': random.choice(random.randint(1, 10) / 10, 1, 1, 1),
+                'share_the_pain_factor': random.choice([random.randint(1, 10) / 10, 1, 1, 1]),
                 'validity_start_date': start_date,
                 'validity_end_date': end_date
             }).save()
@@ -79,7 +79,7 @@ def populateCustomer():
                 'part_sold_material_price_type': part_sold_material_price_type,
                 'month_range': random.randint(1, 24),
                 'month_offset': [1, 3, 6, 9, 12, 18][random.randint(0, 5)],
-                'share_the_pain_factor': random.choice(random.randint(1, 10) / 10, 1, 1, 1),
+                'share_the_pain_factor': random.choice([random.randint(1, 10) / 10, 1, 1, 1]),
                 'validity_start_date': start_date,
                 'validity_end_date': None
             }).save()

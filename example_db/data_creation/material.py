@@ -27,7 +27,7 @@ def populateMaterial():
     )
     material.save()
     for _ in range(random.randint(0,5)):
-        material.add(customer_norm = getRandomReference(NormGroup))
+        material.customer_norm.add(getRandomReference(NormGroup))
     
     material.save()
     deactivateLastObjectRandomly(material)

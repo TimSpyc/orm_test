@@ -32,7 +32,7 @@ def populateBillOfMaterial():
 
         bill_of_material.save()
         bom_structure_element_list = []
-        amount_of_bom_elements = random.choice(random.randint(1, 75), random.randint(1, 10), random.randint(1, 20))
+        amount_of_bom_elements = random.choice([random.randint(1, 75), random.randint(1, 10), random.randint(1, 20)])
         for _ in range(amount_of_bom_elements):
             bill_of_material_structure = BillOfMaterialStructure(**{
                 "bill_of_material": bill_of_material,

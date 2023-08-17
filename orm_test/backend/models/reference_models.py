@@ -131,10 +131,10 @@ class ProjectUserRole(ReferenceTable):
     A Django model representing a project user role, which includes a role
     name.
     """
-    role_name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.role_name
+        return self.name
 
 
 class RevisionLMC(ReferenceTable):

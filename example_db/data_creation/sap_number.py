@@ -7,14 +7,18 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomDateTime, getRandomUser, deactivateLastObjectRandomly
+from auxiliary import getRandomDateTime, getRandomUser, deactivateLastObjectRandomly, getUniqueNumber
 from backend.models import SapNumber, SapNumberGroup
 
 fake = Faker()
 
 def populateSapNumber():
     sap_number_group = SapNumberGroup(
-        sap_number = f'{random.randint(1, 1000000):07}'
+        sap_number = getUniqueNumber(
+            SapNumberGroup,
+            'sap_number',
+            lambda: f'{random.randint(6000000, 7000000):07}'
+        ),
     )
     sap_number_group.save()
 

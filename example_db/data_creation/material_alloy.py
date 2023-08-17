@@ -21,7 +21,7 @@ def populateMaterialAlloy():
         norm = getRandomReference(NormGroup),
         chemical_symbol = fake.word(),
         internal_name = fake.word(),
-        density = random.choice(2.7, 2.7, 2.7, 7.85, 8.9),
+        density = random.choice([2.7, 2.7, 2.7, 7.85, 8.9]),
         creator = getRandomUser(),
         date = getRandomDateTime()
     )

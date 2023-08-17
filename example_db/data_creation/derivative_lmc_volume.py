@@ -9,7 +9,8 @@ from faker import Faker
 import random
 from backend.models import DerivativeLmcGroup, DerivativeLmc, RevisionLMC, DerivativeLmcVolume
 from dateutil.relativedelta import relativedelta
-from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
+from auxiliary import deactivateLastObjectRandomly
+from datetime import date
 
 fake = Faker()
 
@@ -19,7 +20,7 @@ def populateVolumeForAllDerivativeLmc():
         populateLmcVolume(der_lmc_group)
 
 def populateLmcVolume(derivative_lmc_group_model):
-    der_lmc_obj = DerivativeLmc(derivative_lmc_group= derivative_lmc_group_model)
+    der_lmc_obj = DerivativeLmc.objects.filter(derivative_lmc_group= derivative_lmc_group_model).latest('date')
     sop_date = der_lmc_obj.sop_date
     eop_date = der_lmc_obj.eop_date
 
@@ -43,13 +44,13 @@ def populateLmcVolume(derivative_lmc_group_model):
             else:
                 volume -= 0.1*volume
 
-            date = start_date + relativedelta(months=distance_sop_month)
+            insert_date = start_date + relativedelta(months=distance_sop_month)
 
             if use_lmc_rev:
                 DerivativeLmcVolume.objects.create(
                     derivative_lmc_group = derivative_lmc_group_model,
                     volume = volume,
-                    date = date,
+                    date = insert_date,
                     lmc_revision = lmc_rev_date,
                 )
     

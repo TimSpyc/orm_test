@@ -11,7 +11,7 @@ from backend.models import User
 
 fake = Faker()
 
-def createFakeUser():
+def populateUser():
     first_name = fake.first_name()
     last_name = fake.last_name()
     email = f'{first_name}.{last_name}@constellium.com'

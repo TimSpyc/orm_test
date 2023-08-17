@@ -7,15 +7,22 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
+from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime, getUniqueNumber
 from backend.models import PartRecipient, PartRecipientGroup
 
 fake = Faker()
 
 def populatePartRecipient():
+
     part_recipient_group = PartRecipientGroup(
-        number = f'{random.randint(1, 1000000):07}'
+        number = getUniqueNumber(
+            PartRecipientGroup,
+            'number',
+            lambda: f'{random.randint(1, 1000000):07}'
+        ),
     )
+    part_recipient_group.save()
+    
     part_recipient = PartRecipient.objects.create(
         part_recipient_group = part_recipient_group,
         description = fake.name(),

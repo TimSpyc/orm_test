@@ -20,7 +20,7 @@ def populateMaterialAlloyTreatment():
     material_alloy_treatment_group.save()
 
     material_alloy_treatment = MaterialAlloyTreatment(
-        remark = random.choice(fake.text(max_nb_chars=200), None),
+        remark = random.choice([fake.text(max_nb_chars=200), None]),
         material_alloy_treatment_group = material_alloy_treatment_group,
         creator = getRandomUser(),
         date = getRandomDateTime()
