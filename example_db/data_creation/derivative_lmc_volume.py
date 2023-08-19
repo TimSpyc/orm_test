@@ -9,7 +9,7 @@ from faker import Faker
 import random
 from backend.models import DerivativeLmcGroup, DerivativeLmc, RevisionLMC, DerivativeLmcVolume
 from dateutil.relativedelta import relativedelta
-from auxiliary import deactivateLastObjectRandomly
+from example_db.auxiliary import deactivateLastObjectRandomly
 from datetime import date
 
 fake = Faker()
@@ -34,6 +34,7 @@ def populateLmcVolume(derivative_lmc_group_model):
     for lmc_rev_date in all_lmc_revisions:
         use_lmc_rev =random.choice([True]+4*[False])
         peak_volume = standard_peak_volume * (1+random.randint(-20, 20)/100)
+        volume = peak_volume
         for distance_sop_month in range(1, total_month+1):
             if distance_sop_month < total_month/3:
                 volume = peak_volume *(1 - 0.9**distance_sop_month)
@@ -47,11 +48,17 @@ def populateLmcVolume(derivative_lmc_group_model):
             insert_date = start_date + relativedelta(months=distance_sop_month)
 
             if use_lmc_rev:
-                DerivativeLmcVolume.objects.create(
-                    derivative_lmc_group = derivative_lmc_group_model,
-                    volume = volume,
-                    date = insert_date,
-                    lmc_revision = lmc_rev_date,
-                )
+                try:
+                    DerivativeLmcVolume.objects.create(
+                        derivative_lmc_group = derivative_lmc_group_model,
+                        volume = int(volume),
+                        date = insert_date,
+                        lmc_revision = lmc_rev_date,
+                    )
+                except:
+                    pass
     
     deactivateLastObjectRandomly(der_lmc_obj)
+
+if __name__ == '__main__':
+    populateVolumeForAllDerivativeLmc()

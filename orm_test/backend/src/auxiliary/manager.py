@@ -199,6 +199,30 @@ class GeneralManager:
                 attribute_name = f'{prefix}__{key}'
                 yield attribute_name, value
 
+        def list_creator(list_obj):
+            output_list = []
+            for instance in list_obj:
+                if isinstance(instance, dict):
+                    output_dict = {}
+                    for key, value in instance.items():
+                        if key == 'id':
+                            continue
+                        if isinstance(value, Model):
+                            if value == self.__group_obj or value == self.__data_obj:
+                                continue
+                            if value.table_type == 'GroupTable':
+                                output_key = f'{key}_group__id'
+                            elif value.table_type == 'DataTable':
+                                output_key = f'{key}__id'
+                            output_value = value.id
+                            output_dict[output_key] = output_value
+                        else:
+                            output_value = value
+                            output_key = key
+                            output_dict[output_key] = output_value
+                    output_list.append(output_dict)
+            return output_list
+
         for attribute_name, value in self.__dict__.items():
             if attribute_name[0] == '_':
                 continue
@@ -208,6 +232,9 @@ class GeneralManager:
                     attribute_name
                 ):
                     yield attribute_name, value
+            elif isinstance(value, list):
+                value = list_creator(value)
+                yield attribute_name, value
             else:
                 yield attribute_name, value
 
@@ -440,7 +467,7 @@ class GeneralManager:
             column, 
             ref_type
             )
-        attribute_name = f'{column_name}_manager'
+        attribute_name = f'{column_name}_manager_list'
 
         def method(self):
             manager_list = []
@@ -471,7 +498,7 @@ class GeneralManager:
         Returns:
             tuple: A tuple containing the generated method and attribute name.
         """
-        attribute_name = f'{column.name}_manager'
+        attribute_name = f'{column.name}'.replace('group', 'manager')
         def method(self):
             group_data = getattr(model_obj, column.name)
             return group_data.manager(self.search_date, self.use_cache)

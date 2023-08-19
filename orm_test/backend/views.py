@@ -2,7 +2,8 @@ from rest_framework.decorators import api_view
 from django.http import HttpResponseRedirect, JsonResponse
 from backend.src.auxiliary.info_handler import handleManagerRequestMethods_list, handleManagerRequestMethods_detail
 from backend.src.info.project_info import serializeProject
-from backend.src.manager import ProjectManager
+from backend.src.info.derivative_constellium_info import serializeDerivativeConstellium
+from backend.src.manager import ProjectManager, DerivativeConstelliumManager
 
 
 @api_view(['GET', 'POST'])
@@ -26,15 +27,15 @@ def getProject_detail(request, project_group_id):
 def getDerivativeConstellium_list(request):
     return handleManagerRequestMethods_list(
         request, 
-        ProjectManager, 
-        serializeProject
+        DerivativeConstelliumManager, 
+        serializeDerivativeConstellium
     )
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def getDerivativeConstellium_detail(request, derivative_constellium_group_id):
     return handleManagerRequestMethods_detail(
         request,
-        ProjectManager,
+        DerivativeConstelliumManager,
         derivative_constellium_group_id,
-        serializeProject
+        serializeDerivativeConstellium
     )
