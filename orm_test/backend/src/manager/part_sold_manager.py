@@ -1,7 +1,6 @@
 from django.db import models
 from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
-from backend.models import SapNumber, PartGroup, CustomerGroup, PartSoldContractGroup, Currency, PartRecipientGroup, PartSoldPriceComponentType, PartSoldMaterialPriceType, PartSoldMaterialType, SavingUnit
 
 
 class PartSoldGroup(GroupTable):
@@ -22,16 +21,16 @@ class PartSoldGroup(GroupTable):
 
 
 class PartSold(DataTable):
-    sap_number = models.ForeignKey('SapNumber', on_delete= models.DO_NOTHING)
     part_sold_group = models.ForeignKey(PartSoldGroup, on_delete= models.DO_NOTHING)
+    sap_number = models.ForeignKey('SapNumber', on_delete= models.DO_NOTHING, null=True)
     customer_part_number = models.CharField(max_length=255)
-    part_group = models.ManyToManyField(PartGroup,blank=False) 
-    customer_group = models.ForeignKey(CustomerGroup, on_delete= models.DO_NOTHING)
-    contract_group = models.ForeignKey(PartSoldContractGroup, on_delete= models.DO_NOTHING)
-    currency = models.ForeignKey(Currency, on_delete= models.DO_NOTHING)
-    description = models.TextField()
-    validity_start_date = models.DateTimeField()
-    validity_end_date = models.DateTimeField()
+    part_group = models.ManyToManyField('PartGroup',blank=True) 
+    customer_group = models.ForeignKey('CustomerGroup', on_delete= models.DO_NOTHING)
+    contract_group = models.ForeignKey('PartSoldContractGroup', on_delete= models.DO_NOTHING)
+    currency = models.ForeignKey('Currency', on_delete= models.DO_NOTHING)
+    description = models.TextField(null=True)
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
     cbd_date = models.DateTimeField()
 
     @property
@@ -44,9 +43,8 @@ class PartSoldPriceComponent(DataExtensionTable):
     value = models.FloatField()
     saveable = models.BooleanField(default=False)
     part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
-
-    class meta:
-        unique_together = ('part_sold', 'part_sold_price_component_type')
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
 
 
 class PartSoldMaterialPriceComponent(DataExtensionTable):
@@ -55,15 +53,15 @@ class PartSoldMaterialPriceComponent(DataExtensionTable):
     basis = models.FloatField()
     variable = models.BooleanField(default=True)
     use_gross_weight = models.BooleanField(default=False)
-    saveable = models.BooleanField(default=False)
-
-    class Meta:
-        unique_together = ('part_sold_material_price_type', 'part_sold')
+    current_saveable = models.BooleanField(default=False)
+    basis_saveable = models.BooleanField(default=False)
+    validity_start_date = models.DateTimeField(null=True)
+    validity_end_date = models.DateTimeField(null=True)
 
 
 class PartSoldMaterialWeight(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
-    part_sold_material_type = models.ForeignKey('PartSoldMaterialType', on_delete= models.DO_NOTHING)
+    part_sold_material_type = models.ForeignKey('MaterialType', on_delete= models.DO_NOTHING)
     gross_weight = models.FloatField()
     net_weight = models.FloatField()
 
@@ -76,9 +74,6 @@ class PartSoldSaving(DataExtensionTable):
     saving_date = models.DateTimeField()
     saving_rate = models.FloatField()
     saving_unit = models.ForeignKey('SavingUnit', on_delete= models.DO_NOTHING)
-
-    # class Meta:
-    #     unique_together = ('part_sold_material_price_type', 'part_sold')
 
 
 class PartSoldManager(GeneralManager):

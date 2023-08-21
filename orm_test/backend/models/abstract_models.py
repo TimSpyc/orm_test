@@ -40,6 +40,7 @@ class DataExtensionTable(models.Model):
     class Meta:
         abstract = True
 
+
 class ExternalDataTable(models.Model):
     """
     An abstract Django model for representing external data tables.

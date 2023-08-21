@@ -1,6 +1,8 @@
 from django.db import models
 from backend.models import ExternalDataTable
 from backend.src.auxiliary.manager import ExternalDataManager
+from statistics import mean
+from datetime import date, datetime
 
 class StockExchangeData(ExternalDataTable):
     stock_exchange_date = models.DateTimeField()
@@ -75,3 +77,113 @@ class StockExchangeDataManager(ExternalDataManager):
 
     def __init__(self, search_date=None):
         super().__init__(search_date)
+
+        self.lme_monthly = self.__getMonthlyValues('lme')
+        self.ecdp_monthly = self.__getMonthlyValues('ecdp')
+        self.billet_upcharge_monthly = self.__getMonthlyValues(
+            'billet_upcharge'
+        )
+        self.metal_cost_list_monthly = self.__getMonthlyMetalCostList()
+
+
+    def __getMonthlyValues(self, type: str) -> dict:
+        types = {
+            'lme': 'aluminum_cash_ask',
+            'ecdp': 'premium_rotterdam_p1020A_duty_paid_usd_t_avg',
+            'billet_upcharge':
+                'premium_european_billet_6063EC_duty_paid_usd_t_avg'
+        }
+        exchange_rate = 'exchange_rate_ecb_eur_usd'
+        if type not in types:
+            raise ValueError(f"Invalid type '{type}'")
+        
+        metal_price_dict_list = self.getData(
+            columns=[types[type], exchange_rate, 'stock_exchange_date']
+        )
+        monthly_metal_price_dict = {}
+
+        for metal_price_dict in metal_price_dict_list:
+            year = metal_price_dict['stock_exchange_date'].year
+            month = metal_price_dict['stock_exchange_date'].month
+            year_month = year * 100 + month
+            if year_month not in monthly_metal_price_dict:
+                monthly_metal_price_dict[year_month] = []
+            if metal_price_dict['price'] is None:
+                continue
+            monthly_metal_price_dict[year_month].append(
+                metal_price_dict['price'] / metal_price_dict['exchange_rate']
+            )
+
+        for year_month in monthly_metal_price_dict.keys():
+            monthly_metal_price_dict[year_month] = mean(
+                monthly_metal_price_dict[year_month]
+            )
+        
+        return monthly_metal_price_dict
+    
+
+    def __getMonthlyMetalCostList(self) -> list:
+        monthly_metal_cost_list = []
+        for year_month in self.lme_monthly.keys():
+            monthly_metal_cost_list.append({
+                'year_month': year_month,
+                'lme': self.lme_monthly[year_month],
+                'ecdp': self.ecdp_monthly[year_month],
+                'billet_upcharge': self.billet_upcharge_monthly[year_month],
+                'billet': (
+                    self.ecdp_monthly[year_month] +
+                    self.billet_upcharge_monthly[year_month]
+                )
+            })
+        
+        return monthly_metal_cost_list
+    
+    def isExistingDate(lookup_date: datetime | date) -> bool:
+        return StockExchangeData.objects.filter(
+            stock_exchange_date=lookup_date
+        ).exists()
+
+    def currencyExchange(
+        self,
+        input_currency_abbr: str,
+        output_currency_abbr: str,
+        lookup_date: date
+    ) -> float:
+        
+        if input_currency_abbr == output_currency_abbr:
+            return 1.0
+
+        exchange_rate = self.__getExchangeRate(
+            input_currency_abbr,
+            output_currency_abbr,
+            lookup_date
+        )
+        if exchange_rate is not None:
+            return exchange_rate
+        
+        exchange_rate = self.__getExchangeRate(
+            output_currency_abbr,
+            input_currency_abbr,
+            lookup_date
+        )
+        if exchange_rate is not None:
+            return 1/exchange_rate
+        
+        raise ValueError(
+            f"Exchange rate from {input_currency_abbr} to "
+            f"{output_currency_abbr} not found for {lookup_date}"
+        )
+
+    def __getExchangeRate(
+        self,
+        input_currency_abbr: str,
+        output_currency_abbr: str,
+        lookup_date: date
+    ) -> float:
+        col = f"exchange_rate_ecb_{output_currency_abbr}_{input_currency_abbr}"
+        return self.getData(
+            columns=[col],
+            filters={
+                'stock_exchange_date': lookup_date
+            }
+        )[0][col]

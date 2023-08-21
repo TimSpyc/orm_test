@@ -6,6 +6,8 @@ import string
 from backend.models import User
 
 from backend.src.auxiliary.manager import transferToSnakeCase
+from backend.src.auxiliary.string_modification import printInLineProgressBar
+from typing import Callable
 
 fake = Faker()
 
@@ -64,7 +66,7 @@ def modelCreationDict(
     return new_data_dict
 
 
-def deactivateLastObjectRandom(data_model: Model, chance_for_no_change: float = 0.7):
+def deactivateLastObjectRandomly(data_model: Model, chance_for_no_change: float = 0.7):
     if randomChoice(chance_for_no_change):
         data_model.active = 0
         data_model.save()
@@ -78,3 +80,35 @@ def randomChoice(chance_for_false):
 def randomLetters(length = 4):
     letters = string.ascii_letters
     return ''.join(random.choice(letters) for _ in range(length))
+
+
+def drawingNumberGenerator(drawing_type: str) -> str:
+    return f'AS_{random.randint(1,99):02}_{drawing_type}_{random.randint(10000,99999):05}'
+
+def loadingBarForPopulateScripts(
+    max_iterations: int,
+    function: Callable
+) -> None:
+    func_name = function.__name__
+    if len(func_name) > 28:
+        func_name = f'{func_name[:25]}...'
+    if max_iterations == 0:
+        print(f"Processing {func_name}:                                    "[:40] + "-- skipped --")
+    for i in range(max_iterations):
+        function()
+
+        label = f"Processing {func_name}:                                   "[:40]
+        printInLineProgressBar(
+            i,
+            max_iterations,
+            label,
+        )
+
+
+def getUniqueNumber(model, column_name, number_function):
+    unique = False
+    while not unique:
+        number = number_function()
+        if not model.objects.filter(**{column_name: number}):
+            unique = True
+    return number

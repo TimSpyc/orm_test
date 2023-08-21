@@ -22,6 +22,7 @@ class PartSoldPriceUpload(DataTable):
     uploaded = models.DateTimeField()
     price = models.FloatField()
     description = models.TextField()
+    source = models.CharField(max_length=255)
 
     @property
     def group(self):

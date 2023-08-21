@@ -19,11 +19,10 @@ class Material(DataTable):
     remark = models.TextField()
     #extrusion_plant = models.ForeignKey('SupplierGroup', on_delete= models.DO_NOTHING)
 
-
     @property
     def group(self):
         return self.material_group
-    
+
     def __str__(self):
         return f"Material {self.material_group}-{self.description}"
 

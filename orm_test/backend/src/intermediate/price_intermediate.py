@@ -48,9 +48,9 @@ class PriceIntermediate(GeneralIntermediate):
             dependencies
         )
 
-        self._price_component_development = None
-        self._max_price_date: date | None = None
-        self._min_price_date: date | None = None
+        self._price_component_development: list | None = None
+        self._max_price_date: date
+        self._min_price_date: date
 
     @property
     def current_price(self) -> float:
@@ -58,10 +58,10 @@ class PriceIntermediate(GeneralIntermediate):
         return self.get_price(current_date)
 
     def get_price(self, date: date) -> float:
-        if date > self.max_price_date:
-            date = self.max_price_date
-        elif date < self.min_price_date:
-            date = self.min_price_date
+        if date > self._max_price_date:
+            date = self._max_price_date
+        elif date < self._min_price_date:
+            date = self._min_price_date
 
         year_month = date.strftime("%Y-%m")
         for price_data in self.price_component_development:
@@ -75,36 +75,4 @@ class PriceIntermediate(GeneralIntermediate):
         return self._price_component_development
     
     def __get_price_component_development(self) -> list:
-        basis_price = self.__getBasePrice()
-        material_price_information = self.__getMaterialPriceInformation()
-        stock_exchange_price_list = self.__getStockExchangePrice()
-        price_saving_information = self.__getPriceSavingInformation()
-        return self.__calculatePriceComponentDevelopment(
-            basis_price,
-            material_price_information,
-            stock_exchange_price_list,
-            price_saving_information
-        )
-
-    def __calculatePriceComponentDevelopment(
-        self,
-        basis_price: dict,
-        material_price_information: dict,
-        stock_exchange_price_list: list,
-        price_saving_information: dict
-    ) -> list:
-        price_component_development = []
-        for stock_exchange_price in stock_exchange_price_list:
-            date = stock_exchange_price['date']
-
-            material_price_dict = self.__calculateMaterialCost(
-                date,
-                stock_exchange_price_list,
-                material_price_information
-            )
-
-            price_component_development.append({
-                'date': date,
-                
-            })
-        return price_component_development
+        pass

@@ -1,10 +1,9 @@
 from backend.src.auxiliary.manager import GeneralManager
 from backend.models.abstract_models import GroupTable, DataTable, DataExtensionTable
-from backend.models import CustomerGroup, PartRecipientGroup
 from django.db import models
 
 class CustomerPlantGroup(GroupTable):
-    customer_group = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING)
+    customer_group = models.ForeignKey("CustomerGroup", on_delete=models.DO_NOTHING)
     plant_name = models.CharField(max_length=255, null=True)
 
     def __str__(self):
@@ -20,7 +19,7 @@ class CustomerPlant(DataTable):
     country = models.CharField(max_length=255)
     latitude = models.CharField(max_length=255)
     longitude = models.CharField(max_length=255)
-    recipient_no = models.ManyToManyField(PartRecipientGroup,blank=False)
+    part_recipient_group = models.ManyToManyField("PartRecipientGroup",blank=False)
     customer_plant_group = models.ForeignKey(CustomerPlantGroup, on_delete=models.DO_NOTHING)
 
     @property
