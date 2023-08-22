@@ -39,8 +39,7 @@ class ScenarioHandler:
             key_chain_list = list(key_chain)
             to_add_dict = self.__addValuesToDict(
                 key_chain_list,
-                self.scenario_dict,
-                {}
+                self.scenario_dict
             )
             relevant_scenarios = self.__mergeTwoDicts(
                 relevant_scenarios,
@@ -109,7 +108,7 @@ class ScenarioHandler:
                     isinstance(output_dict[key], dict) and
                     isinstance(dict_2[key], dict)
                 ):
-                    ScenarioHandler.__mergeTwoDicts(
+                    output_dict[key] = ScenarioHandler.__mergeTwoDicts(
                         output_dict[key],
                         dict_2[key],
                         path + [key]
