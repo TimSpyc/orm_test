@@ -168,6 +168,8 @@ class GeneralIntermediate:
             dependency.start_date for dependency in self.dependencies
             if dependency.start_date is not None
         ]
+        if not start_date_list:
+            raise ValueError('no valid start date found')
         return min(start_date_list)
         
     def __getEndDate(self) -> datetime | None:
@@ -220,8 +222,8 @@ class GeneralIntermediate:
             )
         for dependency in self.dependencies:
             if (
-                not isinstance(dependency, GeneralIntermediate) or 
-                not isinstance(dependency, GeneralManager) or
+                not isinstance(dependency, GeneralIntermediate) and 
+                not isinstance(dependency, GeneralManager) and
                 not isinstance(dependency, ExternalDataManager)
             ):
                 raise TypeError(
@@ -293,14 +295,22 @@ class GeneralIntermediate:
         """
         if self.end_date is None:
             id_string = CacheIntermediate.getIdString(self._identification_dict)
-            cache.set(id_string, self)
+            # cache.set(id_string, self)
+            # print('cache.set(id_string, self)',cache.set(id_string, self))
         CacheIntermediate.setCacheData(
             intermediate_name=self.__class__.__name__,
-            _identification_dict=self._identification_dict,
+            identification_dict=self._identification_dict,
             data=self,
             start_date=self.start_date,
             end_date=self.end_date
         )
+        print('FKMF',CacheIntermediate.setCacheData(
+            intermediate_name=self.__class__.__name__,
+            identification_dict=self._identification_dict,
+            data=self,
+            start_date=self.start_date,
+            end_date=self.end_date
+        ))
 
     def checkIfCacheNeedsToExpire(
         self,
