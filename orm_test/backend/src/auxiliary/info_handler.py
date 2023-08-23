@@ -275,31 +275,35 @@ def selectStatusWithErrorType(error_type):
         NotUpdatableError: status.HTTP_400_BAD_REQUEST,
         NotValidIdError: status.HTTP_404_NOT_FOUND
     }.get(type(error_type), status.HTTP_400_BAD_REQUEST)
-    
+
 def catchErrorsAndAdjustResponse(createRequestResponse):
     """
-    Handles exceptions that may be raised by the createRequestResponse function 
-    and adjusts the HTTP status code of the response accordingly.
+    Wraps a function that creates a request response and catches any errors.
 
-    This function takes a function as input that returns a response object. It 
-    calls the function and catches any exceptions that may be raised. If an 
-    exception is caught, the function uses the `selectStatusWithErrorType` 
-    helper function to determine the appropriate HTTP status code to use in the 
-    response. If no exception is caught, the function uses the 
-    `adjustStatusWithResponse` helper function to adjust the HTTP status code 
-    based on the response data.
+    This function takes a function that creates a request response as input and 
+    returns a new function that wraps the original function and catches any 
+    errors that occur during its execution. If an error occurs, the function 
+    logs the error and returns an error response with an appropriate status 
+    code. Otherwise, it returns the response created by the original function.
 
     Args:
-        createRequestResponse (func): A function that returns a response object.
+        createRequestResponse (function): A function that creates a request 
+                                            response.
 
     Returns:
-        Response: A response object with the adjusted HTTP status code.
+        function: A new function that wraps the original function and catches 
+                    any errors that occur during its execution.
     """
-    try:
-        return adjustStatusWithResponse(createRequestResponse())
-    except Exception as e:
-        logging.exception(e)
-        return Response(status=selectStatusWithErrorType(e))
+    def tryExceptWrapper(*args, **kwargs):
+        try:
+            return adjustStatusWithResponse(
+                createRequestResponse(*args, **kwargs)
+            )
+        except Exception as e:
+            logging.exception(e)
+            return Response(status=selectStatusWithErrorType(e))
+    
+    return tryExceptWrapper
     
 
     
@@ -343,201 +347,91 @@ def readAndConvertFilterDict(query_params: dict) -> dict:
     )
 
 ##### Handle manager functions #################################################
-def getReducedAndFilteredManagerData(manager, createManagerInfoDict, request):
-    """
-    Returns a reduced and filtered list of manager data based on the HTTP 
-    request.
+@catchErrorsAndAdjustResponse
+def getReducedAndFilteredManagerData(
+    manager, 
+    createManagerInfoDict, 
+    request, 
+    reduceFunction=lambda list_of_dict: list_of_dict
+):
+    query_params = aux.queryParamsIntoDict(request)
+    wanted_key_list = readKeyFromQueryParams(query_params, "wanted_keys")
+    filter_dict = readAndConvertFilterDict(query_params)
+    search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
+        query_params
+    )
 
-    This function takes a manager object, a function to create a dictionary of 
-    manager data, and an HTTP request as input and returns a reduced and 
-    filtered list of manager data based on the HTTP request. The function 
-    extracts the wanted keys, filter dictionary, and search date from the HTTP 
-    request and uses them to create the reduced and filtered list. If any errors 
-    occur during the creation process, the function catches them and adjusts the 
-    response accordingly.
+    return [
+        reduceDictWithKeyList(
+            createManagerInfoDict(manager_obj), wanted_key_list
+        ) for manager_obj in reduceFunction(manager.filter(
+            search_date=search_date, **filter_dict
+        ))
+    ]
 
-    Args:
-        manager (Manager): The manager object to use for getting data.
-        createManagerInfoDict (function): The function to use for creating a 
-                                            dictionary of manager data.
-        request (HttpRequest): The HTTP request containing the wanted keys, 
-                                filter dictionary, and search date.
-
-    Returns:
-        HttpResponse: A reduced and filtered list of manager data, or an error 
-                        response if an error occurs during the creation process.
-    """
-    def createRequestResponse():
-        query_params = aux.queryParamsIntoDict(request)
-        wanted_key_list = readKeyFromQueryParams(query_params, "wanted_keys")
-        filter_dict = readAndConvertFilterDict(query_params)
-        search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
-            query_params
-        )
-
-        return [
-            reduceDictWithKeyList(
-                createManagerInfoDict(manager_obj), wanted_key_list
-            ) for manager_obj in manager.filter(
-                search_date=search_date, **filter_dict
-            )
-        ]
-    
-    return catchErrorsAndAdjustResponse(createRequestResponse)
-
+@catchErrorsAndAdjustResponse
 def getReducedManagerData(
     manager_group_id, 
     manager, 
     createManagerInfoDict, 
     request
 ):
-    """
-    Returns a reduced dictionary of manager data based on the HTTP request.
+    query_params = aux.queryParamsIntoDict(request)
+    wanted_key_list = readKeyFromQueryParams(query_params, "wanted_keys")
+    search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
+        query_params
+    )
 
-    This function takes a manager group ID, a manager object, a function to 
-    create a dictionary of manager data, and an HTTP request as input and 
-    returns a reduced dictionary of manager data based on the HTTP request. The 
-    function extracts the wanted keys and search date from the HTTP request and 
-    uses them to create the reduced dictionary. If any errors occur during the 
-    creation process, the function catches them and adjusts the response 
-    accordingly.
+    return reduceDictWithKeyList(
+        createManagerInfoDict(
+            manager(manager_group_id, search_date=search_date)
+        ), 
+        wanted_key_list
+    )
 
-    Args:
-        manager_group_id (int): The ID of the manager group to get data from.
-        manager (Manager): The manager object to use for getting data.
-        createManagerInfoDict (function): The function to use for creating a 
-                                            dictionary of manager data.
-        request (HttpRequest): The HTTP request containing the wanted keys and 
-                                search date.
-
-    Returns:
-        HttpResponse: A reduced dictionary of manager data, or an error response 
-                        if an error occurs during the creation process.
-    """
-    def createRequestResponse():
-        query_params = aux.queryParamsIntoDict(request)
-        wanted_key_list = readKeyFromQueryParams(query_params, "wanted_keys")
-        search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
-            query_params
-        )
-
-        return reduceDictWithKeyList(
-            createManagerInfoDict(
-                manager(manager_group_id, search_date=search_date)
-            ), 
-            wanted_key_list
-        )
-
-    return catchErrorsAndAdjustResponse(createRequestResponse)
-
+@catchErrorsAndAdjustResponse
 def createManager(manager, request):
-    """
-    Creates a new manager and returns the manager group ID.
+    query_params = aux.queryParamsIntoDict(request)
+    errorIfQueryParamsContainUnwantedInformation(query_params)
+    data_to_create = readDataFromRequestObject(request)
+    creator_id = readCreatorIdFromRequestObject(request)
 
-    This function takes a manager object and an HTTP request as input and 
-    creates a new manager using the data provided in the request. It then 
-    returns the manager group ID. The function also extracts the creator ID and 
-    data to create from the HTTP request and uses them to create the manager 
-    object. If any errors occur during the creation process, the function 
-    catches them and adjusts the response accordingly.
+    manager_obj = manager.create(creator_id, **data_to_create)        
 
-    Args:
-        manager (Manager): The manager object to use for creation.
-        request (HttpRequest): The HTTP request containing the creator ID and 
-                                data to create.
+    return manager_obj.group_id
 
-    Returns:
-        HttpResponse: The manager group ID, or an error response if an error 
-                        occurs during the creation process.
-    """
-    def createRequestResponse():
-        query_params = aux.queryParamsIntoDict(request)
-        errorIfQueryParamsContainUnwantedInformation(query_params)
-        data_to_create = readDataFromRequestObject(request)
-        creator_id = readCreatorIdFromRequestObject(request)
-
-        manager_obj = manager.create(creator_id, **data_to_create)        
-
-        return manager_obj.group_id
-
-    return catchErrorsAndAdjustResponse(createRequestResponse)
-
+@catchErrorsAndAdjustResponse
 def updateManager(manager_group_id, manager, request):
-    """
-    Updates a manager and returns the manager group ID.
+    data_to_update = readDataFromRequestObject(request)
+    creator_id = readCreatorIdFromRequestObject(request)
+    query_params = aux.queryParamsIntoDict(request)
+    allowed_keys = ["search_date"]
+    errorIfQueryParamsContainUnwantedInformation(query_params, allowed_keys)
+    search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
+        query_params
+    )
 
-    This function takes a manager group ID, a manager object, and an HTTP 
-    request as input and updates the manager associated with the group ID. It 
-    then returns the manager group ID. The function also extracts the creator 
-    ID, search date, and data to update from the HTTP request and uses them to 
-    create and update the manager object. If any errors occur during the update 
-    process, the function catches them and adjusts the response accordingly.
+    manager_obj = manager(manager_group_id, search_date=search_date)
+    manager_obj.update(
+        creator_id, **data_to_update
+    )
 
-    Args:
-        manager_group_id (int): The ID of the manager group to update.
-        manager (Manager): The manager object to use for updating.
-        request (HttpRequest): The HTTP request containing the creator ID, 
-                                search date, and data to update.
+    return manager_obj.group_id
 
-    Returns:
-        HttpResponse: The manager group ID, or an error response if an error 
-                        occurs during the update process.
-    """
-    def createRequestResponse():
-        data_to_update = readDataFromRequestObject(request)
-        creator_id = readCreatorIdFromRequestObject(request)
-        query_params = aux.queryParamsIntoDict(request)
-        allowed_keys = ["search_date"]
-        errorIfQueryParamsContainUnwantedInformation(query_params, allowed_keys)
-        search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
-            query_params
-        )
-
-        manager_obj = manager(manager_group_id, search_date=search_date)
-        manager_obj.update(
-            creator_id, **data_to_update
-        )
-
-        return manager_obj.group_id
-
-    return catchErrorsAndAdjustResponse(createRequestResponse)
-
+@catchErrorsAndAdjustResponse
 def deactivateManager(manager_group_id, manager, request):
-    """
-    Deactivates a manager and returns the manager group ID.
+    creator_id = readCreatorIdFromRequestObject(request)
+    query_params = aux.queryParamsIntoDict(request)
+    allowed_keys = ["search_date"]
+    errorIfQueryParamsContainUnwantedInformation(query_params, allowed_keys)
+    search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
+        query_params
+    )
 
-    This function takes a manager group ID, a manager object, and an HTTP 
-    request as input and deactivates the manager associated with the group ID. 
-    It then returns the manager group ID. The function also extracts the creator 
-    ID and search date from the HTTP request and uses them to create the manager 
-    object. If any errors occur during the deactivation process, the function 
-    catches them and adjusts the response accordingly.
+    manager_obj = manager(manager_group_id, search_date=search_date)
+    manager_obj.deactivate(creator_id)
 
-    Args:
-        manager_group_id (int): The ID of the manager group to deactivate.
-        manager (Manager): The manager object to use for deactivation.
-        request (HttpRequest): The HTTP request containing the creator ID and 
-                                search date.
-
-    Returns:
-        HttpResponse: The manager group ID, or an error response if an error 
-                        occurs during the deactivation process.
-    """
-    def createRequestResponse():
-        creator_id = readCreatorIdFromRequestObject(request)
-        query_params = aux.queryParamsIntoDict(request)
-        allowed_keys = ["search_date"]
-        errorIfQueryParamsContainUnwantedInformation(query_params, allowed_keys)
-        search_date = readSearchDateFromQueryParamsAndConvertToDatetimeObject(
-            query_params
-        )
-
-        manager_obj = manager(manager_group_id, search_date=search_date)
-        manager_obj.deactivate(creator_id)
-
-        return manager_obj.group_id
-
-    return catchErrorsAndAdjustResponse(createRequestResponse)
+    return manager_obj.group_id
 
 ##### Handle manager request methods ###########################################
 def checkRequestIncludesWantedMethod(request, wanted_method):
@@ -611,7 +505,9 @@ def handleManagerRequestMethods_detail(
 def handleManagerRequestMethods_list(
     request, 
     manager, 
-    serializeManagerFunction
+    serializeManagerFunction,
+    reducerFunction = None,
+    permissionFunction = None
 ):
     """
     Handles a manager list request based on the HTTP method.
@@ -631,17 +527,24 @@ def handleManagerRequestMethods_list(
         HttpResponse: A list of managers, or a response indicating that the 
                         method is not available.
     """
+    kwargs = {
+        "request": request,
+        "manager": manager,
+    }
+
     if checkRequestIncludesWantedMethod(request, 'GET'):
-        return getReducedAndFilteredManagerData(
-            manager,
-            serializeManagerFunction,
-            request
-        )
+        if type(reducerFunction) == function:
+            kwargs["reduceFunction"] = reducerFunction
+        return getReducedAndFilteredManagerData(**{
+            **kwargs,
+            "serializeManagerFunction": serializeManagerFunction
+        })
 
     elif checkRequestIncludesWantedMethod(request, 'POST'):
+        if type(permissionFunction) == function:
+            kwargs["permissionFunction"] = permissionFunction
         return createManager(
-            manager,
-            request
+            **kwargs
         )
 
     else:
