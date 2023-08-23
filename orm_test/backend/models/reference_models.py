@@ -8,6 +8,7 @@ class User(ReferenceTable):
     """
     microsoft_id = models.CharField(max_length=255, unique=True)
     first_name = models.CharField(max_length=255)
+    middle_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     last_login = models.DateTimeField(null=True)
@@ -154,3 +155,91 @@ class ProjectStaffCostTask(ReferenceTable):
 
     def __str__(self):
         return self.name
+
+
+class log__AutomatedExecutionInterval(ReferenceTable):
+    name = models.CharField(max_length=255)
+    interval_seconds = models.IntegerField()
+    description = models.TextField()
+
+    def __str__(self):
+        return f"{self.interval_name}"
+
+
+class ChangeRequestCostCategory(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class ChangeRequestRiskCategory(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class ChangeRequestRiskImpact(ReferenceTable):
+    name = models.CharField(max_length=255)
+    factor = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+
+
+class ChangeRequestRiskProbability(ReferenceTable):
+    name = models.CharField(max_length=255)
+    factor = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+
+
+class FileExtension(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class FileType(ReferenceTable):
+    name = models.CharField(max_length=255)
+    file_extension = models.ManyToManyField(FileExtension, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class PartReleaseStatus(ReferenceTable):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    release_hierarchy = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+    
+class ProjectStatus(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+class ProjectType(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+class Technology(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+class SapAbbreviationDictionary(ReferenceTable):
+    sap_abbreviation = models.CharField(max_length=255)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.sap_abbreviation
