@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
         "Constellium"
-    ]
+    ],
+    "editor.rulers": [80],
 }
