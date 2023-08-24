@@ -130,6 +130,7 @@ class GeneralIntermediate:
         CacheHandler.add(self)
         self.updateCache()
 
+
     def __eq__(self, other: object) -> bool:
         """
         Overload the __eq__ method to allow for comparing instances based
@@ -295,8 +296,7 @@ class GeneralIntermediate:
         """
         if self.end_date is None:
             id_string = CacheIntermediate.getIdString(self._identification_dict)
-            # cache.set(id_string, self)
-            # print('cache.set(id_string, self)',cache.set(id_string, self))
+            cache.set(id_string, self)
         CacheIntermediate.setCacheData(
             intermediate_name=self.__class__.__name__,
             identification_dict=self._identification_dict,
@@ -304,13 +304,7 @@ class GeneralIntermediate:
             start_date=self.start_date,
             end_date=self.end_date
         )
-        print('FKMF',CacheIntermediate.setCacheData(
-            intermediate_name=self.__class__.__name__,
-            identification_dict=self._identification_dict,
-            data=self,
-            start_date=self.start_date,
-            end_date=self.end_date
-        ))
+        
 
     def checkIfCacheNeedsToExpire(
         self,
@@ -352,7 +346,7 @@ class GeneralIntermediate:
             self.end_date = date
             CacheIntermediate.setCacheData(
                 intermediate_name=self.__class__.__name__,
-                _identification_dict=self._identification_dict,
+                identification_dict=self._identification_dict,
                 data=self,
                 start_date=self.start_date,
                 end_date=self.end_date
