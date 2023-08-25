@@ -1,0 +1,81 @@
+# Responsible Maximilian Kelm
+from django.db import models
+from backend.models import GroupTable, DataTable, User, AbsenceType
+from backend.src.auxiliary.manager import GeneralManager
+
+class AbsenceGroup(GroupTable):
+    """
+    A Django model representing a absence group.
+    """
+    absence_type = models.ForeignKey(
+        AbsenceType, 
+        on_delete=models.DO_NOTHING, 
+    )
+    absence_start_date = models.DateTimeField()
+    absence_end_date = models.DateTimeField()
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.DO_NOTHING, 
+    )
+
+    def manager(self, search_date, use_cache):
+        return AbsenceManager(self.id, search_date, use_cache)
+    
+    class Meta:
+        unique_together = (
+            'absence_type', 'absence_start_date', 'absence_end_date', 'user'
+        )
+
+    def __str__(self):
+        return f'Absence Group with id {self.id}'
+
+class Absence(DataTable):
+    """
+    A Django model representing a absence.
+    """
+    absence_group = models.ForeignKey(
+        AbsenceGroup, 
+        on_delete=models.DO_NOTHING,
+    )
+    description = models.TextField(blank=True, null=True)
+    is_accepted = models.BooleanField(null=True)
+
+    @property
+    def group(self):
+        return self.absence_group
+
+    def __str__(self):
+        return f'Absence with id {self.id}'
+
+class AbsenceManager(GeneralManager):
+    """
+    A manager class for handling asset-item-related operations, extending the 
+    GeneralManager.
+
+    Attributes:
+        group_model (models.Model): The AbsenceGroup model.
+        data_model (models.Model): The Absence model.
+    """
+    group_model = AbsenceGroup
+    data_model = Absence
+    data_extension_model_list = []
+
+    def __init__(
+        self, absence_group_id, search_date=None, use_cache=True
+    ):
+        """
+        Initialize a AbsenceManager instance.
+
+        Args:
+            absence_group_id (int): 
+                The ID of the AbsenceGroup instance.
+            search_date (datetime.datetime, optional): 
+                The date used for filtering data. Defaults to None.
+            use_cache (bool, optional): 
+                Whether to use the cache for data retrieval. Defaults to True.
+        """
+        super().__init__(
+            group_id=absence_group_id, 
+            search_date=search_date, 
+            use_cache=use_cache
+        )
