@@ -1,7 +1,7 @@
 # Responsible Maximilian Kelm
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from backend.models import GroupTable, DataTable, User, AssetItemSiteConnectionGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class AssetLayoutGroup(GroupTable):
@@ -10,11 +10,11 @@ class AssetLayoutGroup(GroupTable):
     item site connection group, user and grid size.
     """
     asset_item_site_connection_group = models.ForeignKey(
-        AssetItemSiteConnectionGroup, 
+        'AssetItemSiteConnectionGroup', 
         on_delete=models.DO_NOTHING,
     )
     user = models.ForeignKey(
-        User, 
+        'User', 
         on_delete=models.DO_NOTHING, 
     )
     grid_size = models.PositiveSmallIntegerField(

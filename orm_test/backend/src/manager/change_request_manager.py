@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, ProjectGroup, DerivativeConstelliumGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class ChangeRequestGroup(GroupTable):
@@ -8,20 +8,17 @@ class ChangeRequestGroup(GroupTable):
     A Django model representing a change request group.
     """
     project_group = models.ForeignKey(
-        ProjectGroup, 
+        'ProjectGroup', 
         on_delete=models.DO_NOTHING, 
     )
-    change_request_number = models.PositiveSmallIntegerField(
-        null=False, 
-        blank=False
-    )
+    change_request_number = models.PositiveSmallIntegerField(null=False)
 
     def manager(self, search_date, use_cache):
         return ChangeRequestManager(self.id, search_date, use_cache)
     
     class Meta:
         unique_together = (
-            'project', 'change_request_number'
+            'project_group', 'change_request_number'
         )
 
     def __str__(self):
@@ -52,32 +49,36 @@ class ChangeRequest(DataTable):
         on_delete=models.DO_NOTHING,
     )
     derivative_constellium_group = models.ForeignKey(
-        DerivativeConstelliumGroup, 
+        'DerivativeConstelliumGroup', 
         on_delete=models.DO_NOTHING,
     )
     # TODO: Add volume_customer_group_id
-    customer_part_number = models.CharField(max_length=255, blank=True, null=True)
-    customer_part_name = models.CharField(max_length=255, blank=True, null=True)
-    ECR_number = models.CharField(max_length=255, blank=True, null=True)
+    customer_part_number = models.CharField(max_length=255, null=True)
+    customer_part_name = models.CharField(max_length=255, null=True)
+    ECR_number = models.CharField(max_length=255, null=True)
     customer_approval = models.BooleanField(null=True)
     internal_approval = models.BooleanField(null=True)
     before_change_part = models.ForeignKey(
         'PartGroup', 
         on_delete=models.DO_NOTHING,
+        related_name='before_change_part',
     )
     before_change_image = models.ForeignKey(
         'FileGroup', 
         on_delete=models.DO_NOTHING,
+        related_name='before_change_image',
     )
     after_change_part = models.ForeignKey(
         'PartGroup', 
         on_delete=models.DO_NOTHING,
+        related_name='after_change_part',
     )
     after_change_image = models.ForeignKey(
         'FileGroup', 
         on_delete=models.DO_NOTHING,
+        related_name='after_change_image',
     )
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(null=True)
 
     @property
     def group(self):

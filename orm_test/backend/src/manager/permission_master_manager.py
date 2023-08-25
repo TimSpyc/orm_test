@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, User, AssetItemSiteConnectionGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class PermissionMasterGroup(GroupTable):
@@ -9,11 +9,11 @@ class PermissionMasterGroup(GroupTable):
     item site connection group and user.
     """
     asset_item_site_connection_group = models.ForeignKey(
-        AssetItemSiteConnectionGroup, 
+        'AssetItemSiteConnectionGroup', 
         on_delete=models.DO_NOTHING,
     )
     user = models.ForeignKey(
-        User, 
+        'User', 
         on_delete=models.DO_NOTHING, 
     )
 

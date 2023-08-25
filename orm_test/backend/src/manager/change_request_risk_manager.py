@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, ChangeRequestGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class ChangeRequestRiskGroup(GroupTable):
@@ -8,7 +8,7 @@ class ChangeRequestRiskGroup(GroupTable):
     A Django model representing a change request risk group.
     """
     change_request_group = models.ForeignKey(
-        ChangeRequestGroup, 
+        'ChangeRequestGroup', 
         on_delete=models.DO_NOTHING, 
     )
     project_user_role = models.ForeignKey(
@@ -47,9 +47,9 @@ class ChangeRequestRisk(DataTable):
         'ChangeRequestRiskProbability', 
         on_delete=models.DO_NOTHING,
     )
-    description = models.TextField(blank=False, null=False)
-    feedback = models.TextField(blank=True, null=True)
-    next_step = models.TextField(blank=True, null=True)
+    description = models.TextField(null=False)
+    feedback = models.TextField(null=True)
+    next_step = models.TextField(null=True)
 
     @property
     def group(self):

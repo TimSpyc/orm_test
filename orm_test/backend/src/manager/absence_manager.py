@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, User, AbsenceType
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class AbsenceGroup(GroupTable):
@@ -8,13 +8,13 @@ class AbsenceGroup(GroupTable):
     A Django model representing a absence group.
     """
     absence_type = models.ForeignKey(
-        AbsenceType, 
+        'AbsenceType', 
         on_delete=models.DO_NOTHING, 
     )
     absence_start_date = models.DateTimeField()
     absence_end_date = models.DateTimeField()
     user = models.ForeignKey(
-        User, 
+        'User', 
         on_delete=models.DO_NOTHING, 
     )
 
@@ -33,11 +33,8 @@ class Absence(DataTable):
     """
     A Django model representing a absence.
     """
-    absence_group = models.ForeignKey(
-        AbsenceGroup, 
-        on_delete=models.DO_NOTHING,
-    )
-    description = models.TextField(blank=True, null=True)
+    absence_group = models.ForeignKey(AbsenceGroup, on_delete=models.DO_NOTHING)
+    description = models.TextField(null=True)
     is_accepted = models.BooleanField(null=True)
 
     @property

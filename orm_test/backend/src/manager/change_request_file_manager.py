@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, ChangeRequestGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class ChangeRequestFileGroup(GroupTable):
@@ -8,7 +8,7 @@ class ChangeRequestFileGroup(GroupTable):
     A Django model representing a change request file group.
     """
     change_request_group = models.ForeignKey(
-        ChangeRequestGroup, 
+        'ChangeRequestGroup', 
         on_delete=models.DO_NOTHING, 
     )    
     file_group = models.ForeignKey(
@@ -35,7 +35,7 @@ class ChangeRequestFile(DataTable):
         ChangeRequestFileGroup, 
         on_delete=models.DO_NOTHING,
     )
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(null=True)
 
     @property
     def group(self):

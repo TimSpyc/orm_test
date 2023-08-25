@@ -10,9 +10,6 @@ class AssetItemGroup(GroupTable):
     """
     def manager(self, search_date, use_cache):
         return AssetItemManager(self.id, search_date, use_cache)
-    
-    class Meta:
-        app_label = "user_control"
 
     def __str__(self):
         return f'Asset Item Group with id {self.id}'
@@ -35,14 +32,11 @@ class AssetItem(DataTable):
     max_height = models.PositiveSmallIntegerField(
         default=1, validators=temp_validators
     )
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(null=True)
 
     @property
     def group(self):
         return self.asset_item_group
-
-    class Meta:
-        app_label = "user_control"
 
     def __str__(self):
         return f'Asset Item with id {self.id}'

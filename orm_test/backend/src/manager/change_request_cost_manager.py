@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, ChangeRequestGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class ChangeRequestCostGroup(GroupTable):
@@ -8,7 +8,7 @@ class ChangeRequestCostGroup(GroupTable):
     A Django model representing a change request cost group.
     """
     change_request_group = models.ForeignKey(
-        ChangeRequestGroup, 
+        'ChangeRequestGroup', 
         on_delete=models.DO_NOTHING, 
     )
     project_user_role = models.ForeignKey(
@@ -39,7 +39,7 @@ class ChangeRequestCost(DataTable):
         'ChangeRequestCostCategory', 
         on_delete=models.DO_NOTHING,
     )
-    description = models.TextField(blank=False, null=False)
+    description = models.TextField(null=False)
 
     @property
     def group(self):

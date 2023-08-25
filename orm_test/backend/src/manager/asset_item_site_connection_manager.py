@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, AssetItemGroup, AssetSiteGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class AssetItemSiteConnectionGroup(GroupTable):
@@ -9,11 +9,11 @@ class AssetItemSiteConnectionGroup(GroupTable):
     the asset site group and asset item group.
     """
     asset_site_group = models.ForeignKey(
-        AssetSiteGroup, 
+        'AssetSiteGroup', 
         on_delete=models.DO_NOTHING,
     )
     asset_item_group = models.ForeignKey(
-        AssetItemGroup, 
+        'AssetItemGroup', 
         on_delete=models.DO_NOTHING,
     )
 

@@ -1,6 +1,6 @@
 # Responsible Maximilian Kelm
 from django.db import models
-from backend.models import GroupTable, DataTable, ChangeRequestGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class ChangeRequestFeasibilityGroup(GroupTable):
@@ -8,7 +8,7 @@ class ChangeRequestFeasibilityGroup(GroupTable):
     A Django model representing a change request feasibility group.
     """
     change_request_group = models.ForeignKey(
-        ChangeRequestGroup, 
+        'ChangeRequestGroup', 
         on_delete=models.DO_NOTHING, 
     )
     project_user_role = models.ForeignKey(
@@ -36,7 +36,7 @@ class ChangeRequestFeasibility(DataTable):
         on_delete=models.DO_NOTHING,
     )
     confirmed = models.BooleanField(null=False, default=False)
-    description = models.TextField(blank=False, null=False)
+    description = models.TextField(null=False)
 
     @property
     def group(self):
