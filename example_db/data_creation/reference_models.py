@@ -323,21 +323,21 @@ def createProjectStaffCostTasks():
 
 def createAutomatedExecutionInterval():
 
-    interval = log__AutomatedExecutionInterval(
+    interval = log_AutomatedExecutionInterval(
         name = 'daily',
         interval_seconds = 86400,
         description = 'this script is run at least once a day'
     )
     interval.save()
 
-    interval = log__AutomatedExecutionInterval(
+    interval = log_AutomatedExecutionInterval(
         name = 'weekly',
         interval_seconds = 604800,
         description = 'this script is run at least once a week'
     )
     interval.save()
 
-    interval = log__AutomatedExecutionInterval(
+    interval = log_AutomatedExecutionInterval(
         name = 'monthly',
         interval_seconds = 2592000,
         description = 'this script is run at least once a month'

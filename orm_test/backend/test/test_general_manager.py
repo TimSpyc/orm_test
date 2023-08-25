@@ -2164,7 +2164,7 @@ class TestGetManagerFromGroupModel(TestCase):
         self.new_project.save()
 
         result = method(self.manager)
-        self.assertEqual(attribute_name, 'new_abc_group_manager')
+        self.assertEqual(attribute_name, 'new_abc_manager')
         self.assertEqual(result.group_id, self.new_abc_group.id)
         self.assertEqual(result.search_date, datetime(2023,7,28))
 
@@ -2352,7 +2352,7 @@ class TestGetManagerListFromDataModel(TestCase):
             ref_type
         )
         result = method(self.manager)
-        self.assertEqual(attribute_name, 'new_xyz_manager')
+        self.assertEqual(attribute_name, 'new_xyz_manager_list')
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0].group_id, self.new_project_user_group.id)
