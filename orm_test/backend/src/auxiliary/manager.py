@@ -3,7 +3,8 @@ from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatable
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
-from backend.models import CacheManager, User
+from backend.models import CacheManager
+from backend.models import User
 from datetime import datetime
 from django.db.models import Model, Field
 from django.db.models.query import QuerySet
@@ -437,7 +438,7 @@ class GeneralManager:
         attribute_name = column_name.replace('group', 'manager_list')
 
         method = lambda self: [
-            group_data.manager(self.search_date, self.use_cache)
+            group_data.getManager(self.search_date, self.use_cache)
             #(group_data, self.search_date, self.use_cache, group_data.manager)
 
             for group_data in getattr(model_obj, data_source).all()
@@ -473,7 +474,7 @@ class GeneralManager:
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group
-                manager = group_data.manager(self.search_date, self.use_cache)
+                manager = group_data.getManager(self.search_date, self.use_cache)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
             return manager_list
@@ -501,7 +502,7 @@ class GeneralManager:
         attribute_name = f'{column.name}'.replace('group', 'manager')
         def method(self):
             group_data = getattr(model_obj, column.name)
-            return group_data.manager(self.search_date, self.use_cache)
+            return group_data.getManager(self.search_date, self.use_cache)
         return (method, attribute_name)
 
     def __getManagerFromDataModel(
@@ -527,7 +528,7 @@ class GeneralManager:
 
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group
-            manager = group_data.manager(self.search_date, self.use_cache)
+            manager = group_data.getManager(self.search_date, self.use_cache)
             if manager.id == data_data.id:
                 return manager
         return (method, attribute_name)

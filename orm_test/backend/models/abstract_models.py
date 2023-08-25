@@ -1,12 +1,23 @@
 from django.db import models
+from django.utils import timezone
 from datetime import datetime
-# from .reference_models import User
+
+if __name__ == '__main__':
+    from backend.src.auxiliary.manager import GeneralManager
 
 class GroupTable(models.Model):
     """
     An abstract Django model for representing group tables.
     """
     table_type = 'GroupTable'
+
+    def getManager(
+        self, 
+        search_date: datetime, 
+        use_cache: bool
+    ) -> 'GeneralManager':
+        return self.manager(self.id, search_date, use_cache)
+
     class Meta:
         abstract = True
 
@@ -45,7 +56,7 @@ class ExternalDataTable(models.Model):
     """
     An abstract Django model for representing external data tables.
     """
-    date = models.DateTimeField(default=datetime.now())
+    date = models.DateTimeField(default=timezone.now)
     table_type = 'ExternalDataTable'
     class Meta:
         abstract = True
