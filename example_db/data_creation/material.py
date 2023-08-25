@@ -20,7 +20,6 @@ def populateMaterial():
         material_group = material_group,
         material_type = getRandomReference(MaterialType),
         material_alloy = getRandomReference(MaterialAlloyGroup),
-        material_alloy_treatment = getRandomReference(MaterialAlloyTreatmentGroup),
         remark = fake.text(),
         creator = getRandomUser(),
         date = getRandomDateTime()
@@ -28,6 +27,11 @@ def populateMaterial():
     material.save()
     for _ in range(random.randint(0,5)):
         material.customer_norm.add(getRandomReference(NormGroup))
-    
+
+    for _ in range(random.randint(0,5)):
+        material.material_alloy_treatment.add(
+            getRandomReference(MaterialAlloyTreatmentGroup)
+        )
+
     material.save()
     deactivateLastObjectRandomly(material)
