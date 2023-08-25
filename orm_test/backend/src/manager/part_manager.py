@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable #, PartType, SemiFinishedProductType, CrossSectionGroup, NormGroup, MaterialGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class PartGroup(GroupTable):

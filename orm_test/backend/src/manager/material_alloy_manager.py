@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable #NormGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class MaterialAlloyGroup(GroupTable):
