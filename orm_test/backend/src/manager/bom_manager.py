@@ -51,12 +51,12 @@ class BillOfMaterialManager(GeneralManager):
 
     def __init__(
         self,
-        bill_of_material_group_id,
+        group_id,
         search_date=None,
         use_cache=True
     ):
         super().__init__(
-            group_id=bill_of_material_group_id,
+            group_id=group_id,
             search_date=search_date,
             use_cache=use_cache
         )

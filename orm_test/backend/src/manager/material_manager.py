@@ -38,6 +38,3 @@ class MaterialManager(GeneralManager):
     group_model = MaterialGroup
     data_model = Material
     data_extension_model_list = []
-
-    def __init__(self, material_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=material_group_id, search_date=search_date, use_cache=use_cache)

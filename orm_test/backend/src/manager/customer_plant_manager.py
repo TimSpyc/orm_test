@@ -32,6 +32,3 @@ class CustomerPlantManager(GeneralManager):
     group_model = CustomerPlantGroup
     data_model = CustomerPlant
     data_extension_model_list = []
-
-    def __init__(self, customer_plant_group_id, search_date=None, use_cache=True):
-        super().__init__(customer_plant_group_id, search_date, use_cache)

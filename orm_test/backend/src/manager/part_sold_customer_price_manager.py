@@ -37,6 +37,3 @@ class PartSoldCustomerPriceManager(GeneralManager):
     group_model = PartSoldCustomerPriceGroup
     data_model = PartSoldCustomerPrice
     data_extension_models = [PartSoldCustomerPriceComponent]
-    
-    def __init__(self, part_sold_customer_price_group_id, search_date=None, use_cache=True):
-        super().__init__(part_sold_customer_price_group_id, search_date, use_cache)

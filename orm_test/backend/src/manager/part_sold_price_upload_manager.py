@@ -38,8 +38,8 @@ class PartSoldPriceUploadManager(GeneralManager):
     data_model = PartSoldPriceUpload
     data_extension_models = []
     
-    def __init__(self, part_sold_price_upload_group_id, search_date=None, use_cache=True):
-        super().__init__(part_sold_price_upload_group_id, search_date, use_cache)
+    def __init__(self, group_id, search_date=None, use_cache=True):
+        super().__init__(group_id, search_date, use_cache)
 
     def uploadPriceToSap(self):
         pass

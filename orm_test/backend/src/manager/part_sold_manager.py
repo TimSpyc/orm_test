@@ -105,14 +105,3 @@ class PartSoldManager(GeneralManager):
         PartSoldMaterialWeight,
         PartSoldSaving
     ]
-
-    def __init__(self, project_group_id, search_date=None, use_cache=True):
-        """
-        Initialize a ProjectManager instance.
-
-        Args:
-            project_group_id (int): The ID of the ProjectGroup instance.
-            search_date (datetime.datetime, optional): The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
-        """
-        super().__init__(group_id=project_group_id, search_date=search_date, use_cache=use_cache)

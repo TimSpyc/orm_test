@@ -34,6 +34,3 @@ class ScenarioManager(GeneralManager):
     group_model = ScenarioGroup
     data_model = Scenario
     data_extension_models = []
-
-    def __init__(self, scenario_group_id, search_date, use_cache):
-        super().__init__(scenario_group_id, search_date, use_cache)

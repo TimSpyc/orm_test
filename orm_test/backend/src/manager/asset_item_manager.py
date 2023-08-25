@@ -55,23 +55,3 @@ class AssetItemManager(GeneralManager):
     group_model = AssetItemGroup
     data_model = AssetItem
     data_extension_model_list = []
-
-    def __init__(
-        self, asset_item_group_id, search_date=None, use_cache=True
-    ):
-        """
-        Initialize a AssetItemManager instance.
-
-        Args:
-            asset_item_group_id (int): 
-                The ID of the AssetItemGroup instance.
-            search_date (datetime.datetime, optional): 
-                The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): 
-                Whether to use the cache for data retrieval. Defaults to True.
-        """
-        super().__init__(
-            group_id=asset_item_group_id, 
-            search_date=search_date, 
-            use_cache=use_cache
-        )

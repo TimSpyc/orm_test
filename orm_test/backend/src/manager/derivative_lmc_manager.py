@@ -97,14 +97,14 @@ class DerivativeLmcVolumeManager(ExternalDataManager):
 
     def __init__(
         self,
-        derivative_lmc_group_id:int,
+        group_id:int,
         search_date: datetime | None = None,
     ):
         super().__init__(
             search_date=search_date,
         )
 
-        self.derivative_lmc_group_id = derivative_lmc_group_id
+        self.derivative_lmc_group_id = group_id
 
     @property
     def current_volume(self) -> list[dict]:

@@ -31,6 +31,3 @@ class MaterialAlloyTreatmentManager(GeneralManager):
     group_model = MaterialAlloyTreatmentGroup
     data_model = MaterialAlloyTreatment
     data_extension_model_list = []
-
-    def __init__(self, material_alloy_treatment_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=material_alloy_treatment_group_id, search_date=search_date, use_cache=use_cache)

@@ -70,21 +70,3 @@ class AssetLayoutManager(GeneralManager):
     group_model = AssetLayoutGroup
     data_model = AssetLayout
     data_extension_model_list = []
-
-    def __init__(self, asset_layout_group_id, search_date=None, use_cache=True):
-        """
-        Initialize a AssetLayoutManager instance.
-
-        Args:
-            asset_layout_group_id (int): 
-                The ID of the AssetLayoutGroup instance.
-            search_date (datetime.datetime, optional): 
-                The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): 
-                Whether to use the cache for data retrieval. Defaults to True.
-        """
-        super().__init__(
-            group_id=asset_layout_group_id, 
-            search_date=search_date, 
-            use_cache=use_cache
-        )

@@ -45,16 +45,3 @@ class ProjectUserManager(GeneralManager):
     group_model = ProjectUserGroup
     data_model = ProjectUser
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        project_user_group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-
-        super().__init__(
-            group_id=project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )

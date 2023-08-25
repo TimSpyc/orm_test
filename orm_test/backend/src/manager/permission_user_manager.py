@@ -61,21 +61,3 @@ class PermissionUserManager(GeneralManager):
     group_model = PermissionUserGroup
     data_model = PermissionUser
     data_extension_model_list = []
-
-    def __init__(self, permission_user_group_id, search_date=None, use_cache=True):
-        """
-        Initialize a PermissionUserManager instance.
-
-        Args:
-            permission_user_group_id (int): 
-                The ID of the PermissionUserGroup instance.
-            search_date (datetime.datetime, optional): 
-                The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): 
-                sWhether to use the cache for data retrieval. Defaults to True.
-        """
-        super().__init__(
-            group_id=permission_user_group_id, 
-            search_date=search_date, 
-            use_cache=use_cache
-        )

@@ -41,6 +41,3 @@ class CustomerManager(GeneralManager):
     group_model = CustomerGroup
     data_model = Customer
     data_extension_model_list = [CustomerMaterialCondition]
-
-    def __init__(self, customer_group_id, search_date=None, use_cache=True):
-        super().__init__(customer_group_id, search_date, use_cache)

@@ -45,15 +45,3 @@ class FileManager(GeneralManager):
     group_model = FileGroup
     data_model = File
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        file_group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-        super().__init__(
-            group_id=file_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )

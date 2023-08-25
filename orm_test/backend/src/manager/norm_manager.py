@@ -37,6 +37,3 @@ class NormManager(GeneralManager):
     GroupTable = NormGroup
     DataTable = Norm
     DataExtensionTableList = []
-
-    def __init__(self, norm_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=norm_group_id, search_date=search_date, use_cache=use_cache)

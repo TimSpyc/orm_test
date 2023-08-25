@@ -38,12 +38,12 @@ class AutomatedScriptManager(GeneralManager):
 
     def __init__(
         self,
-        script_group_id:int,
+        group_id:int,
         search_date: datetime | None = None,
         use_cache: bool = True
     ):
         super().__init__(
-            group_id=script_group_id,
+            group_id=group_id,
             search_date=search_date,
             use_cache=use_cache
         )

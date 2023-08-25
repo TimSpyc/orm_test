@@ -77,15 +77,3 @@ class DerivativeConstelliumManager(GeneralManager):
     group_model = DerivativeConstelliumGroup
     data_model = DerivativeConstellium
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        derivative_constellium_group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-        super().__init__(
-            group_id=derivative_constellium_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )

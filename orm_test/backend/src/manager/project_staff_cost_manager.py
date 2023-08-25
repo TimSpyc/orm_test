@@ -34,6 +34,3 @@ class ProjectStaffCostManager(GeneralManager):
     group_model = ProjectStaffCostGroup
     data_model = ProjectStaffCost
     data_extension_models = []
-
-    def __init__(self, project_staff_cost_group_id, search_date, use_cache):
-        super().__init__(project_staff_cost_group_id, search_date, use_cache)
