@@ -8,6 +8,13 @@ class TestGroupTable(models.Model):
     """
     An abstract Django model for representing group tables.
     """
+    def getManager(
+        self, 
+        search_date: datetime, 
+        use_cache: bool
+    ) -> GeneralManager:
+        return self.manager(self.id, search_date, use_cache)
+    
     table_type = 'GroupTable'
     class Meta:
         abstract = True

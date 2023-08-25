@@ -8,7 +8,7 @@ from django.test import TestCase
 
 class TestGetStartDate(TestCase):
     def setUp(self):
-     
+
         self.manager.group_id = 1
         self.search_date = datetime(2023, 7, 28)
         self.scenario_dict = {'scenario_key': 'scenario_value'}
