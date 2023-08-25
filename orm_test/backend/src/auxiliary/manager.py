@@ -473,7 +473,7 @@ class GeneralManager:
         def method(self):
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
-                group_data = data_data.group
+                group_data = data_data.group_object
                 manager = group_data.getManager(self.search_date, self.use_cache)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
@@ -527,7 +527,7 @@ class GeneralManager:
         def method(self):
 
             data_data = getattr(model_obj, column.name)
-            group_data = data_data.group
+            group_data = data_data.group_object
             manager = group_data.getManager(self.search_date, self.use_cache)
             if manager.id == data_data.id:
                 return manager
