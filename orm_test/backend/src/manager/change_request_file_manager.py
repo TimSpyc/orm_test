@@ -10,15 +10,18 @@ class ChangeRequestFileGroup(GroupTable):
     change_request_group = models.ForeignKey(
         ChangeRequestGroup, 
         on_delete=models.DO_NOTHING, 
+    )    
+    file_group = models.ForeignKey(
+        'FileGroup', 
+        on_delete=models.DO_NOTHING,
     )
-    # file_id
 
     def manager(self, search_date, use_cache):
         return ChangeRequestFileManager(self.id, search_date, use_cache)
     
     class Meta:
         unique_together = (
-            'change_request_group', #'file_id'
+            'change_request_group', 'file_group'
         )
 
     def __str__(self):

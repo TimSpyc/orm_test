@@ -36,7 +36,10 @@ class ChangeRequestGroup(GroupTable):
             if len(change_request_group_list) == 0:
                 self.change_request_number = 1
             else:
-                self.change_request_number = change_request_group_list.objects.latest('change_request_number').change_request_number + 1
+                self.change_request_number =\
+                    change_request_group_list.objects.latest(
+                        'change_request_number'
+                    ).change_request_number + 1
 
         super(ChangeRequestGroup, self).save(*args, **kwargs)
 
@@ -52,16 +55,28 @@ class ChangeRequest(DataTable):
         DerivativeConstelliumGroup, 
         on_delete=models.DO_NOTHING,
     )
-    # volume_customer_group_id
+    # TODO: Add volume_customer_group_id
     customer_part_number = models.CharField(max_length=255, blank=True, null=True)
     customer_part_name = models.CharField(max_length=255, blank=True, null=True)
     ECR_number = models.CharField(max_length=255, blank=True, null=True)
     customer_approval = models.BooleanField(null=True)
     internal_approval = models.BooleanField(null=True)
-    # part_id_before_change
-    # file_id_before_change
-    # part_id_after_change
-    # file_id_after_change
+    before_change_part = models.ForeignKey(
+        'PartGroup', 
+        on_delete=models.DO_NOTHING,
+    )
+    before_change_image = models.ForeignKey(
+        'FileGroup', 
+        on_delete=models.DO_NOTHING,
+    )
+    after_change_part = models.ForeignKey(
+        'PartGroup', 
+        on_delete=models.DO_NOTHING,
+    )
+    after_change_image = models.ForeignKey(
+        'FileGroup', 
+        on_delete=models.DO_NOTHING,
+    )
     description = models.TextField(blank=True, null=True)
 
     @property
