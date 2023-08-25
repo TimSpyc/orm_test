@@ -37,7 +37,7 @@ class AssetItem(DataTable):
     description = models.TextField(null=True)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.asset_item_group
 
     def __str__(self):

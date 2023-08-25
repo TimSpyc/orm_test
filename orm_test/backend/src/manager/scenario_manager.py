@@ -27,7 +27,7 @@ class Scenario(DataTable):
         return self.name
 
     @property
-    def group(self):
+    def group_object(self):
         return self.scenario_group
 
 class ScenarioManager(GeneralManager):

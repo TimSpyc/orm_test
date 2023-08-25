@@ -40,7 +40,7 @@ class ChangeRequestFeasibility(DataTable):
     description = models.TextField(null=False)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.change_request_feasibility_group
 
     def __str__(self):

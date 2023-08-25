@@ -26,7 +26,7 @@ class PartSoldPriceUpload(DataTable):
     source = models.CharField(max_length=255)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_sold_price_upload_group
 
     def __str__(self):

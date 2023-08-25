@@ -39,7 +39,7 @@ class Absence(DataTable):
     is_accepted = models.BooleanField(null=True)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.absence_group
 
     def __str__(self):

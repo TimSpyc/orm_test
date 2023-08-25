@@ -44,7 +44,7 @@ class DerivativeConstellium(DataTable):
         return self.name
     
     @property
-    def group(self):
+    def group_object(self):
         return self.derivative_constellium_group
 
 

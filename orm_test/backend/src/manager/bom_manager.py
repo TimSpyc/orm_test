@@ -20,7 +20,7 @@ class BillOfMaterial(DataTable):
     description = models.CharField(max_length=255)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.bill_of_material_group
     
     def __str__(self):

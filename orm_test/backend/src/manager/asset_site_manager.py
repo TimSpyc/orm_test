@@ -26,7 +26,7 @@ class AssetSite(DataTable):
     name = models.CharField(max_length=150)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.asset_site_group
 
     def __str__(self):

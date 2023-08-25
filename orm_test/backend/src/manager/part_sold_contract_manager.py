@@ -21,7 +21,7 @@ class PartSoldContract(DataTable):
     description = models.TextField()
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_sold_contract_group
     
     def __str__(self):

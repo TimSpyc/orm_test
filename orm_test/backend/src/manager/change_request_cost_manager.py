@@ -43,7 +43,7 @@ class ChangeRequestCost(DataTable):
     description = models.TextField(null=False)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.change_request_cost_group
 
     def __str__(self):

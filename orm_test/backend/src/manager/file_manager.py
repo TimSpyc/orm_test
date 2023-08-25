@@ -36,7 +36,7 @@ class File(DataTable):
         return self.name
     
     @property
-    def group(self):
+    def group_object(self):
         return self.file_group
     
 

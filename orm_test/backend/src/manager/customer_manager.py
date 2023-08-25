@@ -20,7 +20,7 @@ class Customer(DataTable):
     customer_group = models.ForeignKey(CustomerGroup, on_delete=models.CASCADE)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.customer_group
 
 

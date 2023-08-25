@@ -43,7 +43,7 @@ class PermissionUser(DataTable):
     is_accepted = models.BooleanField(null=True)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.permission_user_group
 
     def __str__(self):

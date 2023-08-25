@@ -55,7 +55,7 @@ class CrossSection(DataTable):
     evaluation_info_dict = models.JSONField(null=True, default=None)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.cross_section_group
 
     def __str__(self):

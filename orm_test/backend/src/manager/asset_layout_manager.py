@@ -52,7 +52,7 @@ class AssetLayout(DataTable):
     )
 
     @property
-    def group(self):
+    def group_object(self):
         return self.asset_layout_group
 
     def __str__(self):

@@ -27,7 +27,7 @@ class Norm(DataTable):
     )
 
     @property
-    def group(self):
+    def group_object(self):
         return self.norm_group
     
     def __str__(self):

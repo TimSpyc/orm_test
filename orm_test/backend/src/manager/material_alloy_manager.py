@@ -52,7 +52,7 @@ class MaterialAlloy(DataTable):
     permissible_additions = models.FloatField(null=True)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.material_alloy_group
     
     def __str__(self):

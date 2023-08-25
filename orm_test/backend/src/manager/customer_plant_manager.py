@@ -24,7 +24,7 @@ class CustomerPlant(DataTable):
     customer_plant_group = models.ForeignKey(CustomerPlantGroup, on_delete=models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.customer_plant_group
 
 

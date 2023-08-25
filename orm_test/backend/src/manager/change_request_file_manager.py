@@ -39,7 +39,7 @@ class ChangeRequestFile(DataTable):
     description = models.TextField(null=True)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.change_request_file_group
 
     def __str__(self):

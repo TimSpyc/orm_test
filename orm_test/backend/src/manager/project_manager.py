@@ -25,7 +25,7 @@ class Project(DataTable):
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.project_group
 
     def __str__(self):

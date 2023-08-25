@@ -28,7 +28,7 @@ class Material(DataTable):
     #extrusion_plant = models.ForeignKey('SupplierGroup', on_delete= models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.material_group
 
     def __str__(self):

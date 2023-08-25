@@ -54,7 +54,7 @@ class DerivativeLmc(DataTable):
         return f"{self.derivative_group_lmc} - {self.local_make} {self.local_model_line}"
     
     @property
-    def group(self):
+    def group_object(self):
         return self.derivative_group_lmc
     
 

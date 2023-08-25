@@ -37,7 +37,7 @@ class ProjectUser(DataTable):
         return f'ProjectUser {self.id}'
 
     @property
-    def group(self):
+    def group_object(self):
         return self.project_user_group
 
 class ProjectUserManager(GeneralManager):

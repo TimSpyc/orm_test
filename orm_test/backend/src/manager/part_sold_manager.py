@@ -35,7 +35,7 @@ class PartSold(DataTable):
     cbd_date = models.DateTimeField()
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_sold_group
 
 

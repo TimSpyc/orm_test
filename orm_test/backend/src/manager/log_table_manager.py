@@ -26,7 +26,7 @@ class log__AutomatedScript(DataTable):
         return f"{self.script_name}"
     
     @property
-    def group(self):
+    def group_object(self):
         return self.script_group
 
 

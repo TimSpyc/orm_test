@@ -39,7 +39,7 @@ class AssetItemSiteConnection(DataTable):
     is_released = models.BooleanField(default=False)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.asset_item_site_connection_group
 
     def __str__(self):

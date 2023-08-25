@@ -18,7 +18,7 @@ class SapNumber(DataTable):
     alu_net_weight = models.FloatField()
 
     @property
-    def group(self):
+    def group_object(self):
         return self.sap_number_group
 
     def __str__(self):

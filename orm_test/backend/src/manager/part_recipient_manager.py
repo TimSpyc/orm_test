@@ -17,7 +17,7 @@ class PartRecipient(DataTable):
     description = models.CharField(max_length=255)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_recipient_group
     
     def __str__(self):

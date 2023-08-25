@@ -39,7 +39,7 @@ class Part(DataTable):
     material_norm_customer = models.ForeignKey('NormGroup', on_delete= models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_group
 
     def __str__(self):

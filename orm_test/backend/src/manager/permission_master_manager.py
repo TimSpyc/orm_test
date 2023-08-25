@@ -38,7 +38,7 @@ class PermissionMaster(DataTable):
     )
 
     @property
-    def group(self):
+    def group_object(self):
         return self.permission_master_group
 
     def __str__(self):

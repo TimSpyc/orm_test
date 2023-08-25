@@ -21,7 +21,7 @@ class MaterialAlloyTreatment(DataTable):
     remark = models.TextField(default=None, null=True)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.material_alloy_treatment_group
     
     def __str__(self):

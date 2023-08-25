@@ -27,7 +27,7 @@ class ProjectStaffCost(DataTable):
         return f'Project_staff_cost {self.id}'
     
     @property
-    def group(self):
+    def group_object(self):
         return self.project_staff_cost_group
 
 class ProjectStaffCostManager(GeneralManager):
