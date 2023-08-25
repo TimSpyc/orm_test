@@ -6,8 +6,10 @@ class AssetSiteGroup(GroupTable):
     """
     A Django model representing a asset site group.
     """
-    def manager(self, search_date, use_cache):
-        return AssetSiteManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return AssetSiteManager
 
     def __str__(self):
         return f'Asset Site Group with id {self.id}'

@@ -13,8 +13,9 @@ class ChangeRequestGroup(GroupTable):
     )
     change_request_number = models.PositiveSmallIntegerField(null=False)
 
-    def manager(self, search_date, use_cache):
-        return ChangeRequestManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return ChangeRequestManager
     
     class Meta:
         unique_together = (

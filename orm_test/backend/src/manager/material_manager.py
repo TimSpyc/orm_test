@@ -4,8 +4,9 @@ from backend.src.auxiliary.manager import GeneralManager
 
 class MaterialGroup(GroupTable):
 
-    def manager(self, search_date, use_cache):
-        return MaterialManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return MaterialManager
     
     def __str__(self):
         return f"MaterialGroup {self.id}"

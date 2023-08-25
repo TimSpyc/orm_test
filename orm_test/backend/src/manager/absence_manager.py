@@ -18,8 +18,9 @@ class AbsenceGroup(GroupTable):
         on_delete=models.DO_NOTHING, 
     )
 
-    def manager(self, search_date, use_cache):
-        return AbsenceManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return AbsenceManager
     
     class Meta:
         unique_together = (

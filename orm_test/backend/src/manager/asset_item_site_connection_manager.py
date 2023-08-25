@@ -17,8 +17,9 @@ class AssetItemSiteConnectionGroup(GroupTable):
         on_delete=models.DO_NOTHING,
     )
 
-    def manager(self, search_date, use_cache):
-        return AssetItemSiteConnectionManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return AssetItemSiteConnectionManager
 
     class Meta:
         unique_together = ('asset_site_group', 'asset_item_group')

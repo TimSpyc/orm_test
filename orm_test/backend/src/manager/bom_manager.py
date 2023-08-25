@@ -5,8 +5,9 @@ from backend.src.auxiliary.manager import GeneralManager
 class BillOfMaterialGroup(GroupTable):
     derivative_constellium_group = models.ForeignKey('DerivativeConstelliumGroup', on_delete= models.DO_NOTHING)
 
-    def manager(self, search_date, use_cache):
-        return BillOfMaterialManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return BillOfMaterialManager
     
     def __str__(self):
         return f"BillOfMaterialGroup {self.derivative_constellium_group}"

@@ -9,8 +9,9 @@ class CrossSectionGroup(GroupTable):
     class meta:
         unique_together = ('drawing_no', 'drawing_rev')
 
-    def manager(self, search_date, use_cache):
-        return CrossSectionManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return CrossSectionManager
     
 class CrossSection(DataTable):
     cross_section_group = models.ForeignKey('CrossSectionGroup', on_delete= models.DO_NOTHING)

@@ -4,8 +4,9 @@ from backend.src.auxiliary.manager import GeneralManager
 
 class MaterialAlloyGroup(GroupTable):
 
-    def manager(self, search_date, use_cache):
-        return MaterialAlloyManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return MaterialAlloyManager
     
     def __str__(self):
         return f"MaterialAlloyGroup {self.number}"

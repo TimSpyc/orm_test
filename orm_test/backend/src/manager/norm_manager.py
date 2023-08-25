@@ -11,8 +11,9 @@ class NormGroup(GroupTable):
     def __str__(self):
         return f"NormGroup {self.number}"
 
-    def manager(self, search_date, use_cache):
-        return NormManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return NormManager
         
 
 class Norm(DataTable):

@@ -10,8 +10,9 @@ class PartSoldPriceUploadGroup(GroupTable):
     class _Meta:
         unique_together = ('part_sold_group', 'valid_from')
 
-    def manager(self, search_date, use_cache):
-        return PartSoldPriceUploadManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartSoldPriceUploadManager
 
     def __str__(self):
         return f"PartSoldPriceUploadGroup {self.id}"

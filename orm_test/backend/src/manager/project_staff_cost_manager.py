@@ -14,9 +14,10 @@ class ProjectStaffCostGroup(GroupTable):
 
     def __str__(self):
         return f'Project_staff_cost_group {self.id}'
-    
-    def manager(self, search_date, use_cache):
-        return ProjectStaffCostManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return ProjectStaffCostManager
 
 class ProjectStaffCost(DataTable): 
     project_staff_cost_group = models.ForeignKey(ProjectStaffCostGroup, on_delete=models.DO_NOTHING)

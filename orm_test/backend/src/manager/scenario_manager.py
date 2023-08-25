@@ -12,8 +12,9 @@ class ScenarioGroup(GroupTable):
     def __str__(self):
         return self.id
 
-    def manager(self, search_date, use_cache):
-        return ScenarioManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return ScenarioManager
 
 class Scenario(DataTable):
     """

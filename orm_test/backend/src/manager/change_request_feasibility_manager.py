@@ -16,8 +16,9 @@ class ChangeRequestFeasibilityGroup(GroupTable):
         on_delete=models.DO_NOTHING, 
     )
 
-    def manager(self, search_date, use_cache):
-        return ChangeRequestFeasibilityManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return ChangeRequestFeasibilityManager
     
     class Meta:
         unique_together = (

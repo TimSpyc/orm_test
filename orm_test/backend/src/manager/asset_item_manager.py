@@ -8,8 +8,10 @@ class AssetItemGroup(GroupTable):
     """
     A Django model representing a asset item group.
     """
-    def manager(self, search_date, use_cache):
-        return AssetItemManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return AssetItemManager
 
     def __str__(self):
         return f'Asset Item Group with id {self.id}'

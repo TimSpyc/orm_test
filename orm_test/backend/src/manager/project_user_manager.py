@@ -16,9 +16,10 @@ class ProjectUserGroup(GroupTable):
 
     def __str__(self):
         return f"{self.user} - {self.project_group}"
-    
-    def manager(self, search_date, use_cache):
-        return ProjectUserManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return ProjectUserManager
 
 
 class ProjectUser(DataTable):

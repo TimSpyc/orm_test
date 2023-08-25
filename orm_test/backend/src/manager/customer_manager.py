@@ -12,8 +12,9 @@ class CustomerGroup(GroupTable):
     class meta:
         unique_together = ('company_name', 'group_name')
 
-    def manager(self, search_date, use_cache):
-        return CustomerManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return CustomerManager
 
 class Customer(DataTable):
     customer_group = models.ForeignKey(CustomerGroup, on_delete=models.CASCADE)

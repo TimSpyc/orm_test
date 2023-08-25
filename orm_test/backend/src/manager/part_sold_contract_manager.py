@@ -9,8 +9,9 @@ class PartSoldContractGroup(GroupTable):
     contract_number = models.CharField(max_length=255)
     contract_date = models.DateTimeField()
 
-    def manager(self, search_date, use_cache):
-        return PartSoldContractManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartSoldContractManager
 
     def __str__(self):
         return f"PartSoldContractGroup {self.id}"

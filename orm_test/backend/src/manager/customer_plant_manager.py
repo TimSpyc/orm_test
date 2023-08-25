@@ -9,8 +9,9 @@ class CustomerPlantGroup(GroupTable):
     def __str__(self):
         return f"{self.customer_group}|{self.plant_name} ({self.id})"
 
-    def manager(self, search_date, use_cache):
-        return CustomerPlantManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return CustomerPlantManager
 
 class CustomerPlant(DataTable):
     city = models.CharField(max_length=255)

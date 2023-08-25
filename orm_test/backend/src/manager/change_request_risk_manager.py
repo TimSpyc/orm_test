@@ -16,8 +16,9 @@ class ChangeRequestRiskGroup(GroupTable):
         on_delete=models.DO_NOTHING, 
     )
 
-    def manager(self, search_date, use_cache):
-        return ChangeRequestRiskManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return ChangeRequestRiskManager
     
     class Meta:
         unique_together = (

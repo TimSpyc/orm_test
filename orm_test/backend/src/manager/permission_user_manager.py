@@ -17,8 +17,9 @@ class PermissionUserGroup(GroupTable):
         on_delete=models.DO_NOTHING, 
     )
 
-    def manager(self, search_date, use_cache):
-        return PermissionUserManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PermissionUserManager
 
     class Meta:
         unique_together = ('asset_item_site_connection_group', 'user')

@@ -9,8 +9,9 @@ class PartGroup(GroupTable):
     class meta:
         unique_together = ('drawing_no', 'drawing_rev')
 
-    def manager(self, search_date, use_cache):
-        return PartManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartManager
     
     def __str__(self):
         return f"PartGroup {self.drawing_no}-{self.drawing_rev}"

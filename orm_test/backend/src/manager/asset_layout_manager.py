@@ -21,8 +21,9 @@ class AssetLayoutGroup(GroupTable):
         default=3, validators=[MinValueValidator(1), MaxValueValidator(3)]
     )
 
-    def manager(self, search_date, use_cache):
-        return AssetLayoutManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return AssetLayoutManager
 
     class Meta:
         unique_together = (

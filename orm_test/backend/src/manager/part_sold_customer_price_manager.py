@@ -9,6 +9,10 @@ class PartSoldCustomerPriceGroup(GroupTable):
     """
     part_sold_group = models.ForeignKey('PartSoldGroup', on_delete= models.DO_NOTHING)
     price_date = models.DateTimeField()
+
+    @property
+    def manager(self):
+        return PartSoldCustomerPriceManager
     
     class Meta:
         unique_together = ('part_sold_group', 'price_date')

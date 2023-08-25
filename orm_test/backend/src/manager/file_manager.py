@@ -9,8 +9,9 @@ class FileGroup(GroupTable):
     with a project group.
     """
 
-    def manager(self, search_date, use_cache):
-        return FileManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return FileManager
 
     def __str__(self):
         return f"{self.id}"

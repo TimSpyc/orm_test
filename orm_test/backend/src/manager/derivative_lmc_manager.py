@@ -12,9 +12,10 @@ class DerivativeLmcGroup(GroupTable):
 
     def __str__(self):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
-    
-    def manager(self, search_date, use_cache):
-        return DerivativeLmcManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return DerivativeLmcManager
 
 class DerivativeLmc(DataTable):
     derivative_lmc_group = models.ForeignKey(DerivativeLmcGroup, on_delete=models.DO_NOTHING)

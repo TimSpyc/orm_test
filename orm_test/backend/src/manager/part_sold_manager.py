@@ -13,8 +13,9 @@ class PartSoldGroup(GroupTable):
     class Meta:
         unique_together = ('part_recipient', 'customer_part_number_sap')
 
-    def manager(self, search_date, use_cache):
-        return PartSoldManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartSoldManager
 
     def __str__(self):
         return f"PartSoldGroup {self.id}"

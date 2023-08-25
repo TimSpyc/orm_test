@@ -5,8 +5,9 @@ from backend.src.auxiliary.manager import GeneralManager
 class SapNumberGroup(GroupTable):
     sap_number = models.CharField(max_length=255, unique=True)
 
-    def manager(self, search_date, use_cache):
-        return SapNumberManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return SapNumberManager
     
     def __str__(self):
         return f"SapNumber {self.sap_number}"

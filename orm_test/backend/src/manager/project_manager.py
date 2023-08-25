@@ -7,8 +7,9 @@ class ProjectGroup(GroupTable):
     A Django model representing a project group.
     """
 
-    def manager(self, search_date, use_cache):
-        return ProjectManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return ProjectManager
 
     def __str__(self):
         return f'Project Group with {self.id}'

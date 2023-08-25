@@ -9,8 +9,9 @@ class MaterialAlloyTreatmentGroup(GroupTable):
     class meta:
         unique_together = ('temperature', 'duration')
 
-    def manager(self, search_date, use_cache):
-        return MaterialAlloyTreatmentManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return MaterialAlloyTreatmentManager
     
     def __str__(self):
         return f"MaterialAlloyTreatmentGroup {self.id}"

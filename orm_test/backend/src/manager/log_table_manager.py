@@ -12,9 +12,10 @@ class log__AutomatedScriptGroup(GroupTable):
 
     def __str__(self):
         return f"{self.script_name}"
-    
-    def manager(self, search_date, use_cache):
-        return AutomatedScriptManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return AutomatedScriptManager
 
 class log__AutomatedScript(DataTable):
     script_group = models.ForeignKey('log__AutomatedScriptGroup', on_delete=models.DO_NOTHING)
