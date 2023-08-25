@@ -14,7 +14,7 @@ class Material(DataTable):
     material_group = models.ForeignKey(MaterialGroup, on_delete= models.DO_NOTHING)
     material_type = models.ForeignKey('MaterialType', on_delete= models.DO_NOTHING)
     material_alloy = models.ForeignKey('MaterialAlloyGroup', on_delete= models.DO_NOTHING, null=True)
-    material_alloy_treatment = models.ManyToManyField('MaterialAlloyTreatmentGroup', null=True)
+    material_alloy_treatment = models.ManyToManyField('MaterialAlloyTreatmentGroup', blank=True)
     customer_norm = models.ManyToManyField('NormGroup', blank=True)
     remark = models.TextField(null=True)
     rm_min = models.FloatField(null=True)
