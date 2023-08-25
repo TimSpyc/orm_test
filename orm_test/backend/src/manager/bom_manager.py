@@ -39,6 +39,10 @@ class BillOfMaterialStructure(DataExtensionTable):
     left_value_logistics = models.FloatField(null=True)
     right_value_logistics = models.FloatField(null=True)
 
+    @property
+    def data_object(self):
+        return self.BillOfMaterial
+
 
 class BillOfMaterialManager(GeneralManager):
     group_model = BillOfMaterialGroup

@@ -28,6 +28,10 @@ class PartSoldCustomerPriceComponent(DataExtensionTable):
     part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
     value = models.FloatField()
 
+    @property
+    def data_object(self):
+        return self.PartSoldCustomerPrice
+
 
 class PartSoldCustomerPriceManager(GeneralManager):
     group_model = PartSoldCustomerPriceGroup

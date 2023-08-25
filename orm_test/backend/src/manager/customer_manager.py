@@ -33,6 +33,10 @@ class CustomerMaterialCondition(DataExtensionTable):
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
 
+    @property
+    def data_object(self):
+        return self.Customer
+
 class CustomerManager(GeneralManager):
     group_model = CustomerGroup
     data_model = Customer

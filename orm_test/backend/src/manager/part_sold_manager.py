@@ -47,6 +47,10 @@ class PartSoldPriceComponent(DataExtensionTable):
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
 
+    @property
+    def data_object(self):
+        return self.part_sold
+
 
 class PartSoldMaterialPriceComponent(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
@@ -59,6 +63,10 @@ class PartSoldMaterialPriceComponent(DataExtensionTable):
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
 
+    @property
+    def data_object(self):
+        return self.part_sold
+
 
 class PartSoldMaterialWeight(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
@@ -69,12 +77,20 @@ class PartSoldMaterialWeight(DataExtensionTable):
     class Meta:
         unique_together = ('part_sold_material_type', 'part_sold')
 
+    @property
+    def data_object(self):
+        return self.part_sold
+
 
 class PartSoldSaving(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
     saving_date = models.DateTimeField()
     saving_rate = models.FloatField()
     saving_unit = models.ForeignKey('SavingUnit', on_delete= models.DO_NOTHING)
+
+    @property
+    def data_object(self):
+        return self.part_sold
 
 
 class PartSoldManager(GeneralManager):

@@ -64,6 +64,10 @@ class DerivativeConstelliumDerivativeLmcConnection(DataExtensionTable):
     )
     take_rate = models.FloatField()
 
+    @property
+    def data_object(self):
+        return self.DerivativeConstellium
+
     def __str__(self):
         return f"{self.derivative_constellium} - {self.derivative_lmc}"
 
