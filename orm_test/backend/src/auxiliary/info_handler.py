@@ -509,42 +509,17 @@ def handleManagerRequestMethods_list(
     reducerFunction = None,
     permissionFunction = None
 ):
-    """
-    Handles a manager list request based on the HTTP method.
-
-    This function takes an HTTP request, a manager object, and a serialization 
-    function as input and returns a list of managers based on the HTTP method. 
-    If the method is not available, the function returns a response indicating 
-    that the method is not available.
-
-    Args:
-        request (HttpRequest): The HTTP request to handle.
-        manager (Manager): The manager object to handle.
-        serializeManagerFunction (function): The function to use for serializing 
-                                                the manager data.
-
-    Returns:
-        HttpResponse: A list of managers, or a response indicating that the 
-                        method is not available.
-    """
-    kwargs = {
-        "request": request,
-        "manager": manager,
-    }
-
     if checkRequestIncludesWantedMethod(request, 'GET'):
-        if type(reducerFunction) == function:
-            kwargs["reduceFunction"] = reducerFunction
-        return getReducedAndFilteredManagerData(**{
-            **kwargs,
-            "serializeManagerFunction": serializeManagerFunction
-        })
+        return getReducedAndFilteredManagerData(
+            manager,
+            serializeManagerFunction,
+            request
+        )
 
     elif checkRequestIncludesWantedMethod(request, 'POST'):
-        if type(permissionFunction) == function:
-            kwargs["permissionFunction"] = permissionFunction
         return createManager(
-            **kwargs
+            manager,
+            request
         )
 
     else:
