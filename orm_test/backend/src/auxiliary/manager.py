@@ -934,27 +934,30 @@ class GeneralManager:
                   'search_date': search_date} for group_id in group_id_list]
     
     @staticmethod
-    def __createSearchKeys(key, value):
+    def __createSearchKeys(
+        key: str,
+        value: list
+    ):
         """
         Convert a search key-value pair to the correct query lookup format.
 
         Args:
             key (str): The name of the field for the search.
-            value (): The search value or a tuple with an operator and value.
+            value (): The search value or a list with an operator and value.
 
         Returns:
-            Tuple[str, Any]: A tuple with the field lookup string and value.
+            list[str, Any]: A list with the field lookup string and value.
 
         Raises:
-            ValueError: If the value is a tuple but has a valid operator or
+            ValueError: If the value is a list but has a valid operator or
                  has an invalid length.
         """
-        if type(value) != tuple:
+        if type(value) != list:
             return key, value
         if len(value) != 2:
             raise ValueError(
                 f'''
-                The value for {key} must be a tuple of length 2.
+                The value for {key} must be a list of length 2.
                 Starting with the operator and then the value.
                 Possible Operators are:
                 ">", "<", ">=", "<=", "=" and "like"

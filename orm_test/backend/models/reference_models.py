@@ -8,7 +8,6 @@ class User(ReferenceTable):
     """
     microsoft_id = models.CharField(max_length=255, unique=True)
     first_name = models.CharField(max_length=255)
-    middle_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     last_login = models.DateTimeField(null=True)
@@ -157,7 +156,7 @@ class ProjectStaffCostTask(ReferenceTable):
         return self.name
 
 
-class log__AutomatedExecutionInterval(ReferenceTable):
+class log_AutomatedExecutionInterval(ReferenceTable):
     name = models.CharField(max_length=255)
     interval_seconds = models.IntegerField()
     description = models.TextField()
@@ -205,7 +204,7 @@ class FileExtension(ReferenceTable):
 
 class FileType(ReferenceTable):
     name = models.CharField(max_length=255)
-    file_extension = models.ManyToManyField(FileExtension, on_delete=models.CASCADE)
+    file_extension = models.ManyToManyField(FileExtension)
 
     def __str__(self):
         return self.name

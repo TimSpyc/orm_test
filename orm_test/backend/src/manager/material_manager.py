@@ -13,10 +13,17 @@ class MaterialGroup(GroupTable):
 class Material(DataTable):
     material_group = models.ForeignKey(MaterialGroup, on_delete= models.DO_NOTHING)
     material_type = models.ForeignKey('MaterialType', on_delete= models.DO_NOTHING)
-    material_alloy = models.ForeignKey('MaterialAlloyGroup', on_delete= models.DO_NOTHING)
-    material_alloy_treatment = models.ForeignKey('MaterialAlloyTreatmentGroup', on_delete= models.DO_NOTHING)
-    customer_norm = models.ManyToManyField('NormGroup', blank=False)
-    remark = models.TextField()
+    material_alloy = models.ForeignKey('MaterialAlloyGroup', on_delete= models.DO_NOTHING, null=True)
+    material_alloy_treatment = models.ManyToManyField('MaterialAlloyTreatmentGroup', null=True)
+    customer_norm = models.ManyToManyField('NormGroup', blank=True)
+    remark = models.TextField(null=True)
+    rm_min = models.FloatField(null=True)
+    rm_max = models.FloatField(null=True)
+    rp_min = models.FloatField(null=True)
+    rp_max = models.FloatField(null=True)
+    a_min = models.FloatField(null=True)
+    ag_min = models.FloatField(null=True)
+    bending_angle_min = models.FloatField(null=True)
     #extrusion_plant = models.ForeignKey('SupplierGroup', on_delete= models.DO_NOTHING)
 
     @property
