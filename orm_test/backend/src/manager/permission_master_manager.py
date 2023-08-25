@@ -45,7 +45,7 @@ class PermissionMaster(DataTable):
 
 class PermissionMasterManager(GeneralManager):
     """
-    A manager class for handling permission-master-related operations, extending 
+    A manager class for handling permission master related operations, extending 
     the GeneralManager.
 
     Attributes:

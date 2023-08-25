@@ -46,7 +46,7 @@ class AssetItemSiteConnection(DataTable):
 
 class AssetItemSiteConnectionManager(GeneralManager):
     """
-    A manager class for handling asset-item-site-connection-related operations, 
+    A manager class for handling asset item site connection related operations, 
     extending the GeneralManager.
 
     Attributes:

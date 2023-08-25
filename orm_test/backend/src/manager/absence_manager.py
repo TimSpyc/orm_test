@@ -49,7 +49,7 @@ class Absence(DataTable):
 
 class AbsenceManager(GeneralManager):
     """
-    A manager class for handling asset-item-related operations, extending the 
+    A manager class for handling absence related operations, extending the 
     GeneralManager.
 
     Attributes:

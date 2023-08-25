@@ -50,7 +50,7 @@ class PermissionUser(DataTable):
 
 class PermissionUserManager(GeneralManager):
     """
-    A manager class for handling permission-user-related operations, extending 
+    A manager class for handling permission user related operations, extending 
     the GeneralManager.
 
     Attributes:

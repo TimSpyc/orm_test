@@ -59,7 +59,7 @@ class AssetLayout(DataTable):
 
 class AssetLayoutManager(GeneralManager):
     """
-    A manager class for handling asset-layout-related operations, extending the 
+    A manager class for handling asset layout related operations, extending the 
     GeneralManager.
 
     Attributes:

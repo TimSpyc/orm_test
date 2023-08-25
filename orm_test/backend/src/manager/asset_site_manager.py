@@ -32,7 +32,7 @@ class AssetSite(DataTable):
 
 class AssetSiteManager(GeneralManager):
     """
-    A manager class for handling asset-site-related operations, extending the 
+    A manager class for handling asset site related operations, extending the 
     GeneralManager.
 
     Attributes:

@@ -49,7 +49,7 @@ class AssetItem(DataTable):
 
 class AssetItemManager(GeneralManager):
     """
-    A manager class for handling asset-item-related operations, extending the 
+    A manager class for handling asset item related operations, extending the 
     GeneralManager.
 
     Attributes:
