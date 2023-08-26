@@ -679,8 +679,6 @@ class GeneralManager:
         To create a list of all manager objects where the 'name' column 
         is equal to 'foo': filter(name='foo')
         """
-        if search_date is None:
-            search_date = datetime.now()
 
         group_model_column_list = cls.__getColumnNameList(cls.group_model)
         data_model_column_list = cls.__getColumnNameList(cls.data_model)
@@ -904,8 +902,7 @@ class GeneralManager:
             key, value)[0]: cls.__createSearchKeys(key, value)[1]
             for key, value in group_search_dict.items()
         }
-
-        newest_data_table_entries = cls.data_model.objects.raw(f'''
+        search_for_newest_data = f'''
             SELECT
                 id
             FROM
@@ -916,12 +913,14 @@ class GeneralManager:
                         {group_model_name}_id, max(date)
                     FROM
                         {data_table_name}
-                    WHERE
-                        date <= '{search_date}'
+                    {search_date is not None and f"WHERE date <= '{search_date}'"}
                     GROUP BY
                         {group_model_name}_id
                 )
-        ''')
+        '''
+        newest_data_table_entries = cls.data_model.objects.raw(
+            search_for_newest_data
+        )
         group_model_ids = cls.data_model.objects.filter(
             **{**data_search_dict_with_operators, 
             'id__in': [data_obj.id for data_obj in newest_data_table_entries]}
@@ -2095,7 +2094,7 @@ class GeneralManager:
 
         return data_obj
 
-    def __setManagerObjectDjangoCache(self) -> None:
+    def _setManagerObjectDjangoCache(self) -> None:
         """
         Set the current manager object in the Django cache.
         """
@@ -2107,12 +2106,13 @@ class GeneralManager:
         Update the cache for the current instance.
         """
         if self.search_date is None:
-            self.__setManagerObjectDjangoCache()
+            self._setManagerObjectDjangoCache()
 
         CacheManager.setCacheData(
             self.__class__.__name__, 
             self.group_id, self, 
-            self.start_date)
+            self.start_date
+        )
 
     @classmethod
     def __handleCache(cls, group_id, search_date):
@@ -2133,10 +2133,10 @@ class GeneralManager:
             group_id, 
             search_date
             )
-        if cached_instance:
-            cls.updateCache(cached_instance)
-            return cached_instance
-        return None
+        if cached_instance and search_date is None:
+            cached_instance.search_date = None
+            cached_instance._setManagerObjectDjangoCache()
+        return cached_instance
 
     def __getEndDate(self) -> datetime | None:
         """
