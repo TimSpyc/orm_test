@@ -12,9 +12,10 @@ class log__AutomatedScriptGroup(GroupTable):
 
     def __str__(self):
         return f"{self.script_name}"
-    
-    def manager(self, search_date, use_cache):
-        return AutomatedScriptManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return AutomatedScriptManager
 
 class log__AutomatedScript(DataTable):
     script_group = models.ForeignKey('log__AutomatedScriptGroup', on_delete=models.DO_NOTHING)
@@ -25,7 +26,7 @@ class log__AutomatedScript(DataTable):
         return f"{self.script_name}"
     
     @property
-    def group(self):
+    def group_object(self):
         return self.script_group
 
 
@@ -37,12 +38,12 @@ class AutomatedScriptManager(GeneralManager):
 
     def __init__(
         self,
-        script_group_id:int,
+        group_id:int,
         search_date: datetime | None = None,
         use_cache: bool = True
     ):
         super().__init__(
-            group_id=script_group_id,
+            group_id=group_id,
             search_date=search_date,
             use_cache=use_cache
         )

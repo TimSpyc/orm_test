@@ -180,16 +180,16 @@ class ChangeRequestRiskCategory(ReferenceTable):
 
 
 class ChangeRequestRiskImpact(ReferenceTable):
-    name = models.CharField(max_length=255)
-    factor = models.IntegerField()
+    name = models.CharField(max_length=255, unique=True)
+    factor = models.PositiveSmallIntegerField(unique=True)
 
     def __str__(self):
         return self.name
 
 
 class ChangeRequestRiskProbability(ReferenceTable):
-    name = models.CharField(max_length=255)
-    factor = models.IntegerField()
+    name = models.CharField(max_length=255, unique=True)
+    factor = models.PositiveSmallIntegerField(unique=True)
 
     def __str__(self):
         return self.name
@@ -242,3 +242,21 @@ class SapAbbreviationDictionary(ReferenceTable):
 
     def __str__(self):
         return self.sap_abbreviation
+    
+class PermissionType(ReferenceTable):
+    """
+    A Django model representing a permission type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class AbsenceType(ReferenceTable):
+    """
+    A Django model representing a absence type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name

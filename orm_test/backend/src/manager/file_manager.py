@@ -9,8 +9,9 @@ class FileGroup(GroupTable):
     with a project group.
     """
 
-    def manager(self, search_date, use_cache):
-        return FileManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return FileManager
 
     def __str__(self):
         return f"{self.id}"
@@ -35,7 +36,7 @@ class File(DataTable):
         return self.name
     
     @property
-    def group(self):
+    def group_object(self):
         return self.file_group
     
 
@@ -44,15 +45,3 @@ class FileManager(GeneralManager):
     group_model = FileGroup
     data_model = File
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        file_group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-        super().__init__(
-            group_id=file_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )

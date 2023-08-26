@@ -5,8 +5,9 @@ from backend.src.auxiliary.manager import GeneralManager
 class BillOfMaterialGroup(GroupTable):
     derivative_constellium_group = models.ForeignKey('DerivativeConstelliumGroup', on_delete= models.DO_NOTHING)
 
-    def manager(self, search_date, use_cache):
-        return BillOfMaterialManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return BillOfMaterialManager
     
     def __str__(self):
         return f"BillOfMaterialGroup {self.derivative_constellium_group}"
@@ -19,7 +20,7 @@ class BillOfMaterial(DataTable):
     description = models.CharField(max_length=255)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.bill_of_material_group
     
     def __str__(self):
@@ -38,6 +39,10 @@ class BillOfMaterialStructure(DataExtensionTable):
     left_value_logistics = models.FloatField(null=True)
     right_value_logistics = models.FloatField(null=True)
 
+    @property
+    def data_object(self):
+        return self.BillOfMaterial
+
 
 class BillOfMaterialManager(GeneralManager):
     group_model = BillOfMaterialGroup
@@ -46,12 +51,12 @@ class BillOfMaterialManager(GeneralManager):
 
     def __init__(
         self,
-        bill_of_material_group_id,
+        group_id,
         search_date=None,
         use_cache=True
     ):
         super().__init__(
-            group_id=bill_of_material_group_id,
+            group_id=group_id,
             search_date=search_date,
             use_cache=use_cache
         )

@@ -1861,26 +1861,26 @@ class TestCreateSearchKeys(TestCase):
 
     def test_valid_key_tuple_value(self):
         key = 'ap_no'
-        value = ('>', 5)
+        value = ['>', 5]
         result = GeneralManager._GeneralManager__createSearchKeys(key, value)      
         expected_result = ('ap_no__gt', 5)
         self.assertEqual(result, expected_result)
 
     def test_invalid_operator(self):
         key = 'project_number'
-        value = ('!=', '123456')
+        value = ['!=', '123456']
         with self.assertRaises(ValueError):
             GeneralManager._GeneralManager__createSearchKeys(key, value)
 
     def test_invalid_tuple_length(self):
         key = 'date'
-        value = ('>=', '2023-07-17', '2023-07-31')
+        value = ['>=', '2023-07-17', '2023-07-31']
         with self.assertRaises(ValueError):
             GeneralManager._GeneralManager__createSearchKeys(key, value)
 
     def test_invalid_operator_and_value(self):
         key = 'name'
-        value = (None, 'TestProject1')
+        value = [None, 'TestProject1']
         with self.assertRaises(ValueError):
             GeneralManager._GeneralManager__createSearchKeys(key, value)
 
