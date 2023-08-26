@@ -931,7 +931,7 @@ class GeneralManager:
             **{**group_search_dict_with_operators, 'id__in': group_model_ids}
             ).values_list('id', flat=True)
         
-        return [{f'{group_model_name}_id': group_id,
+        return [{f'group_id': group_id,
                   'search_date': search_date} for group_id in group_id_list]
     
     @staticmethod

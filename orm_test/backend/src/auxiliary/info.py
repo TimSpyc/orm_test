@@ -11,6 +11,7 @@ import json
 
 
 
+
 def selectStatusWithErrorType(error_type):
     """
     Maps an exception type to an HTTP status code.
@@ -116,8 +117,8 @@ class GeneralInfo:
     detail_key_dict: dict = {'group_id': 'int'}
 
     manager: GeneralManager # Optional
-    datasetPermissionFunction = lambda cls, data_set_dict: True
-    serializerFunction = lambda cls, data_object : dict(data_object)
+    datasetPermissionFunction = lambda data_set_dict: True
+    serializerFunction = lambda data_object : dict(data_object)
 
     def __new__(
         cls,
@@ -224,7 +225,7 @@ class GeneralInfo:
         self,
         data_object: GeneralManager | GeneralIntermediate | object
     ) -> dict:
-        return self.serializerFunction(data_object)
+        return self.__class__.serializerFunction(data_object)
 
     def _handleGetList(self, request: HttpRequest) -> list[dict]:
         object_list = self.getList(request)
@@ -267,7 +268,7 @@ class GeneralInfo:
         return filtered_and_reduced_list
 
     def __couldBeSend(self, result_dict: dict) -> bool:
-        return self.datasetPermissionFunction(result_dict)
+        return self.__class__.datasetPermissionFunction(result_dict)
 
     @classmethod
     def __getAllowedMethodsList(cls, method_type: str) -> list:

@@ -10,11 +10,11 @@ class DerivativeConstelliumInfo(GeneralInfo):
     serializerFunction = lambda derivative_constellium_manager_obj: {
         **dict(derivative_constellium_manager_obj), 
         **addPrefix(
+            'project',
             dict(
                 derivative_constellium_manager_obj.\
                 project_manager
             ),
-            'project'
         ),
     }
 
