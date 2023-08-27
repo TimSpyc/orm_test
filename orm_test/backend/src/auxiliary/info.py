@@ -8,7 +8,9 @@ from django.urls import path
 from django.http.request import HttpRequest
 from backend.src.auxiliary.exceptions import *
 import json
-
+from django.core.cache import cache
+from backend.src.auxiliary.timing import timeit
+from backend.src.auxiliary.cache_handler import InfoCacheHandler
 
 
 
@@ -111,6 +113,7 @@ def addPrefix(prefix: str, dictionary: dict) -> dict:
 class GeneralInfo:
     WITHOUT_IDENTIFIER_OPERATIONS = {'GET_list', 'POST'}
     WITH_IDENTIFIER_OPERATIONS = {'GET_detail', 'PUT', 'DELETE'}
+
     base_url: str
     allowed_method_list: list # ['GET_detail', 'GET_list', 'POST', 'PUT', 'DELETE']
     required_permission_list: list
@@ -119,100 +122,120 @@ class GeneralInfo:
     manager: GeneralManager # Optional
     datasetPermissionFunction = lambda data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
+    use_cache = True
 
-    def __new__(
-        cls,
-        use_cache: bool = False,
-        **kwargs: dict
-    ) -> 'GeneralInfo':
-        if use_cache:
-            cached_instance = cls.__handleCache(cls, **kwargs)
-            if cached_instance:
-                return cached_instance
-        instance =  super().__new__(cls)
-        instance.__init__(**kwargs)
-        return instance
-
-    def getDetail(
+    def __init__(
         self,
-        request: HttpRequest,
+        request:HttpRequest,
+        request_type: str,
         **identifier: dict
-    ) -> GeneralManager:
-        request_info_dict = self.__getRequestInfos(request)
-        search_date = request_info_dict['query_params'].get('search_date', None)
+    ):
+        self.__checkGeneralInfoIsProperlyConfigured()
+        if request_type not in ['detail', 'list']:
+            raise ValueError('type must be "detail" or "list"')
+        self.request = request
+        self.type = request_type
+        self.method = request.method
+
+        self.request_response_dict = {
+            ('GET', 'list'): self.__handleGetList,
+            ('POST', 'list'): self.post,
+            ('GET', 'detail'): self.__handleGetDetail,
+            ('PUT', 'detail'): self.put,
+            ('DELETE', 'detail'): self.delete
+        }
+
+        self.request_info_dict = self.__getRequestInfos()
+        filter_params = self.request_info_dict["query_params"].get('filter', {})
+        self.id_string = f'{self.base_url}|{json.dumps(filter_params)}'
+        self.identifier = identifier
+
+    @catchErrorsAndAdjustResponse
+    def respond(self) -> list | dict | int:
+        selection = (self.method, self.type)
+        if selection in self.request_response_dict:
+            return self.request_response_dict[selection]()
+        else:
+            return self.__responseIfMethodNotAvailable()
+
+    def getDetail(self) -> GeneralManager:
+        search_date = self.request_info_dict['query_params'].get(
+            'search_date',
+            None
+        )
         return self.manager(
             search_date=search_date,
-            **identifier,
+            **self.identifier,
         )
 
-    def put(
-        self,
-        request: HttpRequest,
-        **identifier: dict
-    ) -> None:
+    def put(self) -> None:
         self.__checkConfiguration()
-        request_info_dict = self.__getRequestInfos(request)
 
         manager_obj = self.manager(
-            identifier['group_id'],
-            request_info_dict['request_data']['creation_date']
+            self.identifier['group_id'],
+            self.request_info_dict['request_data']['creation_date']
         )
         
         manager_obj.update(
-                creator_id = request_info_dict["request_user_id"],
-                **request_info_dict['request_data']
+                creator_id = self.request_info_dict["request_user_id"],
+                **self.request_info_dict['request_data']
             )
 
-    def delete(
-        self,
-        request: HttpRequest,
-        **identifier: dict
-    ) -> None:
+    def delete(self) -> None:
         self.__checkConfiguration()
-        request_info_dict = self.__getRequestInfos(request)
 
         manager_obj = self.manager(
-            identifier['group_id'],
-            request_info_dict['request_data']['creation_date']
+            self.identifier['group_id'],
+            self.request_info_dict['request_data']['creation_date']
         )
         
         manager_obj.deactivate(
-                creator_id = request_info_dict["request_user_id"],
+                creator_id = self.request_info_dict["request_user_id"],
             )
 
-    def getList(
-        self,
-        request: HttpRequest
-    ) -> list[object]:
-        request_info_dict = self.__getRequestInfos(request)
-        search_date = request_info_dict['query_params'].get('search_date', None)
-        filter_dict = request_info_dict['query_params'].get('filter', {})
+    def getList(self) -> list[object]:
+        search_date = self.request_info_dict['query_params'].get(
+            'search_date',
+            None
+        )
+        filter_dict = self.request_info_dict['query_params'].get('filter', {})
 
         return self.manager.filter(
             search_date=search_date,
             **filter_dict,
         )
 
-    def post(
-        self,
-        request: HttpRequest
-    ) -> int:
+    def post(self) -> int:
         self.__checkConfiguration()
-        request_info_dict = self.__getRequestInfos(request)
 
         manager_obj = self.manager.create(
-            creator_id = request_info_dict["request_user_id"],
-            **request_info_dict['request_data']
+            creator_id = self.request_info_dict["request_user_id"],
+            **self.request_info_dict['request_data']
         )
 
         return manager_obj.group_id
 
-    @classmethod
-    def __handleCache(cls, **kwargs: dict) -> 'GeneralInfo':
-        #TODO: implement
-        instance =  super().__new__(cls)
-        instance.__init__(**kwargs)
-        return instance
+    def __getCacheData(self) -> 'GeneralInfo':
+        if self.use_cache:
+            return cache.get(self.id_string)
+        else:
+            return None
+
+    def __setCacheData(self, result_list_dict: list) -> None:
+        InfoCacheHandler.addRequestUrl(self)
+        cache.set(self.id_string, result_list_dict)
+
+    def _updateCache(self) -> None:
+        self.__getNewResultDict()
+
+    def __getNewResultDict(self) -> dict:
+        object_list = self.getList()
+        result_list_dict = list(map(
+            lambda manager_obj: self.__serializeData(manager_obj),
+            object_list
+        ))
+        self.__setCacheData(result_list_dict)
+        return result_list_dict
 
     def __checkConfiguration(self) -> None:
         has_manager = hasattr(self, 'manager')
@@ -227,37 +250,38 @@ class GeneralInfo:
     ) -> dict:
         return self.__class__.serializerFunction(data_object)
 
-    def _handleGetList(self, request: HttpRequest) -> list[dict]:
-        object_list = self.getList(request)
-        result_list_dict = map(
-            lambda manager_obj: self.__serializeData(manager_obj),
-            object_list
-        )
-        result= self.__reduceGetResultList(result_list_dict, request)
-        return result
+    @timeit
+    def __handleGetList(self) -> list[dict]:
 
-    def _handleGetDetail(self, request: HttpRequest, **identifier) -> dict:
-        manager_obj = self.getDetail(request, **identifier)
+        result_list_dict = self.__getCacheData()
+        if not result_list_dict:
+            result_list_dict = self.__getNewResultDict()
+        return self.__reduceGetResultList(result_list_dict)
+
+    def __handleGetDetail(self) -> dict:
+        manager_obj = self.getDetail()
         result_dict = self.__serializeData(manager_obj)
-        return self.__reduceGetResult(result_dict, request)
+        return self.__reduceGetResult(result_dict)
 
     def __reduceGetResult(
         self,
         result_dict: dict,
-        request: HttpRequest
     ) -> dict:
-        request_info_dict = self.__getRequestInfos(request)
-        attributes = request_info_dict['query_params'].get('attributes', None)
+        attributes = self.request_info_dict['query_params'].get(
+            'attributes',
+            None
+        )
         if self.__couldBeSend(result_dict):
             return self.__reduceDictWithKeyList(result_dict, attributes)
 
     def __reduceGetResultList(
         self,
         result_list: list[dict],
-        request: HttpRequest
     ) -> list[dict]:
-        request_info_dict = self.__getRequestInfos(request)
-        attributes = request_info_dict['query_params'].get('attributes', None)
+        attributes = self.request_info_dict['query_params'].get(
+            'attributes',
+            None
+        )
 
         filtered_and_reduced_list = list(map(
             lambda dict_keys: self.__reduceDictWithKeyList(
@@ -288,20 +312,28 @@ class GeneralInfo:
         ]
 
     @classmethod
-    def _getUrl(cls) -> list:
-        allowed_detail_methods = cls.__getAllowedMethodsList('detail')
-        allowed_list_methods = cls.__getAllowedMethodsList('list')
+    def __getRequestFunction(cls, type:str):
+        if type == 'detail':
+            allowed_detail_methods = cls.__getAllowedMethodsList('detail')
 
-        @api_view(allowed_list_methods)
-        @catchErrorsAndAdjustResponse
-        def listRequest(request):
-            return cls.__handleManagerRequestMethods_list(request)
-        
-        @api_view(allowed_detail_methods)
-        def detailRequest(request, **identifier):
-            return cls.__handleManagerRequestMethods_detail(request, **identifier)
-        cls.__checkGeneralInfoIsProperlyConfigured()
+            @api_view(allowed_detail_methods)
+            def detailRequest(request: HttpRequest, **identifier: dict) -> Response:
+                return cls.__handleRequest(request, 'detail', **identifier)
+            return detailRequest
 
+        elif type == 'list':
+            allowed_list_methods = cls.__getAllowedMethodsList('list')
+
+            @api_view(allowed_list_methods)
+            def listRequest(request: HttpRequest) -> Response:
+                return cls.__handleRequest(request, 'list')
+            return listRequest
+
+        else:
+            raise ValueError('type must be "detail" or "list"')
+    
+    @classmethod
+    def getUrlList(cls) -> list:
         allowed_model_operations = set(cls.allowed_method_list)
 
         url_list = []
@@ -309,7 +341,7 @@ class GeneralInfo:
         if cls.WITHOUT_IDENTIFIER_OPERATIONS & allowed_model_operations:
             url_list.append(path(
                 f'{cls.base_url}/',
-                listRequest
+                cls.__getRequestFunction('list')
             ))
         if cls.WITH_IDENTIFIER_OPERATIONS & allowed_model_operations:
             identifier_string = '/'.join([
@@ -319,46 +351,20 @@ class GeneralInfo:
 
             url_list.append(path(
                 f'{cls.base_url}/{identifier_string}',
-                detailRequest
+                cls.__getRequestFunction('detail')
             ))
 
         return url_list
 
     @classmethod
-    def __handleManagerRequestMethods_list(
+    def __handleRequest(
         cls,
-        request: HttpRequest
-    ) -> list | int:
+        request: HttpRequest,
+        request_type: str,
+        **identifier: dict
+    ) -> list | dict | int:
         cls.__checkIfUserIsAuthorized(request)
-        instance = cls()
-
-        if cls.__checkRequestIncludesWantedMethod(request, 'GET'):
-            return instance._handleGetList(request)
-
-        elif cls.__checkRequestIncludesWantedMethod(request, 'POST'):
-            return instance.post(request)
-
-        else:
-            return cls.__responseIfMethodNotAvailable()
-
-    @classmethod
-    def __handleManagerRequestMethods_detail(cls, request, **identifier):
-        cls.__checkIfUserIsAuthorized(request)
-        instance = cls(**identifier)
-
-        if cls.__checkRequestIncludesWantedMethod(request, 'GET'):
-            return instance._handleGetDetail(request, **identifier)
-
-        elif cls.__checkRequestIncludesWantedMethod(request, 'PUT'):
-            instance.put(request, **identifier)
-            return cls.__responseIfAlright()
-
-        elif cls.__checkRequestIncludesWantedMethod(request, 'DELETE'):
-            instance.delete(request, **identifier)
-            return cls.__responseIfAlright()
-        
-        else:
-            return cls.__responseIfMethodNotAvailable()
+        return cls(request, request_type, **identifier).respond()
 
     @staticmethod
     def __checkIfUserIsAuthorized(request):
@@ -375,28 +381,6 @@ class GeneralInfo:
         request
         #TODO: implement
         return True
-
-    @classmethod
-    def __checkRequestIncludesWantedMethod(
-        cls,
-        request: HttpRequest,
-        wanted_method: str,
-        # method_type: str|None = None
-    ) -> bool:
-        """
-        Checks if an HTTP request includes a specific method.
-
-        This function takes an HTTP request and a method as input and returns
-        True if the request includes the method, and False otherwise.
-
-        Args:
-            request (HttpRequest): The HTTP request to check.
-            wanted_method (str): The HTTP method to check for.
-
-        Returns:
-            bool: True if the request includes the method, False otherwise.
-        """
-        return request.method == wanted_method
 
     @staticmethod
     def __responseIfMethodNotAvailable():
@@ -438,13 +422,10 @@ class GeneralInfo:
             dict_to_reduce.items()
         ))
 
-    @staticmethod
-    def __getRequestInfos(
-        request: HttpRequest
-    ) -> dict:
-        query_params = GeneralInfo.queryParamsIntoDict(request)
-        request_data = request.data
-        request_user_id = request.user.id
+    def __getRequestInfos(self) -> dict:
+        query_params = self.queryParamsIntoDict(self.request)
+        request_data = self.request.data
+        request_user_id = self.request.user.id
 
         return {
             "query_params": query_params,

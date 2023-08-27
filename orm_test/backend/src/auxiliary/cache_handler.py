@@ -1,7 +1,11 @@
 import pickle
-import json
 from backend.models import CacheIntermediate
 from datetime import datetime
+from django.http import HttpRequest
+from django.contrib.auth.models import AnonymousUser
+from django.http import QueryDict
+import json
+
 
 class Watcher:
     def __init__(self, dependency: object, id_string: str) -> None:
@@ -132,7 +136,6 @@ class CacheHandler:
         self.watch_dict.pop(identification, None)
 
 
-
 def updateCache(func):
     """
     Decorator function to update the cache after executing the wrapped function.
@@ -147,7 +150,7 @@ def updateCache(func):
     def wrapper(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
         self.updateCache()
-
+        InfoCacheHandler.updateCache()
         return result
     return wrapper
 
@@ -165,6 +168,77 @@ def createCache(func):
     def wrapper(cls, *args, **kwargs):
         result = func(cls, *args, **kwargs)
         cls.updateCache(result)
-
+        InfoCacheHandler.updateCache()
         return result
     return wrapper
+
+
+class InfoCacheHandler:
+    """
+    Singleton class responsible for managing watchers.
+    """
+    __instance = None
+    request_url_dict = {}
+
+    def __new__(cls, *args: list, **kwargs: dict) -> object:
+        """
+        Create a new instance of CacheHandler if one does not already exist.
+        """
+        if not cls.__instance:
+            cls.__instance = super().__new__(cls, *args, **kwargs)
+        return cls.__instance
+    
+    @classmethod
+    def addRequestUrl(cls, general_info_obj: object) -> None:
+        """
+        Add a request to the InfoCacheHandler.
+
+        Args:
+            request (object): The request to be added.
+        """
+        self = cls()
+        self.__addRequest(general_info_obj)
+
+    def __addRequest(self, general_info_obj: object) -> None:
+        """
+        Add a request to the InfoCacheHandler.
+
+        Args:
+            request (object): The request to be added.
+        """
+
+        if general_info_obj.id_string not in self.request_url_dict:
+            self.request_url_dict[general_info_obj.id_string] = general_info_obj
+        print(self.request_url_dict)
+    
+    @classmethod
+    def updateCache(cls) -> None:
+        """
+        Inform all dependent objects to update their cache
+        """
+        self = cls()
+        for general_info_obj in self.request_url_dict.values():
+            general_info_obj._updateCache()
+
+    @classmethod
+    def startup(cls) -> None:
+        """
+        Start the InfoCacheHandler by adding all GeneralInfo objects.
+        """
+        from backend.urls import info_list
+
+        self = cls()
+        to_handle = info_list
+        request = HttpRequest()
+        request.method = 'GET'
+        request_type = 'list'
+        request.user = AnonymousUser()
+        request.query_params = QueryDict(mutable=True)
+        request.data = {}
+
+        for infoClass in to_handle:
+            self.addRequestUrl(infoClass(
+                request=request,
+                request_type= request_type
+            ))
+        cls.updateCache()
