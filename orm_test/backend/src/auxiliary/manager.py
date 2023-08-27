@@ -27,6 +27,7 @@ def transferToSnakeCase(name):
     return re.sub(
         r'(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])', '_', name).lower()
 
+
 def noneValueInNotNullField(not_null_fields, data_dict):
     """
     Check if there is any None value in the fields marked as NOT NULL.
@@ -389,7 +390,6 @@ class GeneralManager:
         
         return fields
    
-
     def __getDataSourceAndColumnBaseName(self, column: Field, ref_type):
         """
         Retrieve the data source and column base name from 
@@ -479,7 +479,6 @@ class GeneralManager:
                     manager_list.append(manager)
             return manager_list
         return (method, attribute_name)
-
 
     def __getManagerFromGroupModel(
             self, 
@@ -583,7 +582,6 @@ class GeneralManager:
         """
         setattr(self.__class__, attribute_name, property(func))
 
-
     @staticmethod
     def __isIgnored(key: str, ignore_list: list) -> bool:
         """
@@ -622,7 +620,6 @@ class GeneralManager:
             ref_table_type = None
             ref_type = None
         return ref_table_type, ref_type
-    
 
     @classmethod
     def __getGroupModelName(cls) -> str:
@@ -788,7 +785,6 @@ class GeneralManager:
 
         return group_data_dict, data_data_dict, data_extension_data_dict
 
-
     @classmethod
     def __getDataExtensionData(
         cls,
@@ -865,7 +861,6 @@ class GeneralManager:
 
         return is_in_data_ext_model, model_name, to_upload_dict
 
-
     @classmethod
     def __getFilteredManagerList(
         cls, 
@@ -932,7 +927,7 @@ class GeneralManager:
         
         return [{f'group_id': group_id,
                   'search_date': search_date} for group_id in group_id_list]
-    
+
     @staticmethod
     def __createSearchKeys(
         key: str,
@@ -1455,7 +1450,6 @@ class GeneralManager:
             new_data_model_obj
         )
 
-    
     def __getLatestDataData(self):
         """
         Get the latest data entry for the specified group model.
@@ -1822,7 +1816,6 @@ class GeneralManager:
                 unique_fields = {cls.__getUniqueFields(model)}
             '''
         )
-   
 
     @classmethod
     def __isDataTableDataUploadable(cls, data_data_dict: dict):
@@ -1875,8 +1868,6 @@ class GeneralManager:
         )
         return False
 
-
-    
     @classmethod
     def __isDataExtensionTableDataUploadable(
         cls,
@@ -1954,8 +1945,6 @@ class GeneralManager:
         cls.__errorForInsufficientUploadData(
             'data_extension_model', is_data_extension_data_uploadable 
         )
-       
-
 
     @classmethod
     def __getOrCreateGroupModel(cls, group_data_dict: dict) -> models.Model:
