@@ -1,25 +1,30 @@
 {
-  "name": "Python 3.11 Dev Container",
-  "image": "python:3.11",
+  "name": "Python Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "customizations": {
     "vscode": {
-        "settings": {
-            "terminal.integrated.shell.linux": "/bin/bash",
-            "python.pythonPath": "/usr/local/bin/python",
-            "python.autoComplete.extraPaths": ["/workspace", "/workspace/orm_test"],
-            "python.envFile": "/workspace/.env",
-            "locale": "en"
-        },
-        "extensions": [
-          "ms-python.python",
-          "nhoizey.gremlins",
-          "streetsidesoftware.code-spell-checker",
-          "ms-vscode.notepadplusplus-keybindings",
-          "ms-toolsai.jupyter",
-          "visualstudioexptteam.vscodeintellicode",
-          "esbenp.prettier-vscode",
-          "GitHub.copilot",
-          "GitHub.copilot-chat"
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.pythonPath": "/usr/local/bin/python",
+        "python.autoComplete.extraPaths": [
+          "/workspace",
+          "/workspace/orm_test"
+        ],
+        "python.envFile": "/workspace/.env",
+        "locale": "en"
+      },
+      "extensions": [
+        "ms-python.python",
+        "nhoizey.gremlins",
+        "streetsidesoftware.code-spell-checker",
+        "ms-toolsai.jupyter",
+        "visualstudioexptteam.vscodeintellicode",
+        "esbenp.prettier-vscode",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "ms-azuretools.vscode-docker"
       ]
     }
   },

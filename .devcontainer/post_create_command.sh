@@ -1,3 +1,6 @@
 pip install -r /workspaces/orm_test/requirements.txt
-cp /workspaces/orm_test/project.pth $(python -c 'import site; print(site.getsitepackages()[0])')
 cat ./.devcontainer/.bashrc > ~/.bashrc
+cp /workspaces/orm_test/project.pth $(python -m site --user-site)/project.pth
+cd orm_test
+python manage.py migrate
+python ../example_db/fill_db.py

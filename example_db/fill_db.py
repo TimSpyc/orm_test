@@ -1,6 +1,6 @@
 if __name__ == '__main__':
-    import os
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
+#    import os
+#    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
 
     import django
     django.setup()
@@ -22,15 +22,15 @@ def run_db_filler(debug=False):
 
 
     ''')
-    command = input()
-    print()
+    print('y')
+    command = 'y'
     if command not in ['y', 'Y', 'yes', 'Yes']:
         print('aborting...')
-        return 
+        return
     fill_data_function_list = [
         (1, 1, truncate_all_tables),
         (1, 1, fillReferenceTables),
-        (5,50, populateUser),
+        (5, 50, populateUser),
         (100, 500, populatePartRecipient),
         (100, 200, populateSapNumber),
         (5, 25, populateCustomer),
@@ -63,11 +63,12 @@ def run_db_filler(debug=False):
         else:
             iterations = random.randint(min_iterations, max_iterations)
         loadingBarForPopulateScripts(
-            max_iterations = iterations,
-            function = function
+            max_iterations=iterations,
+            function=function
         )
 
     print("Database was filled with random data")
+
 
 if __name__ == '__main__':
     run_db_filler(debug=False)
