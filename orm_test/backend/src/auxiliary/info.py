@@ -107,7 +107,7 @@ def addPrefix(prefix: str, dictionary: dict) -> dict:
                 but with the prefix added to all keys.
     """
     return {
-        f'{prefix}_{key}': value
+        f'{prefix}__{key}': value
         for key, value in dictionary.items()
     }
 

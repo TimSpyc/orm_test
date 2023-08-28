@@ -166,11 +166,11 @@ class GeneralManager:
         ignore_list = [
             self.__group_model_name,
             'id',
-            'creation_date'
+            'date'
         ]
         self.__setAllAttributesFromModel(group_obj, ignore_list)
         self.__setAllAttributesFromModel(data_obj, ignore_list)
-        self.creation_date = data_obj.date
+        self.date = data_obj.date
         self._start_date = data_obj.date
         self._end_date = self.__getEndDate()
         self._identification_dict = {
@@ -196,6 +196,8 @@ class GeneralManager:
                 if key[0] == '_':
                     continue
                 attribute_name = f'{prefix}__{key}'
+                if key == 'id':
+                    attribute_name = f'{prefix}_{key}'
                 yield attribute_name, value
 
         def list_creator(list_obj):
@@ -210,9 +212,9 @@ class GeneralManager:
                             if value == self.__group_obj or value == self.__data_obj:
                                 continue
                             if value.table_type == 'GroupTable':
-                                output_key = f'{key}_group__id'
+                                output_key = f'{key}_group_id'
                             elif value.table_type == 'DataTable':
-                                output_key = f'{key}__id'
+                                output_key = f'{key}_id'
                             output_value = value.id
                             output_dict[output_key] = output_value
                         else:
@@ -274,6 +276,10 @@ class GeneralManager:
                     model_obj)
 
             else:
+                self.__createDirectAttribute(
+                    ref_table_type, 
+                    ref_type, column,
+                    model_obj)
                 self.__createManagerProperty(
                     column, model_obj, ref_table_type, ref_type
                 )
@@ -300,6 +306,8 @@ class GeneralManager:
         """
         methods = {
             self.REFERENCE_TABLE: self.__assignAttribute,
+            self.GROUP_TABLE: self.__assignIdAttribute,
+            self.DATA_TABLE: self.__assignIdAttribute,
             self.DATA_EXTENSION_TABLE: self.__assignExtensionDataDictAttribute,
             None: self.__assignAttribute
         }
@@ -307,6 +315,40 @@ class GeneralManager:
             methods[ref_table_type](column, model_obj, ref_type)
         except KeyError:
             raise ValueError('this is not implemented yet')
+
+    def __assignIdAttribute(
+            self, 
+            column: Field, 
+            model_obj: object, 
+            ref_type = None
+            ) -> None: 
+        """
+        Assign the attribute from the model object to the current object.
+
+        Args:
+            column: The column of the attribute in the model object.
+            model_obj: The model object to get the attribute from.
+            ref_type: The type of the reference. Not necessary here
+                only to use the same method signature as in the extension
+                data dict attribute.
+
+        Returns:
+            None
+        """
+        if ref_type == self.MANY_TO_ONE:
+            return
+        elif ref_type == self.MANY_TO_MANY:
+            data_source, column_name = self.__getDataSourceAndColumnBaseName(
+                column,
+                ref_type
+                )
+            setattr(self, f'{column_name}_id_list', [
+                model_object.id
+                for model_object in getattr(model_obj, data_source).all()
+            ])
+        else:
+            setattr(self, f'{column.name}_id', model_obj.id)
+        
 
     def __assignAttribute(
             self, 
