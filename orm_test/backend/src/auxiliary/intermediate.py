@@ -59,7 +59,11 @@ class GeneralIntermediate:
                 return cached_instance
 
         instance = super().__new__(cls)
-        instance.__init__({**kwargs, 'search_date': search_date})
+        instance.__init__(**{
+            **kwargs,
+            'search_date': search_date,
+            'scenario_dict': scenario_dict
+        })
         instance._identification_dict = identification_dict
         instance._initial_kwargs = initial_kwargs
 
@@ -164,8 +168,8 @@ class GeneralIntermediate:
             datetime: The earliest start date.
         """
         start_date_list = [
-            dependency.start_date for dependency in self.dependencies
-            if dependency.start_date is not None
+            dependency._start_date for dependency in self.dependencies
+            if dependency._start_date is not None
         ]
         return min(start_date_list)
         

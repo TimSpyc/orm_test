@@ -221,22 +221,22 @@ class TestGetValueAndColumnIfExists(TestCase):
         
     def test_get_value_and_column_if_exists(self):
         model = TestProject
-        column_list = ['name', 'project_number', 'test_project_group_id']
-        db_column = 'test_project_group_id'
+        column_list = ['name', 'project_number', 'group_id']
+        db_column = 'group_id'
         value = 1
         
         result = GeneralManager._GeneralManager__getValueAndColumnIfExists(db_column, column_list, model, value)
         # result = (is_in_model, db_column, value)
-        self.assertEqual(result, (True, 'test_project_group_id', TestProjectGroup.objects.get(id=value).id))
-        self.assertEqual(result, (True, 'test_project_group_id', 1))
+        self.assertEqual(result, (True, 'group_id', TestProjectGroup.objects.get(id=value).id))
+        self.assertEqual(result, (True, 'group_id', 1))
 
     def test_column_exists_in_model(self):
-        column_list = ['name', 'project_number', 'test_project_group_id']
+        column_list = ['name', 'project_number', 'group_id']
         result = GeneralManager._GeneralManager__getValueAndColumnIfExists("name", column_list, TestProject, "example_value")
         self.assertEqual(result, (True, "name", "example_value"))
 
     def test_column_does_not_exist_in_model(self):
-        column_list = ['name', 'project_number', 'test_project_group_id']
+        column_list = ['name', 'project_number', 'group_id']
         result = GeneralManager._GeneralManager__getValueAndColumnIfExists("non_existent_column", column_list, TestProject, "example_value")
         self.assertEqual(result, (False, "non_existent_column", "example_value"))
 
@@ -274,14 +274,14 @@ class TestFilter(TestCase):
             creator = self.user,
             active = True
         )
-        self.manager = TestProjectManager(test_project_group_id = self.test_project_group.id)
+        self.manager = TestProjectManager(group_id = self.test_project_group.id)
     
     def test_filter_with_search_date(self):
         search_date = date(2023, 5, 16)
         result = self.manager.filter(search_date=search_date)
 
         expected_result = [
-            TestProjectManager(test_project_group_id= self.test_project_group.id, search_date= search_date)
+            TestProjectManager(group_id= self.test_project_group.id, search_date= search_date)
         ]
         self.assertEqual(result, expected_result)
 
@@ -295,7 +295,7 @@ class TestFilter(TestCase):
         name = 'TestProject1'
         result = self.manager.filter(name = name)
         expected_result = [
-            TestProjectManager(test_project_group_id= self.test_project_group.id)
+            TestProjectManager(group_id= self.test_project_group.id)
         ]
         self.assertEqual(result, expected_result)
 
@@ -313,7 +313,7 @@ class TestFilter(TestCase):
         project_number = '123456'
         result = self.manager.filter(search_date=search_date, project_number=project_number, name = name)
         expected_result = [
-            TestProjectManager(test_project_group_id=self.test_project_group.id, search_date = search_date)
+            TestProjectManager(group_id=self.test_project_group.id, search_date = search_date)
         ]
         self.assertEqual(result, expected_result)
 
@@ -328,12 +328,12 @@ class TestFilter(TestCase):
         self.test_project_user1.test_project_user_role.add(self.test_project_user_role1)
         self.test_project_user1.test_project_user_role.add(self.test_project_user_role2)
 
-        
-        self.many_to_many_manager = TestProjectUserManager(test_project_user_group_id=self.test_project_user_group.id)
+        TestProjectUserManager.use_cache = False
+        self.many_to_many_manager = TestProjectUserManager(group_id=self.test_project_user_group.id)
 
         result = self.many_to_many_manager.filter(test_project_user_role = self.test_project_user_role1)
         expected_result = [
-            TestProjectUserManager(test_project_user_group_id= self.test_project_user_group.id)
+            TestProjectUserManager(group_id= self.test_project_user_group.id)
         ]
         self.assertEqual(result, expected_result)
 
@@ -366,14 +366,14 @@ class TestAll(TestCase):
             creator = self.user,
             active = True
         )
-        self.manager = TestProjectManager(test_project_group_id = self.test_project_group.id)
+        self.manager = TestProjectManager(group_id = self.test_project_group.id)
     
     def test_all_with_search_date(self):
         search_date = date(2023, 5, 17)
         result = self.manager.all(search_date=search_date)
 
         expected_result = [
-            TestProjectManager(test_project_group_id= self.test_project_group.id, search_date= search_date)
+            TestProjectManager(group_id= self.test_project_group.id, search_date= search_date)
         ]
         self.assertEqual(result, expected_result)
 
@@ -381,7 +381,7 @@ class TestAll(TestCase):
         result = self.manager.all()
 
         expected_result = [
-            TestProjectManager(test_project_group_id= self.test_project_group.id),
+            TestProjectManager(group_id= self.test_project_group.id),
         ]
         self.assertEqual(result, expected_result)    
 
@@ -454,7 +454,7 @@ class TestGetFilteredManagerList(TestCase):
 
         result = self.manager._GeneralManager__getFilteredManagerList(data_search_dict, group_search_dict, search_date)
         expected_result = [
-            {'test_project_group_id': project_group1.id, 'search_date': search_date}
+            {'group_id': project_group1.id, 'search_date': search_date}
         ]
         self.assertEqual(result, expected_result)
 
@@ -477,7 +477,7 @@ class TestGetFilteredManagerList(TestCase):
 
         result = self.manager._GeneralManager__getFilteredManagerList(data_search_dict, group_search_dict, search_date)
         expected_result = [
-            {'test_project_group_id': project_group1.id, 'search_date': search_date}
+            {'group_id': project_group1.id, 'search_date': search_date}
         ]
         self.assertEqual(result, expected_result)
 
@@ -509,8 +509,8 @@ class TestGetFilteredManagerList(TestCase):
 
             result = self.manager._GeneralManager__getFilteredManagerList(data_search_dict, group_search_dict, search_date)
             expected_result = [
-                {'test_project_group_id': project_group1.id, 'search_date': None},
-                {'test_project_group_id': project_group2.id, 'search_date': None}
+                {'group_id': project_group1.id, 'search_date': None},
+                {'group_id': project_group2.id, 'search_date': None}
             ]
             self.assertEqual(result, expected_result)
 
@@ -590,7 +590,7 @@ class TestGetFilteredManagerList(TestCase):
 
         result = self.manager._GeneralManager__getFilteredManagerList(data_search_dict, group_search_dict, search_date)
         expected_result = [
-            {'test_project_group_id': project_group1.id, 'search_date': search_date}
+            {'group_id': project_group1.id, 'search_date': search_date}
         ]
         self.assertEqual(result, expected_result)  
 
@@ -1023,7 +1023,7 @@ class TestCreate(TestCase):
         def dummy_init(self, group_id, search_date=None):
             self.group_id = group_id
             self.active = 1
-            self.start_date = datetime.now()
+            self._start_date = datetime.now()
             self.search_date = search_date
 
         with patch.object(GeneralManager, '__init__', new = dummy_init):
@@ -1064,7 +1064,7 @@ class TestCreate(TestCase):
         def dummy_init(self, group_id, search_date=None):
             self.group_id = group_id
             self.active = 1
-            self.start_date = datetime.now()
+            self._start_date = datetime.now()
             self.search_date = search_date
 
         with patch.object(GeneralManager, '__init__', new = dummy_init):
@@ -1260,7 +1260,7 @@ class TestGetEndDate(TestCase):
         self.manager._GeneralManager__group_model_name = 'test_project_group'
         self.test_project_group = TestProjectGroup.objects.create()
         self.manager._GeneralManager__group_obj = self.test_project_group
-        self.manager.start_date = datetime(2023, 5, 15)
+        self.manager._start_date = datetime(2023, 5, 15)
 
 
     def test_get_end_date_with_newer_entry(self):
@@ -2206,10 +2206,10 @@ class TestGetManagerFromDataModel(TestCase):
 
 class TestGetManagerListFromGroupModel(TestCase):
     def setUp(self):
+        GeneralManager.use_cache = False
         self.manager = GeneralManager.__new__(GeneralManager)
         self.creator = User.objects.create()
         self.manager.search_date = datetime(2023,7,28)
-        self.manager.use_cache = False
 
         self.new_kunden_group = newKundenGroup.objects.create()
         self.new_kunden = newKunden.objects.create(

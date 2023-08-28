@@ -176,8 +176,8 @@ class GeneralManager:
         self._identification_dict = {
             'group_id': self.group_id,
             'manager_name': self.__class__.__name__,
-            'start_date': self.start_date,
-            'end_date': self.end_date
+            'start_date': self._start_date,
+            'end_date': self._end_date
         }
 
     def __repr__(self):
@@ -241,7 +241,7 @@ class GeneralManager:
         return (
             isinstance(other, self.__class__) and
             self.group_id == other.group_id and
-            self.start_date == other.start_date
+            self._start_date == other._start_date
         )
 
     def __setAllAttributesFromModel(
@@ -435,7 +435,7 @@ class GeneralManager:
         attribute_name = column_name.replace('group', 'manager_list')
 
         method = lambda self: [
-            group_data.getManager(self.search_date, self.use_cache)
+            group_data.getManager(self.search_date)
             for group_data in getattr(model_obj, data_source).all()
         ]
       
@@ -469,7 +469,7 @@ class GeneralManager:
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group_object
-                manager = group_data.getManager(self.search_date, self.use_cache)
+                manager = group_data.getManager(self.search_date)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
             return manager_list
@@ -496,7 +496,7 @@ class GeneralManager:
         attribute_name = f'{column.name}'.replace('group', 'manager')
         def method(self):
             group_data = getattr(model_obj, column.name)
-            return group_data.getManager(self.search_date, self.use_cache)
+            return group_data.getManager(self.search_date)
         return (method, attribute_name)
 
     def __getManagerFromDataModel(
@@ -522,7 +522,7 @@ class GeneralManager:
 
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group_object
-            manager = group_data.getManager(self.search_date, self.use_cache)
+            manager = group_data.getManager(self.search_date)
             if manager.id == data_data.id:
                 return manager
         return (method, attribute_name)
@@ -2093,7 +2093,7 @@ class GeneralManager:
         CacheManager.setCacheData(
             self.__class__.__name__, 
             self.group_id, self, 
-            self.start_date
+            self._start_date
         )
 
     @classmethod
@@ -2134,7 +2134,7 @@ class GeneralManager:
             data_obj = self.data_model.objects.filter(
                 **{
                     self.__group_model_name: self.__group_obj,
-                    'date__gt': self.start_date
+                    'date__gt': self._start_date
                 }
             ).earliest('date') #latest()
             return data_obj.date
