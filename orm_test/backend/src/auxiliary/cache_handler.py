@@ -210,7 +210,6 @@ class InfoCacheHandler:
 
         if general_info_obj.id_string not in self.request_url_dict:
             self.request_url_dict[general_info_obj.id_string] = general_info_obj
-        print(self.request_url_dict)
     
     @classmethod
     def updateCache(cls) -> None:

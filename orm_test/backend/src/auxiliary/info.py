@@ -11,6 +11,7 @@ import json
 from django.core.cache import cache
 from backend.src.auxiliary.timing import timeit
 from backend.src.auxiliary.cache_handler import InfoCacheHandler
+from backend.models.caching_models import CacheIntermediate
 
 
 
@@ -147,7 +148,10 @@ class GeneralInfo:
 
         self.request_info_dict = self.__getRequestInfos()
         filter_params = self.request_info_dict["query_params"].get('filter', {})
-        self.id_string = f'{self.base_url}|{json.dumps(filter_params)}'
+        self.id_string = CacheIntermediate.getIdString({
+            **filter_params,
+            'base_url': self.base_url
+        })
         self.identifier = identifier
 
     @catchErrorsAndAdjustResponse
@@ -252,7 +256,6 @@ class GeneralInfo:
 
     @timeit
     def __handleGetList(self) -> list[dict]:
-
         result_list_dict = self.__getCacheData()
         if not result_list_dict:
             result_list_dict = self.__getNewResultDict()

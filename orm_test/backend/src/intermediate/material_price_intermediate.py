@@ -13,7 +13,6 @@ class MaterialPriceIntermediate(GeneralIntermediate):
         customer_group_id: int,
         search_date: datetime | None = None,
         scenario_dict: dict = {},
-        use_cache: bool = True
     ):
 
         self.customer_group_id = customer_group_id
@@ -22,12 +21,10 @@ class MaterialPriceIntermediate(GeneralIntermediate):
         self.customer_manager = CustomerManager(
             customer_group_id,
             search_date,
-            use_cache
         )
 
         self.stock_exchange = StockExchangeDataManager(
             search_date,
-            use_cache
         )
 
         dependencies = [self.customer_manager, self.stock_exchange]

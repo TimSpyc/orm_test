@@ -16,12 +16,6 @@ class TestProjectManager(GeneralManager):
     data_model = TestProject
     data_extension_model_list: list = []
 
-    def __init__(self, test_project_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=test_project_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
 
         
 class TestProjectUserManager(GeneralManager):
@@ -29,13 +23,6 @@ class TestProjectUserManager(GeneralManager):
     data_model = TestProjectUser
     data_extension_model_list: list = []
 
-
-    def __init__(self, test_project_user_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=test_project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )    
 
 
 class TestSearchForColumn(TestCase):

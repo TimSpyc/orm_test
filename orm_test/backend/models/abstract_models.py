@@ -14,9 +14,8 @@ class GroupTable(models.Model):
     def getManager(
         self, 
         search_date: datetime, 
-        use_cache: bool
     ) -> 'GeneralManager':
-        return self.manager(self.id, search_date, use_cache)
+        return self.manager(self.id, search_date)
 
     class Meta:
         abstract = True

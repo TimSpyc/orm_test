@@ -68,12 +68,10 @@ class DerivativeLmcManager(GeneralManager):
         self,
         derivative_lmc_group_id:int,
         search_date: datetime | None = None,
-        use_cache: bool = True
     ):
         super().__init__(
             group_id=derivative_lmc_group_id,
             search_date=search_date,
-            use_cache=use_cache
         )
 
 class DerivativeLmcVolume(ExternalDataTable):

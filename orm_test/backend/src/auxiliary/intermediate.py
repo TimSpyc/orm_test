@@ -18,7 +18,7 @@ class GeneralIntermediate:
     methods for comparing instances and verifying their dependencies.
     """
     relevant_scenario_keys: list
-
+    use_cache: bool = True
     
     def __new__(cls, *args: list, **kwargs: dict) -> object:
         """
@@ -39,7 +39,6 @@ class GeneralIntermediate:
         initial_kwargs = copy.deepcopy(kwargs)
 
         search_date = kwargs.pop('search_date', None)
-        use_cache = kwargs.pop('use_cache', True)
         scenario_dict = kwargs.pop('scenario_dict', {})
 
         rel_scenario, _ = cls.__cleanScenarioDict(scenario_dict)
@@ -50,7 +49,7 @@ class GeneralIntermediate:
             'intermediate_name': intermediate_name,
             'kwargs': kwargs
         }
-        if use_cache:
+        if cls.use_cache:
             cached_instance = cls.__handleCache(
                 intermediate_name,
                 identification_dict,

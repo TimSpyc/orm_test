@@ -53,8 +53,8 @@ class ExternalDataManager:
 
     def __init__(self, search_date):
         self.search_date = search_date
-        self.start_date = self.__getStartDate()
-        self.end_date = self.__getEndDate()
+        self._start_date = self.__getStartDate()
+        self._end_date = self.__getEndDate()
         self._identification_dict = {
             'database_model': self.database_model,
         }
@@ -99,8 +99,9 @@ class GeneralManager:
     group_model: Model
     data_model: Model
     data_extension_model_list: list[Model]
+    use_cache: bool = True
 
-    def __new__(cls,group_id=None, search_date=None, use_cache=True, **kwargs):
+    def __new__(cls,group_id=None, search_date=None, **kwargs):
         """
         Create a new instance of the Manager or 
         return a cached instance if available.
@@ -110,8 +111,6 @@ class GeneralManager:
                 Defaults to None for caching only.
             search_date (datetime, optional): The date for which to 
                 search the data object. Defaults to None (latest data).
-            use_cache (bool, optional): Whether to use the cache when 
-                searching for instances. Defaults to True.
 
         Returns:
             manager: A new or cached instance of the manager.
@@ -127,14 +126,14 @@ class GeneralManager:
         if group_id is None:
             return super().__new__(cls)
 
-        if use_cache:
+        if cls.use_cache:
             cached_instance = cls.__handleCache(group_id, search_date)
             if cached_instance:
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        if use_cache:
+        if cls.use_cache:
             cls.updateCache(instance)
 
         return instance
@@ -143,7 +142,6 @@ class GeneralManager:
         self,
         group_id: int,
         search_date: datetime|None = None,
-        use_cache: bool = True
     ):
         """
         Initialize the manager with the given group_id and date.
@@ -154,7 +152,6 @@ class GeneralManager:
             search_date (datetime, optional): The date for which to search
                 the data object. Defaults to None (latest data).
         """
-        self.use_cache = use_cache
         self.search_date = search_date
         self.group_id = group_id
 
@@ -169,13 +166,13 @@ class GeneralManager:
         ignore_list = [
             self.__group_model_name,
             'id',
-            'date'
+            'creation_date'
         ]
         self.__setAllAttributesFromModel(group_obj, ignore_list)
         self.__setAllAttributesFromModel(data_obj, ignore_list)
-
-        self.start_date = data_obj.date
-        self.end_date = self.__getEndDate()
+        self.creation_date = data_obj.date
+        self._start_date = data_obj.date
+        self._end_date = self.__getEndDate()
         self._identification_dict = {
             'group_id': self.group_id,
             'manager_name': self.__class__.__name__,
@@ -439,8 +436,6 @@ class GeneralManager:
 
         method = lambda self: [
             group_data.getManager(self.search_date, self.use_cache)
-            #(group_data, self.search_date, self.use_cache, group_data.manager)
-
             for group_data in getattr(model_obj, data_source).all()
         ]
       
@@ -642,7 +637,7 @@ class GeneralManager:
         return group_model_name
 
     @classmethod
-    def all(cls, search_date=None, use_cache=True) -> list:
+    def all(cls, search_date=None) -> list:
         """
         Retrieves all objects of the manager's class, 
         optionally filtering by search_date.
@@ -656,10 +651,10 @@ class GeneralManager:
             list: A list of manager objects, 
                 filtered by the optional search_date if provided.
         """
-        return cls.filter(search_date=search_date, use_cache=use_cache)
+        return cls.filter(search_date=search_date)
 
     @classmethod
-    def filter(cls, search_date=None, use_cache=True, **kwargs: any) -> list:
+    def filter(cls, search_date=None, **kwargs: any) -> list:
         """Creates a list of objects based on the given parameters.
         It's NOT possible to search for DataExtensionTable Data.
 
@@ -699,7 +694,6 @@ class GeneralManager:
             )
         return cls.__createManagerObjectsFromDictList(
             found_group_id_date_combination_dict_list,
-            use_cache=use_cache
             )
 
     @classmethod
@@ -981,7 +975,6 @@ class GeneralManager:
     def __createManagerObjectsFromDictList(
         cls, 
         creation_dict_list: list,
-        use_cache
     ) -> list:
         """
         Creates a list of manager objects from a list of dictionaries.
@@ -996,7 +989,7 @@ class GeneralManager:
                 A list of manager objects created 
                 from the provided dictionary data.
         """
-        return [cls(**data, use_cache=use_cache) for data in creation_dict_list]
+        return [cls(**data) for data in creation_dict_list]
 
     def __errorIfNotUpdatable(self) -> None:
         """
