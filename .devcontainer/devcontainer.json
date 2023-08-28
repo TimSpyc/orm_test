@@ -1,23 +1,27 @@
 {
   "name": "Python 3.11 Dev Container",
   "image": "python:3.11",
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash",
-    "python.pythonPath": "/usr/local/bin/python",
-    "python.autoComplete.extraPaths": ["/workspace", "/workspace/orm_test"],
-    "python.envFile": "/workspace/.env",
-    "locale": "en"
+  "customizations": {
+    "vscode": {
+        "settings": {
+            "terminal.integrated.shell.linux": "/bin/bash",
+            "python.pythonPath": "/usr/local/bin/python",
+            "python.autoComplete.extraPaths": ["/workspace", "/workspace/orm_test"],
+            "python.envFile": "/workspace/.env",
+            "locale": "en"
+        },
+        "extensions": [
+          "ms-python.python",
+          "nhoizey.gremlins",
+          "streetsidesoftware.code-spell-checker",
+          "ms-vscode.notepadplusplus-keybindings",
+          "ms-toolsai.jupyter",
+          "visualstudioexptteam.vscodeintellicode",
+          "esbenp.prettier-vscode",
+          "GitHub.copilot",
+          "GitHub.copilot-chat"
+      ]
+    }
   },
-  "extensions": [
-    "ms-python.python",
-    "nhoizey.gremlins",
-    "streetsidesoftware.code-spell-checker",
-    "ms-vscode.notepadplusplus-keybindings",
-    "ms-toolsai.jupyter",
-    "visualstudioexptteam.vscodeintelli",
-    "esbenp.prettier-vscode",
-    "GitHub.copilot",
-    "GitHub.copilot-chat"
-  ],
-  "postCreateCommand": "sh ./.devcontainer/post_create_command.sh"
+  "postCreateCommand": "sh ./.devcontainer/post_create_command.sh",
 }
