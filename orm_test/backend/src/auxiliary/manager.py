@@ -12,6 +12,7 @@ from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
+from django.conf import settings
 
 
 def transferToSnakeCase(name):
@@ -115,7 +116,8 @@ class GeneralManager:
         Returns:
             manager: A new or cached instance of the manager.
         """
-
+        cls.use_cache = settings.USE_CACHE and cls.use_cache
+        
         if hasattr(cls, 'group_model'):
             group_table_id_name = f'''
                 {transferToSnakeCase(cls.group_model.__name__)}_id

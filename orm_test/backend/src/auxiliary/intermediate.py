@@ -7,6 +7,7 @@ from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, creat
 from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
 from django.core.cache import cache
 import copy
+from django.conf import settings
 
 
 class GeneralIntermediate:
@@ -32,6 +33,9 @@ class GeneralIntermediate:
             object: An instance of the class, either retrieved from cache or
             newly created.
         """
+        cls.use_cache = settings.USE_CACHE and cls.use_cache
+
+
         if kwargs == {} and args == []:
             return super().__new__(cls)
 

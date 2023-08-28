@@ -12,7 +12,7 @@ from django.core.cache import cache
 from backend.src.auxiliary.timing import timeit
 from backend.src.auxiliary.cache_handler import InfoCacheHandler
 from backend.models.caching_models import CacheIntermediate
-
+from django.conf import settings
 
 
 def selectStatusWithErrorType(error_type):
@@ -124,6 +124,10 @@ class GeneralInfo:
     datasetPermissionFunction = lambda data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
     use_cache = True
+
+    def __new__(cls, *args, **kwargs):
+        cls.use_cache = settings.USE_CACHE and cls.use_cache
+        return super().__new__(cls)
 
     def __init__(
         self,
