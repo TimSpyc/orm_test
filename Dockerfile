@@ -1,49 +1,30 @@
 # Use the official Python 3.11 image
 FROM python:3.11
+RUN useradd -ms /bin/bash knowledgehub_user
+USER knowledgehub_user
+WORKDIR /home/knowledgehub_user
 
 # Set the working directory to /workspace
-COPY ./ /workspace
-WORKDIR /workspace
+COPY . /home/knowledgehub_user/.
 
 # Install the Python dependencies
 RUN pip install -r requirements.txt
 
 # Set the environment variable for Django settings
-RUN echo "export DJANGO_SETTINGS_MODULE=orm_test.settings" >> /root/.bashrc
+RUN echo "export DJANGO_SETTINGS_MODULE=orm_test.settings" >> ~/.bashrc && \
+    echo "export LS_OPTIONS='--color=auto'" >> ~/.bashrc && \
+    echo "alias ls='ls $LS_OPTIONS'" >> ~/.bashrc && \
+    echo "alias ll='ls $LS_OPTIONS -l'" >> ~/.bashrc && \
+    echo "alias rm='rm -i'" >> ~/.bashrc && \
+    echo "alias cp='cp -i'" >> ~/.bashrc && \
+    echo "alias mv='mv -i'" >> ~/.bashrc
 
 # Set the default shell for the terminal
 ENV SHELL /bin/bash
 
 # Set the Python interpreter path
 ENV PATH "/usr/local/bin:$PATH"
-ENV PYTHONPATH "${PYTHONPATH}:/workspace:/workspace/orm_test"
-
-# # Set the locale to English
-# ENV LANG en_US.UTF-8
-# ENV LANGUAGE en_US:en
-# ENV LC_ALL en_US.UTF-8
-
-# Install Visual Studio Code extensions
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        curl \
-        gnupg \
-        locales \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg \
-    && mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        code \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Expose port 3000 for Jupyter Notebook
-EXPOSE 3000
+ENV PYTHONPATH "${PYTHONPATH}:~/:~/orm_test"
 
 # Start a bash shell by default
 CMD ["/bin/bash"]
