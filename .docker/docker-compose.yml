@@ -56,3 +56,8 @@ services:
 volumes:
   db_volume:
   cache_volume:
+
+networks:
+  internal:
+  external:
+    external: true
