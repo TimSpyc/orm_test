@@ -46,7 +46,6 @@ services:
     networks:
       - internal
       - external
-    restart: allways
     ports:
       - "8080:80"
     depends_on:
@@ -60,4 +59,3 @@ volumes:
 networks:
   internal:
   external:
-    external: true
