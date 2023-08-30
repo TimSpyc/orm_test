@@ -46,8 +46,8 @@ RUN apt-get -y install python3.11 \
     libmysqlclient-dev \
     python3-pip
 
-COPY ./site_config.conf /etc/apache2/sites-available/000-default.conf
-COPY ./site_config.conf /etc/apache2/sites-enabled/000-default.conf
+COPY ./site-config.conf /etc/apache2/sites-available/000-default.conf
+COPY ./site-config.conf /etc/apache2/sites-enabled/000-default.conf
 
 
 RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html/
