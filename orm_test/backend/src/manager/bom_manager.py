@@ -206,9 +206,6 @@ class BillOfMaterialManager(GeneralManager):
         return head_nodes
     
 
-
-
-
     def __getChildNodeList(
         self,
         head_node: dict,
@@ -282,7 +279,6 @@ class BillOfMaterialManager(GeneralManager):
                     ),
                 })
         return node_list
-
 
 
     @staticmethod
@@ -746,6 +742,7 @@ class BillOfMaterialManager(GeneralManager):
                 parent_pos = ""
             else:
                 parent_pos = hierarchy[-1]['pos']
+            
 
             if parent_pos in current_pos:
                 current_pos[parent_pos] += 1
@@ -759,5 +756,8 @@ class BillOfMaterialManager(GeneralManager):
             hierarchy.append({'pos': pos, 'right': right})
 
         return bom_structure_dict
+        
+        
        
+     
     
