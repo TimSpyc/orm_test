@@ -265,7 +265,30 @@ class GeneralInfo:
             result_list_dict = self.__getNewResultDict()
         result_list_dict = self.__reduceGetResultList(result_list_dict)
         result_list_dict = self.__search(result_list_dict)
+        result_list_dict = self.__sort(result_list_dict)
         return self.__paginate(result_list_dict)
+
+    def __sort(self, result_list_dict: list[dict]) -> list[dict]:
+        sort_by = self.request_info_dict['query_params'].get(
+            'sort_by',
+            None
+        )
+        if sort_by is None:
+            return result_list_dict
+
+        sort_key, sort_order = sort_by.split(':')
+        if sort_key not in result_list_dict[0].keys():
+            raise ValueError(f'key "{sort_key}" not found')
+        if sort_order == 'asc':
+            reverse = False
+        elif sort_order == 'desc':
+            reverse = True
+        else:
+            raise ValueError('sort_order must be "asc" or "desc"')
+        
+        def sortFunction(dict_item: dict) -> any:
+            return str(dict_item[sort_key])
+        return sorted(result_list_dict, key=sortFunction, reverse=reverse)
 
     def __search(self, result_list_dict: list[dict]) -> list[dict]:
         search_string = self.request_info_dict['query_params'].get(
