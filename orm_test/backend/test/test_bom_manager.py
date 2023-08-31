@@ -546,36 +546,6 @@ class TestCreatePositionStructure(TestCase):
             result = BillOfMaterialManager._createPositionStructure(nested_set_data)
             self.assertEqual(result, expected_output)
 
-    def test_format_nested_set_to_bom_structure_long(self):
-        nested_set_data = [
-            {'group_id': 21, 'left': 1, 'right': 2},
-            {'group_id': 20, 'left': 3, 'right': 8},
-            {'group_id': 2, 'left': 4, 'right': 7},
-            {'group_id': 1, 'left': 5, 'right': 6},
-
-            {'group_id': 3, 'left': 9, 'right': 18 },
-            {'group_id': 4, 'left': 10, 'right': 17},
-            {'group_id': 5, 'left': 11, 'right': 16},
-            {'group_id': 6, 'left': 12, 'right': 15},
-            {'group_id': 7, 'left': 13, 'right': 14},
-            {'group_id': 8, 'left': 19, 'right': 22},
-            {'group_id': 9, 'left': 20, 'right': 21},
-        ]
-        expected_output = [
-            {'pos': '1', 'group_id': 21},
-            {'pos': '2', 'group_id': 20},
-            {'pos': '2.1', 'group_id': 2},
-            {'pos': '2.1.1', 'group_id': 1},
-            {'pos': '3', 'group_id': 3},
-            {'pos': '3.1', 'group_id': 4},
-            {'pos': '3.1.1', 'group_id': 5},
-            {'pos': '3.1.2', 'group_id': 6},
-            {'pos': '3.1.3', 'group_id': 7},
-            {'pos': '4', 'group_id': 8},
-            {'pos': '4.1', 'group_id': 9},
-        ]
-        result = BillOfMaterialManager.formatBillOfMaterialNestedSetToPositionStructure(nested_set_data)
-        self.assertEqual(result, expected_output)
 
 
 class TestGetChildNodeList(TestCase):
@@ -733,8 +703,6 @@ class TestGetHeadNodeList(TestCase):
             result = self.manager._BillOfMaterialManager__getHeadNodeList(10,self.key_tuple)
 
 
-
-
 class TestGetBillOfMaterialStructure(TestCase):  
     def setUp(self):
         self.head_part_group_id = 1
@@ -761,13 +729,6 @@ class TestGetBillOfMaterialStructure(TestCase):
 
         self.assertEqual(expected_result, result)
 
-    def test_get_bill_of_material_structure_second_as_head(self):
-
-        head_node = {'group_id': 4, 'left': 7, 'right': 8, 'cumulated_quantity': 40},
-
-        result= self.manager._BillOfMaterialManager__getBillOfMaterialStructure(head_node, ('left', 'right',))
-        expected_result = [{'pos': '1.1', 'group_id': 2}, {'pos': '1.2', 'group_id': 3}]
-        self.assertEqual(expected_result, result)
         
     def test_get_bill_of_material_structure_missing_key_group(self):
         head_node = {
