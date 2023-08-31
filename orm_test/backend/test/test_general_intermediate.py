@@ -321,71 +321,195 @@ class TestUpdateCache(TestCase):
         cache.clear()
         self.intermediate.updateCache()
         id_string = CacheIntermediate.getIdString(self.intermediate._identification_dict)
-        print('id_string', id_string)
         cached_data = cache.get(id_string)
-        print('cached_data', cached_data)
         self.assertIsNotNone(cached_data)
         self.assertEqual(cached_data, self.intermediate)  
         
             
 
+##edit
+class TestCheckIfCacheNeedsToExpire(TestCase):
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager.group_id = 1
+        self.manager.start_date = datetime(2023, 7, 27)
+        self.manager.end_date = datetime(2023, 7, 28)
+        self.search_date=datetime(2023, 8, 1)
+        self.manager._identification_dict = {
+            'group_id': self.manager.group_id,
+            'manager_name': self.manager.__class__.__name__,
+            'start_date': self.manager.start_date,
+            'end_date': self.manager.end_date
+        }
+        GeneralIntermediate.relevant_scenario_keys = []
+        # self.intermediate = object.__new__(GeneralIntermediate) 
+        # scenario_dict={'scenario_key': 'scenario_value'},
+        # dependencies=[self.manager]
+        # self.intermediate._identification_dict = {
+        #     'intermediate_name': 'test_intermediate',
+        #     'kwargs': {'search_date': self.search_date}
+        # }
+        # self.intermediate.__init__(
+        #     scenario_dict=scenario_dict,
+        #     dependencies=dependencies,
+        #     search_date=self.search_date
+        # )
+    def test_cache_needs_to_expire(self):
+        intermediate1 = object.__new__(GeneralIntermediate)
+        scenario_dict={'scenario_key': 'scenario_value'},
+        dependencies=[self.manager]
+        date = datetime(2023, 8, 1)
+
+        intermediate1._identification_dict = {
+            'intermediate_name': 'test_intermediate',
+            'kwargs': {'search_date': self.search_date}
+        }
+        intermediate1.__init__(
+            scenario_dict=scenario_dict,
+            dependencies=dependencies,
+            search_date=self.search_date,
+        )
+        intermediate1.end_date = datetime(2023, 7, 28)
+        self.assertTrue(intermediate1.checkIfCacheNeedsToExpire(dependencies, date))
+
+    # def test_cache_does_not_need_to_expire(self):
+    #     intermediate2 = object.__new__(GeneralIntermediate)
+    #     date = datetime(2023, 8, 1)
+    #     scenario_dict={'scenario_key': 'scenario_value'},
+    #     dependencies=[self.manager]
+    #     intermediate2._identification_dict = {
+    #         'intermediate_name': 'test_intermediate',
+    #         'kwargs': {'search_date': self.search_date}
+    #     }
+    #     intermediate2.__init__(
+    #         scenario_dict=scenario_dict,
+    #         dependencies=dependencies,
+    #         search_date=self.search_date,
+    #     )
+    #     intermediate2.end_date = None
+
+    #     self.assertFalse(intermediate2.checkIfCacheNeedsToExpire(dependencies, date))
 
 
+    def test_custom_cache_logic(self):
+        intermediate3 = object.__new__(GeneralIntermediate)
+        scenario_dict={'scenario_key': 'scenario_value'},
+        dependencies=[self.manager]
+        date = datetime(2023, 8, 1)
+
+        intermediate3._identification_dict = {
+            'intermediate_name': 'test_intermediate',
+            'kwargs': {'search_date': self.search_date}
+        }
+        intermediate3.__init__(
+            scenario_dict=scenario_dict,
+            dependencies=dependencies,
+            search_date=self.search_date,
+        )
+        intermediate3.end_date = datetime(2023, 7, 28)
+
+        def custom_cache_logic(dependency, date):
+            return True
+
+        # Überschreiben des cache ablaufes mit custom_cache_logic
+        intermediate3.checkIfCacheNeedsToExpire = custom_cache_logic
+
+        self.assertTrue(intermediate3.checkIfCacheNeedsToExpire(dependencies, date))
 
 
-    # def test_update_cache_with_end_date_none(self):
-    #     #start_date = datetime(year=2023, month=8, day=22)
-    #     self.intermediate.updateCache()
-    #     id_string = CacheIntermediate.getIdString(self.intermediate._identification_dict)
-    #     cached_data = cache.get(id_string)
+## edit
+class TestExpireCache(TestCase):
+
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager.group_id = 1
+        self.manager.start_date = datetime(2023, 7, 27)
+        self.manager.end_date = datetime(2023, 7, 28)
+        self.search_date=datetime(2023, 8, 1)
+        self.manager._identification_dict = {
+            'group_id': self.manager.group_id,
+            'manager_name': self.manager.__class__.__name__,
+            'start_date': self.manager.start_date,
+            'end_date': self.manager.end_date
+        }
+        GeneralIntermediate.relevant_scenario_keys = []
+        self.intermediate = object.__new__(GeneralIntermediate) 
+        scenario_dict={'scenario_key': 'scenario_value'},
+        self.dependencies=[self.manager]
+        self.intermediate._identification_dict = {
+            'intermediate_name': 'test_intermediate',
+            'kwargs': {'search_date': self.search_date}
+        }
+        self.intermediate.__init__(
+            scenario_dict=scenario_dict,
+            dependencies=self.dependencies,
+            search_date=self.search_date
+        )
+        self.intermediate.end_date = datetime(2023, 8, 20)
+    
+    def test_cache_expiration(self):
+       
+        past_date = datetime(2023, 7, 20)
+        self.intermediate.expireCache(self.intermediate, past_date)
         
-    #     self.assertIsNotNone(cached_data)
-    #     self.assertEqual(cached_data, self.intermediate)
+        self.assertEqual(self.intermediate.end_date, past_date)
 
-    # def test_update_cache_with_end_date_set(self):
-    #     """
-    #     Test updating the cache when the end date is set.
-    #     """
-    #     identification_dict = {'test_key': 'test_value'}
-    #     start_date = datetime(2023, 7, 1)
-    #     end_date = datetime(2023, 7, 5)
-    #     intermediate = GeneralIntermediate(None, identification_dict, start_date, end_date)
+        id_string = CacheIntermediate.getIdString(self.intermediate._identification_dict)
+        cached_data = cache.get(id_string)
+        self.assertIsNone(cached_data)
+       
+    def test_cache_not_expiration(self):
+        future_date = datetime(2023, 8, 1)
+        self.intermediate.expireCache(self.intermediate, future_date)
+
+        self.assertEqual(self.intermediate.end_date, future_date)        
+        # self.assertEqual(self.intermediate.end_date, datetime(2023, 8, 20))
+        # self.assertIsNone(self.intermediate.end_date)
         
-    #     intermediate.updateCache()
+    
         
-    #     id_string = CacheIntermediate.getIdString(identification_dict)
-    #     cached_data = cache.get(id_string)
-        
-    #     self.assertIsNotNone(cached_data)
-    #     self.assertEqual(cached_data, intermediate)
 
 
 
 
+class TestUpdateDependency(TestCase):
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager.group_id = 1
+        self.manager.start_date = datetime(2023, 7, 27)
+        self.manager.end_date = datetime(2023, 7, 28)
+        self.search_date=datetime(2023, 8, 1)
+        self.manager._identification_dict = {
+            'group_id': self.manager.group_id,
+            'manager_name': self.manager.__class__.__name__,
+            'start_date': self.manager.start_date,
+            'end_date': self.manager.end_date
+        }
+        GeneralIntermediate.relevant_scenario_keys = []
+        self.intermediate = object.__new__(GeneralIntermediate) 
+        scenario_dict={'scenario_key': 'scenario_value'},
+        self.dependencies=[self.manager]
+        self.intermediate._identification_dict = {
+            'intermediate_name': 'test_intermediate',
+            'kwargs': {'search_date': self.search_date}
+        }
+        self.intermediate.__init__(
+            scenario_dict=scenario_dict,
+            dependencies=self.dependencies,
+            search_date=self.search_date
+        )
+        self.date = datetime(2023, 8, 1)
 
-    # def test_update_cache_custom_data(self):
-    #     """
-    #     Test updating the cache with custom data.
-    #     """
-    #     identification_dict = {'test_key': 'test_value'}
-    #     start_date = datetime(2023, 7, 1)
-    #     end_date = datetime(2023, 7, 5)
-    #     custom_data = {'custom_key': 'custom_value'}
-    #     intermediate = GeneralIntermediate(None, identification_dict, start_date, end_date)
-        
-    #     intermediate.updateCache(custom_data)
-        
-    #     id_string = CacheIntermediate.getIdString(identification_dict)
-    #     cached_data = cache.get(id_string)
-        
-    #     self.assertIsNotNone(cached_data)
-    #     self.assertEqual(cached_data, custom_data)
+    def test_update_general_intermediate(self):
+        dependency = self.intermediate
+        updated_dependency = self.intermediate._GeneralIntermediate__updateDependency(dependency, self.date)
+        self.assertIsInstance(updated_dependency, GeneralIntermediate)
+        self.assertEqual(updated_dependency.search_date, self.date) 
+##initial_kwargs ??
 
-
-
-
-
-# class TestCheckIfCacheNeedsToExpire(TestCase):
-
-
-# class TestExpireCache(TestCase):
