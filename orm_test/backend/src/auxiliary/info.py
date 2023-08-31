@@ -263,7 +263,64 @@ class GeneralInfo:
         result_list_dict = self.__getCacheData()
         if not result_list_dict:
             result_list_dict = self.__getNewResultDict()
-        return self.__reduceGetResultList(result_list_dict)
+        result_list_dict = self.__reduceGetResultList(result_list_dict)
+        result_list_dict = self.__search(result_list_dict)
+        return self.__paginate(result_list_dict)
+
+    def __search(self, result_list_dict: list[dict]) -> list[dict]:
+        search_string = self.request_info_dict['query_params'].get(
+            'search',
+            None
+        )
+        if search_string is None:
+            return result_list_dict
+        search_string = search_string.lower()
+        search_word_list = search_string.split(' ')
+
+        search_keys = self.request_info_dict['query_params'].get(
+            'search_keys',
+            result_list_dict[0].keys()
+        )
+
+        def searchFunction(dict_item: dict) -> bool:
+            search_text = ' '.join([
+                str(dict_item.get(key, ''))
+                for key in search_keys
+            ]).lower()
+            is_found = True
+            for word in search_word_list:
+                if word not in search_text:
+                    is_found = False
+                    break
+            return is_found
+
+        return list(filter(searchFunction, result_list_dict))
+
+    def __paginate(self, result_list_dict: list[dict]) -> list[dict]:
+        page = self.request_info_dict['query_params'].get(
+            'page',
+            1
+        )
+        page_size = self.request_info_dict['query_params'].get(
+            'page_size',
+            None
+        )
+        if page_size is None:
+            return {
+                "data": result_list_dict,
+                "page":{'current': 1, 'max': 1}
+            }
+        
+        start_index = (page - 1) * page_size
+        end_index = page * page_size
+        page_count = len(result_list_dict) // page_size
+        if len(result_list_dict) % page_size != 0:
+            page_count += 1
+
+        return ({
+            "data": result_list_dict[start_index:end_index], 
+            "page": {'current': page, 'max': page_count}
+        })
 
     def __handleGetDetail(self) -> dict:
         manager_obj = self.getDetail()
