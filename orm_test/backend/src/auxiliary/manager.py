@@ -81,12 +81,56 @@ class ExternalDataManager:
 
 class GeneralManager:
     """
-    GeneralManager is a base class for managing objects with a group model and a data model.
-    It provides caching capabilities and initialization logic for derived classes.
+        GeneralManager is a base class for managing objects with a group model,
+        a data model and optional multiple data extension models. It provides
+        methods for creating, updating, deleting and retrieving objects. All
+        objects are cached by default. The cache can be disabled by setting the
+        class attribute. Every database attribute is mapped to an attribute of
+        the manager object. Foreign keys are mapped to the corresponding manager
+        object. Many to many relations are mapped to a list of manager objects.
+        This happens with @property decorators so the attributes are not
+        actually stored in the object but are generated on the fly.
 
-    Attributes:
-        group_model (Model): The group model class associated with this manager.
-        data_model (Model): The data model class associated with this manager.
+        Attributes:
+            group_model (Model): The group model of the manager.
+            data_model (Model): The data model of the manager.
+            data_extension_model_list (list[Model]): A list of data extension models.
+            use_cache (bool): A boolean indicating whether to use the cache.
+        
+        Methods:
+            all (classmethod): Retrieve all objects of the manager's class.
+            filter (classmethod): Retrieve objects based on the given parameters.
+                You can filter for every database attribute in the group and
+                data model. You can currently not filter for data extension
+                data. Filter accepts the search_date parameter to filter for a
+                specific date. If you don't provide a search_date, the latest
+                data will be returned. You can filter with operators if you
+                provide the operator as a tuple with the value. The operator
+                has to be the first element of the tuple and the value the
+                second. The following operators are supported:
+                    - ">" is only supported for dates and numbers
+                    - "<" is only supported for dates and numbers
+                    - ">=" is only supported for dates and numbers
+                    - "<=" is only supported for dates and numbers
+                    - "=" is supported for all data types
+                    - "like" is supported for strings
+                You will receive a list matching the filter conditions.
+            create (classmethod): Create a new object.
+                You need to provide every database attribute that can't be null
+                or has a default value. If you want to create data extension
+                data, you have to provide the data extension data as a list of
+                dictionaries with the keys like the attribute names of the data.
+            update (object method): Update an existing object.
+                You can't update the group data of an object. Each database
+                attribute that is not provided in the kwargs will be set to
+                the latest value of the attribute including the data extension
+                data. If you want to update the data extension data, you have
+                to provide the data extension data as a list of dictionaries
+                with the keys like the attribute names of the data extension
+                model. 
+            deactivate (object method): Deactivate an existing object.
+                Create a new data object with the same group data and active set
+                to False. Every other attribute will be set to the latest value.
     """
 
     MANY_TO_ONE = 'ManyToOneRel'
@@ -350,7 +394,6 @@ class GeneralManager:
             ])
         else:
             setattr(self, f'{column.name}_id', model_obj.id)
-        
 
     def __assignAttribute(
             self, 

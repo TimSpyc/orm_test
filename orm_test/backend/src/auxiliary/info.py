@@ -115,41 +115,41 @@ class GeneralInfo:
     """
         Abstract class for handling requests, responses and define urls.
         Requests could handle the following query parameters:
-            - attributes: list of attributes to be returned
+            attributes: list of attributes to be returned
                 (default: all attributes)
-            - search: string to be searched in all attributes
+            search: string to be searched in all attributes
                 (default: None)
-            - search_keys: list of attributes to be searched
+            search_keys: list of attributes to be searched
                 (default: all attributes)
-            - sort_by: string to sort the results (e.g. "key:order")
-            - page: int to select the page (default: 1)
-            - page_size: int to select the page size (default: all results)
-            - filter: dict to filter on db level (e.g. {"key": "value"})
+            sort_by: string to sort the results (e.g. "key:order")
+            page: int to select the page (default: 1)
+            page_size: int to select the page size (default: all results)
+            filter: dict to filter on db level (e.g. {"key": "value"})
         
         Attributes:
-            - base_url: str => url to be used in urls.py (e.g. 'example')
-            - allowed_method_list: list => list of allowed methods
+            base_url: str => url to be used in urls.py (e.g. 'example')
+            allowed_method_list: list => list of allowed methods
                 (['GET_list', 'POST', 'GET_detail', 'PUT', 'DELETE'])
-            - required_permission_list: list => list of required permissions
+            required_permission_list: list => list of required permissions
                 (not implemented yet)
-            - detail_key_dict: dict => dict of key and key_type for detail url
+            detail_key_dict: dict => dict of key and key_type for detail url
                 (e.g. {'group_id': 'int'})
-            - manager (OPTIONAL): GeneralManager => manager to be used for
+            manager (OPTIONAL): GeneralManager => manager to be used for
                 requests if not set you need to define the following functions:
-                    - getList: function => function to get list of objects
+                    getList: function => function to get list of objects
                         (used for method 'GET_list')
-                    - getDetail: function => function to get detail of object
+                    getDetail: function => function to get detail of object
                         (used for method 'GET_detail')
-                    - create: function => function to create object
+                    create: function => function to create object
                         (used for method 'POST')
-                    - update: function => function to update object
+                    update: function => function to update object
                         (used for method 'PUT')
-                    - deactivate: function => function to deactivate object
+                    deactivate: function => function to deactivate object
                         (used for method 'DELETE')
-            - datasetPermissionFunction (OPTIONAL): function => function to
+            datasetPermissionFunction (OPTIONAL): function => function to
                 check if dataset is allowed to be sent. Needs to return True if
                 allowed, False if not. (e.g. lambda data_set_dict: True)
-            - serializerFunction (OPTIONAL): function => function to serialize
+            serializerFunction (OPTIONAL): function => function to serialize
                 data (e.g. lambda data_object : {'key': data_object.key})
 
         Simple Example:
