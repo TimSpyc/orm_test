@@ -66,7 +66,7 @@ class BillOfMaterialManager(GeneralManager):
         self,
         bom_type: str,
     ):
-        head_node = self.__getHeadNode()
+        head_node = self.__getHeadNodeList()
         key_tuple = self.__selectBomType(bom_type)
         bill_of_material_structure = self.__getBillOfMaterialStructure(
             head_node,
@@ -78,34 +78,50 @@ class BillOfMaterialManager(GeneralManager):
         self,
         bom_type: str,
         head_part_group_id: int | None = None
-    ) -> dict:
+    ) -> list[dict]:
         key_tuple = self.__selectBomType(bom_type)
-        head_node = self.__getHeadNode(head_part_group_id)
-        direct_child_node_list = self.__getChildNodeList(
-            head_node,
-            key_tuple,
-            must_be_direct_child=True
-        )
-        leaf_node_list = self.__getChildNodeList(
-            head_node,
-            key_tuple,
-            must_be_leaf=True
-        )
-        bill_of_material_structure = self.__getBillOfMaterialStructure(
-            head_node,
-            key_tuple
-        )
+        head_node_list = self.__getHeadNodeList(head_part_group_id, key_tuple)
+        bill_of_material_detail_dict_list = []
 
-        bill_of_material_detail_dict = {
-            'head_node': head_node,
-            'direct_child_node_list': direct_child_node_list,
-            'leaf_node_list': leaf_node_list,
-            'structure': bill_of_material_structure
-        }
+        for head_node in head_node_list:
+            direct_child_node_list = self.__getChildNodeList(
+                head_node,
+                key_tuple,
+                must_be_direct_child=True
+            )
+            leaf_node_list = self.__getChildNodeList(
+                head_node,
+                key_tuple,
+                must_be_leaf=True
+            )
+            bill_of_material_structure = self.__getBillOfMaterialStructure(
+                head_node,
+                key_tuple
+            )
+
+            bill_of_material_detail_dict_list.append({
+                'head_node': head_node,
+                'direct_child_node_list': direct_child_node_list,
+                'leaf_node_list': leaf_node_list,
+                'structure': bill_of_material_structure
+            })
         
-        return bill_of_material_detail_dict
+        return bill_of_material_detail_dict_list
 
     def __selectBomType(self, bom_type: str) -> tuple:
+        """
+        Selects the left and right values corresponding to a given bom type.
+
+        Args:
+            bom_type (str): The Bill of Material type 
+                -'pd' for product_development, 
+                -'ai' for process_development, 
+                -'lg' for logistics).
+
+        Returns:
+            tuple: A tuple containing the left and right value keys 
+                for the specified BOM type.
+        """
         bom_type_dict = {
             'pd': 'product_development',
             'ai': 'process_development',
@@ -120,22 +136,78 @@ class BillOfMaterialManager(GeneralManager):
         right_value = f"right_value_{bom_type_dict[bom_type]}"
 
         return left_value, right_value
+    
 
-    def __getHeadNode(self, head_part_group_id: int | None) -> dict:
+    def __getHeadNodeList(
+            self, 
+            head_part_group_id: int | None, 
+            key_tuple: tuple[str, str]
+            ) -> list[dict]:
+        """
+        Gets the head node dictionary for a given head part group ID.
+
+        Args:
+            head_part_group_id (int | None): 
+                The ID of the head part group or None.
+
+        Returns:
+            dict: The head node dictionary that matches the specified 
+                head part group ID, if None for head part group ID then
+                get the first head node dictionary.
+        """
         if head_part_group_id is None:
-            return filter(
-                lambda dict_data: (
-                    dict_data['left_value_product_development'] == 1
-                ),
-                self.bill_of_material_structure_dict_list
-            )
+            return self.__getNodeHeadNodeList(key_tuple)
         else:
-            return filter(
-                lambda dict_data: (
-                    dict_data['part_group'].id == head_part_group_id
-                ),
-                self.bill_of_material_structure_dict_list
-            )
+            existing_id = list(filter(
+                    lambda dict_data: (
+                        dict_data['part_group']['id'] == head_part_group_id
+                    ),
+                    self.bill_of_material_structure_dict_list
+                ))
+            if not existing_id:
+                raise ValueError(
+                    f"""
+                    The head_part_group_id {head_part_group_id} 
+                    does not exist.
+                    """
+                    )
+         
+        
+        return existing_id
+
+    def __getNodeHeadNodeList(self, key_tuple: tuple[str, str]) -> list[dict]:
+        """
+        Gets the head node dictionaries from a list of nodes.
+
+        Args:
+            node_list (list[dict]): List of dictionaries representing nodes.
+
+        Returns:
+            list[dict]: List of dictionaries that are head nodes.
+        """
+        left_value, right_value = key_tuple
+        head_nodes = []
+        open_ranges = []
+        for node in self.bill_of_material_structure_dict_list:
+
+            left = node.get(left_value)
+            right = node.get(right_value)
+
+            if left is not None and right is not None:
+                is_head = True
+                for range_data in open_ranges:
+                    if left > range_data[left_value] and right < range_data[right_value]:
+                        is_head = False
+                        break
+                if is_head:
+                    head_nodes.append(node)
+                open_ranges.append({left_value: left, right_value: right})
+
+        return head_nodes
+    
+
+
+
 
     def __getChildNodeList(
         self,
@@ -144,14 +216,34 @@ class BillOfMaterialManager(GeneralManager):
         must_be_leaf: bool = False, 
         must_be_direct_child: bool = False
     ) -> list:
+        """
+        Creates a list of child nodes for a given node in the Bill of Material.
+
+        Args:
+            head_node (dict): 
+                The parent node for which child nodes should be found.
+            key_tuple (tuple): 
+                A tuple of keys representing the 'left' and 'right' values
+                in the nodes.
+            must_be_leaf (bool, optional): If True, only leaf nodes are included
+                 in the result. Default is False.
+            must_be_direct_child (bool, optional): If True, only direct child nodes
+                 are included in the result. Default is False.
+
+        Returns:
+            list: A list of child nodes.
+        """
+        
         left_value, right_value = key_tuple
         node_list = []
+        found_direct_child = False
         for node in self.bill_of_material_structure_dict_list:
-            left_node_value = node[left_value] if not None else 0
-            right_node_value = node[right_value] if not None else 0
-            
-            head_node_left_value: head_node[left_value] if not None else 0
-            head_node_right_value: head_node[right_value] if not None else 0
+
+            left_node_value = node[left_value] if left_value in node else 0
+            right_node_value = node[right_value] if right_value in node else 0
+
+            head_node_left_value = head_node.get(left_value, 0)
+            head_node_right_value = head_node.get(right_value, 0)
 
             is_inside = self.__checkIfIsInside(
                 head_node_left_value,
@@ -166,17 +258,20 @@ class BillOfMaterialManager(GeneralManager):
                 left_node_value,
                 right_node_value
             )
-            is_direct_child = self.__checkIfIsDirectChildNode(
-                self.bill_of_material_structure_dict_list,
-                head_node_left_value,
-                head_node_right_value,
-                left_node_value,
-                right_node_value
-            )
             if (
                 (not must_be_leaf or is_leaf) and
-                (not must_be_direct_child or is_direct_child)
+                (not must_be_direct_child or not found_direct_child)
             ):
+                
+                is_direct_child = self.__checkIfIsDirectChildNode(
+                    self.bill_of_material_structure_dict_list,
+                    head_node_left_value,
+                    head_node_right_value,
+                    left_node_value,
+                    right_node_value
+                )
+                if is_direct_child:
+                    found_direct_child = True
                 node_list.append({
                     **node,
                     'left': node[left_value],
@@ -188,6 +283,8 @@ class BillOfMaterialManager(GeneralManager):
                 })
         return node_list
 
+
+
     @staticmethod
     def __checkIfIsInside(
         head_node_left_value: int,
@@ -195,6 +292,18 @@ class BillOfMaterialManager(GeneralManager):
         left_node_value: int,
         right_node_value: int
     ) -> bool:
+        """
+        Checks if a node is inside another node's left and right values.
+
+        Args:
+            head_node_left_value (int): The left value of the head node.
+            head_node_right_value (int): The right value of the head node.
+            left_node_value (int): The left value of the node to check.
+            right_node_value (int): The right value of the node to check.
+
+        Returns:
+            bool: True if the node is inside the head node, otherwise False.
+        """
         return (
                 left_node_value > head_node_left_value and
                 right_node_value < head_node_right_value
@@ -202,12 +311,26 @@ class BillOfMaterialManager(GeneralManager):
 
     @staticmethod
     def __checkIfIsDirectChildNode(
-        all_node_list,
+        all_node_list: list,
         head_node_left_value: int,
         head_node_right_value: int,
         left_node_value: int,
         right_node_value: int
-    ):
+    )-> bool:
+        """
+        Checks if a node is a direct child node of another node
+        in a list of nodes.
+
+        Args:
+            all_node_list (list): The list of nodes to check within.
+            head_node_left_value (int): The left value of the head node.
+            head_node_right_value (int): The right value of the head node.
+            left_node_value (int): The left value of the node to check.
+            right_node_value (int): The right value of the node to check.
+
+        Returns:
+            bool: True if the node is a direct child node, otherwise False.
+        """
         for node in all_node_list:
             is_greater_than_own_node = (
                 node['left'] < left_node_value and
@@ -222,7 +345,21 @@ class BillOfMaterialManager(GeneralManager):
         return True
 
     @staticmethod
-    def __checkIfIsLeafNode(left_node_value, right_node_value):
+    def __checkIfIsLeafNode(
+        left_node_value: int, 
+        right_node_value: int
+        ) -> bool:
+        """
+        Checks if a node is a leaf node by verifying if the 
+        left value is one less than the right value.
+
+        Args:
+            left_node_value: The left value of the node.
+            right_node_value: The right value of the node.
+
+        Returns:
+            bool: True if the node is a leaf node, otherwise False.
+        """
         return left_node_value +1 == right_node_value
 
     def __getBillOfMaterialStructure(
@@ -234,12 +371,12 @@ class BillOfMaterialManager(GeneralManager):
             head_node,
             key_tuple,
         )
-        relevant_node_list = self.__addHeadNodeToRelevantNodeList(
+        relevant_node_list = self.__addHeadNodeToRelevantNodeList( 
             head_node,
             key_tuple,
             relevant_node_list
         )
-        return self.formatNestedSetToBillOfMaterialPositionStructure(
+        return self.formatBillOfMaterialNestedSetToPositionStructure(
             relevant_node_list
         )
 
@@ -249,6 +386,18 @@ class BillOfMaterialManager(GeneralManager):
         key_tuple: tuple,
         relevant_node_list: list
     ) -> list:
+        """
+        Adds a head node to a list of relevant nodes with specific 
+        key tuple values.
+
+        Args:
+            head_node (dict): The head node dictionary to add.
+            key_tuple (tuple): A tuple containing left and right key names.
+            relevant_node_list (list): The list of relevant nodes.
+
+        Returns:
+            list: The updated list of relevant nodes with the head node added.
+        """
         left_value, right_value = key_tuple
         head_node_dict = {
             **head_node,
@@ -258,56 +407,357 @@ class BillOfMaterialManager(GeneralManager):
         }
         return [*relevant_node_list, head_node_dict]
 
+
+
+##Nested Set
+    @staticmethod
+    def _checkBillOfMaterialPositionStructure(
+        bill_of_material_dict: list[dict]
+        ) -> None:
+        """
+        Checks the validity of a bill of material represented 
+        in a position structure.
+
+        Args:
+            bill_of_material_dict (list[dict]): 
+                List of dictionaries in a position structure.
+
+        Raises:
+            ValueError: If the input is empty, not a list or dictionary,
+                or has missing key 'pos' and 'group_id' keys.
+        """
+        if bill_of_material_dict == []:
+            raise ValueError("bill_of_material_dict cannot be empty.")
+        
+        if not isinstance(bill_of_material_dict, list) \
+                and not isinstance(bill_of_material_dict, dict):
+            raise ValueError("Please provide a list of dictionaries.")
+
+        for item in bill_of_material_dict:
+            if 'pos' not in item or 'group_id' not in item:
+                raise ValueError(
+                    f"""
+                    "Invalid input format. Expected a list of dictionaries 
+                    with 'pos' and 'group_id'."
+                    """
+                    )
+
+    @staticmethod
+    def _sortPositionStructure(bill_of_material_dict: list[dict])-> list[dict]:
+        """
+        Sorts a list of dictionaries representing a bill of material 
+        in a position structure.
+
+        Args:
+            bill_of_material_dict (list[dict]): 
+                List of dictionaries in the position structure.
+
+        Returns:
+            list[dict]: Sorted list of dictionaries.
+        """
+        sorted_input = sorted(
+            bill_of_material_dict, 
+            key=lambda x: [int(i) for i in x['pos'].split('.')]
+            )
+        return sorted_input
+    
+    @staticmethod
+    def _headCheckOfBillOfMaterialPositionStructure(
+        bill_of_material_dict: list[dict]
+        )-> list[dict]:
+        """
+        A head check of a bill of material represented in a position structure.
+
+        Args:
+            bill_of_material_dict (list[dict]): 
+                List of dictionaries representing the position structure.
+        Raises:
+            ValueError: If the hierarchy is violated.
+
+        Returns:
+            list[dict]: Formatted list of dictionaries after head check.
+        """
+        bill_of_material_dict = BillOfMaterialManager._sortPositionStructure(
+            bill_of_material_dict
+            )
+        formatted_output = []
+        seen_positions = set()
+
+        for item in bill_of_material_dict:
+            pos = item['pos']
+            pos_parts = pos.split('.')
+
+            if len(pos_parts) > 1:    
+                parent_pos = '.'.join(pos_parts[:-1])     
+                if parent_pos not in seen_positions:   
+                    raise ValueError(
+                        f"""
+                        Invalid hierarchy at position: {pos}, 
+                        parent_pos is missing: {parent_pos}
+                        """
+                        )
+
+            seen_positions.add(str(pos)) 
+            formatted_output.append(item)
+
+        return formatted_output
+
     @staticmethod
     def formatBillOfMaterialPositionStructureToNestedSet(
-        bill_of_material_dict: list
-    ) -> list:
-        #TODO: Noch nicht bugfrei!
+        bill_of_material_list_dict: list[dict]
+    ) -> list[dict]:
+        """
+        Converts a bill of material from a position structure 
+        to a nested set structure.
+
+        Args:
+            bill_of_material_list_dict (list[dict]): 
+                List of dictionaries representing the position structure.
+
+        Returns:
+            list[dict]: List of dictionaries in the nested set structure.
+        """    
+        BillOfMaterialManager._checkBillOfMaterialPositionStructure(
+            bill_of_material_list_dict
+            )
+        sorted_and_validated_input = BillOfMaterialManager.\
+            _headCheckOfBillOfMaterialPositionStructure(
+            bill_of_material_list_dict
+            )
+        return BillOfMaterialManager._createNestedSet(
+            sorted_and_validated_input
+            )
+
+    @staticmethod
+    def _createNestedSet(
+        sorted_bill_of_material_list_dict: list[dict]
+        ) -> list:
+        """
+        Creates a nested set structure from a sorted list of 
+        dictionaries from a position structure.
+
+        Args:
+            sorted_bill_of_material_list_dict (list[dict]): 
+                Sorted list of dictionaries representing the bill of
+                material list in a position structure.
+
+        Returns:
+            list[dict]: 
+                List of dictionaries representing the nested set structure.
+        """
         output_data = []
         open_nodes = []
         group_index = {}
+        right_counter = 1
 
-        #sort data based on position values
-        sorted_input = sorted(bill_of_material_dict, key=lambda x: [int(i) for i in x['pos'].split('.')])
+        for node in sorted_bill_of_material_list_dict:
+            pos = node['pos']
 
-        for node in sorted_input:
-            left = len(output_data) * 2 + 1
-            # close open nodes if possible
-            while open_nodes and not node['pos'].startswith(open_nodes[-1]['pos'] + '.'):
-                output_data[group_index[open_nodes[-1]['group_id']]]['right'] = len(output_data) * 2
-                open_nodes.pop()
+            while open_nodes and not pos.startswith(
+                open_nodes[-1]['pos'] + '.'
+                ):
+                output_data[group_index[open_nodes[-1]['group_id']]]['right'] \
+                         = right_counter
+                
+                open_node = open_nodes.pop()
+                open_node['right'] = right_counter
+                right_counter += 1
 
-            # add the current node and mark it as open
-            output_data.append({'group_id': node['group_id'], 'left': left})
+            left = right_counter    
+            right_counter += 1
+ 
+            output_data.append({  
+                'group_id': node['group_id'],
+                'left': left,
+                'right': None
+            })
             group_index[node['group_id']] = len(output_data) - 1
-            open_nodes.append({'group_id': node['group_id'], 'pos': node['pos']})
 
-        # close all remaining open nodes
+            open_nodes.append({'group_id': node['group_id'], 'pos': pos})
+
         while open_nodes:
-            output_data[group_index[open_nodes[-1]['group_id']]]['right'] = len(output_data) * 2
-            open_nodes.pop()
+            output_data[group_index[open_nodes[-1]['group_id']]]['right'] \
+                    = right_counter
+            
+            open_node = open_nodes.pop()
+            open_node['right'] = right_counter
+            right_counter += 1
 
         return output_data
 
-    @staticmethod
-    def formatNestedSetToBillOfMaterialPositionStructure(
-        nested_set_dict: dict
-    ) -> list:
-        #TODO: Noch nicht bugfrei!
-        bom_structure_dict = []
-        open_intervals = []
+        
 
-        #sort the output data based on the left values
-        sorted_output = sorted(nested_set_dict, key=lambda x: x['left'])
+#Position Structure
+    @staticmethod
+    def _checkBillOfMaterialNestedSet(
+        bill_of_material_dict: list[dict]
+        )-> None:
+        """
+        Check of a bill of material represented in a nested set structure.
+
+        Args:
+            bill_of_material_dict (list[dict]): 
+                List of dictionaries representing the nested set structure.
+
+        Raises:
+            ValueError: If the input is empty, not a list or dictionary,
+                 or has missing keys 'group_id', 'left' and 'right'.
+        """
+        if bill_of_material_dict == []:
+            raise ValueError("bill_of_material_dict cannot be empty.")
+        
+        if not isinstance(bill_of_material_dict, list) \
+                and not isinstance(bill_of_material_dict, dict):
+            raise ValueError("Please provide a list of dictionaries.")
+
+        for item in bill_of_material_dict:
+            if not all(key in item for key in ['group_id', 'left', 'right']):
+                raise ValueError(
+                    f"""
+                    "Invalid input format. Expected a list of dictionaries 
+                     with 'group_id','left'and 'right'.")
+                     """
+                     )
+   
+    @staticmethod
+    def _checkValuesBillOfMaterialNestedSet(
+        bill_of_material_dict: list[dict]
+        ) -> list[dict]:
+        """
+        Checks the values within a bill of material nested set structure 
+        for validity.
+
+        Args:
+            bill_of_material_dict (list[dict]): 
+                List of dictionaries representing the nested set structure.
+
+        Raises:
+            ValueError: If left value is greater than or equal to right value, 
+                        if duplicate left or right values exist,
+                        or if the nested set structure is violated.
+        """
+        left_values = set()
+        right_values = set()
+        stack = []
+
+        for node in bill_of_material_dict:
+            left = node['left']
+            right = node['right']
+
+            if left >= right:
+                raise ValueError(
+                    "left value cannot be greater than or equal to right value"
+                    )
+           
+            if left in left_values or right in right_values:
+                raise ValueError("duplicate left or right value")
+
+            left_values.add(left)
+            right_values.add(right)
+
+            while stack and stack[-1]['right'] < right:
+                stack.pop()
+
+            if stack and left <= stack[-1]['left']:
+                raise ValueError("nested set structure violated")
+
+            stack.append(node)
+
+        if min(left_values) != 1 or max(right_values) \
+            != len(bill_of_material_dict) * 2:
+            raise ValueError("invalid root set")
+        
+        sorted_output = BillOfMaterialManager._sortNestedSet(
+            bill_of_material_dict
+            )
+        return sorted_output
+
+    @staticmethod
+    def _sortNestedSet(bill_of_material_dict: list[dict])-> list[dict]:
+        """
+        Sorts a list of dictionaries in a nested set structure.
+
+        Args:
+            bill_of_material_dict (list[dict]): 
+                List of dictionaries in a nested set structure.
+
+        Returns:
+            list[dict]: Sorted list of dictionaries.
+        """
+        sorted_output = sorted(bill_of_material_dict, key=lambda x: x['left'])
+        return sorted_output
+    
+    @staticmethod
+    def formatBillOfMaterialNestedSetToPositionStructure(
+            bill_of_material_list_dict: list[dict]
+        ) -> list[dict]:
+        """
+        Converts a nested set structure to a position structure.
+
+        Args:
+            bill_of_material_list_dict (list[dict]): 
+                List of dictionaries representing the nested set structure.
+
+        Returns:
+            list[dict]: 
+                List of dictionaries in the position structure.
+        """    
+        BillOfMaterialManager._checkBillOfMaterialNestedSet(
+            bill_of_material_list_dict
+            )
+        validated_input = BillOfMaterialManager.\
+            _checkValuesBillOfMaterialNestedSet(
+            bill_of_material_list_dict
+            )
+        return BillOfMaterialManager._createPositionStructure(
+            validated_input
+            )
+        
+    @staticmethod
+    def _createPositionStructure(nested_set_data: list) -> list:
+        """
+        Creates a position structure from a list represented 
+        in a nested set structure.
+
+        Args:
+            nested_set_data (list[dict]): 
+                List of dictionaries representing the nested set structure.
+
+        Returns:
+            list[dict]: List of dictionaries representing the 
+                hierarchical position structure.
+        """
+        bom_structure_dict = []
+        hierarchy = []
+        current_pos = {}
+        parent_pos = ""
+
+        sorted_output = BillOfMaterialManager._sortNestedSet(nested_set_data)
 
         for node in sorted_output:
-            #close open intervals if possible
-            while open_intervals and not (open_intervals[-1]['left'] < node['left'] < open_intervals[-1]['right']):
-                open_intervals.pop()
+            group_id = node['group_id']
+            left = node['left']
+            right = node['right']
 
-            #add the current node and mark the interval as open
-            pos = '.'.join([str(interval['pos']) for interval in open_intervals] + [str(node['left'])])
-            bom_structure_dict.append({'pos': pos, 'data': node})
-            open_intervals.append({'left': node['left'], 'right': node['right'], 'pos': node['left']})
+            while hierarchy and hierarchy[-1]['right'] < left:
+                hierarchy.pop()
+
+            if not hierarchy:
+                parent_pos = ""
+            else:
+                parent_pos = hierarchy[-1]['pos']
+
+            if parent_pos in current_pos:
+                current_pos[parent_pos] += 1
+            else:
+                current_pos[parent_pos] = 1
+
+            pos = parent_pos + '.' + str(current_pos[parent_pos]) \
+                    if parent_pos else str(current_pos[parent_pos])
+            
+            bom_structure_dict.append({'pos': pos, 'group_id': group_id})
+            hierarchy.append({'pos': pos, 'right': right})
 
         return bom_structure_dict
+       
+    
