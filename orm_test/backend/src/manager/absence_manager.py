@@ -15,11 +15,6 @@ class AbsenceGroup(GroupTable):
     @property
     def manager(self):
         return AbsenceManager
-    
-    class Meta:
-        unique_together = (
-            'absence_type', 'absence_start_date', 'absence_end_date', 'user'
-        )
 
     def __str__(self):
         return f'Absence Group with id {self.id}'
