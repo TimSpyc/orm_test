@@ -99,25 +99,22 @@ if mode == 'dev':
         }
     }
 if mode == 'prod':
-    db_user = os.environ.get('MARIADB_USER', 'root')
-    db_pw = os.environ.get('MARIADB_PASSWORD', 'root')
-    db_host = os.environ.get('MARIADB_HOST', 'localhost')
-
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': f'{app_name}',
-            'USER': db_user,
-            'PASSWORD': db_pw,
-            'HOST': db_host,
-            'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'database': 'test',
+                'user': 'root',
+                'password': 'root',
+                'host': 'database',
+            }
         }
     }
-    redis_host = os.environ.get('REDIS_HOST', 'localhost')
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': f'redis://{redis_host}:6379/{app_name}',
+            'LOCATION': f'redis://cache:6379/{app_name}',
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             }
