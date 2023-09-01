@@ -12,14 +12,11 @@ class WeightIntermediate(GeneralIntermediate):
         part_group_id: int,
         search_date: datetime | None = None,
         scenario_dict: dict = {},
-        use_cache: bool = True
     ):
         
-        self.use_cache = use_cache
         self.part_manager = PartManager(
             part_group_id=part_group_id,
             search_date=search_date,
-            use_cache=use_cache
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
         self.relevant_part_manager_list = []
@@ -173,7 +170,6 @@ class WeightIntermediate(GeneralIntermediate):
         for bom_data in bom_data_dict['structure']:
             part_manager = bom_data['part'].manager(
                 self.search_date,
-                use_cache=self.use_cache
             )
             if part_manager not in self.relevant_part_manager_list:
                 self.relevant_part_manager_list.append(part_manager)
@@ -191,7 +187,6 @@ class WeightIntermediate(GeneralIntermediate):
                 not dependency.weight == dependency.__init__(
                     dependency.group_id,
                     search_date=date,
-                    use_cache=self.use_cache
                 ).weight
             )
             material_changed = (
@@ -199,7 +194,6 @@ class WeightIntermediate(GeneralIntermediate):
                     dependency.__init__(
                         dependency.group_id,
                         search_date=date,
-                        use_cache=self.use_cache
                     ).material_manager.material_type
             )
             return weight_changed or material_changed
@@ -207,7 +201,6 @@ class WeightIntermediate(GeneralIntermediate):
             new_bom = dependency.__init__(
                 dependency.group_id,
                 search_date=date,
-                use_cache=self.use_cache
             )
             old_id = CacheIntermediate.getIdString(
                 dependency.bill_of_material_structure_dict_list
@@ -221,7 +214,6 @@ class WeightIntermediate(GeneralIntermediate):
             return not dependency.material_type == dependency.__init__(
                 dependency.group_id,
                 search_date=date,
-                use_cache=self.use_cache
             ).material_type
         else:
             return True

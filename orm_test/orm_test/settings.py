@@ -12,6 +12,20 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import sys
+import os
+
+mode = os.environ.get('MODE', 'dev')
+app_name = os.environ.get('APP_NAME', 'orm_test')
+
+if mode == 'prod':
+    DEBUG = False
+    USE_CACHE = True
+elif mode == 'dev':
+    DEBUG = True
+    USE_CACHE = False
+else:
+    raise ValueError('Invalid MODE environment variable value')
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,8 +37,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-(r4&-_#u_p8wfu4jpij-ukd7b8#0plvd_k_na&2pan36&c4p$s'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -79,14 +91,38 @@ if 'test' in sys.argv:
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if mode == 'dev':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+if mode == 'prod':
+    db_user = os.environ.get('MARIADB_USER', 'root')
+    db_pw = os.environ.get('MARIADB_PASSWORD', 'root')
+    db_host = os.environ.get('MARIADB_HOST', 'localhost')
 
-
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': f'{app_name}',
+            'USER': db_user,
+            'PASSWORD': db_pw,
+            'HOST': db_host,
+            'PORT': '3306',
+        }
+    }
+    redis_host = os.environ.get('REDIS_HOST', 'localhost')
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': f'redis://{redis_host}:6379/{app_name}',
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 

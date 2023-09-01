@@ -8,19 +8,20 @@ from django.test import TestCase
 
 class TestGetStartDate(TestCase):
     def setUp(self):
-
+        self.manager = GeneralManager.__new__(GeneralManager)
         self.manager.group_id = 1
         self.search_date = datetime(2023, 7, 28)
         self.scenario_dict = {'scenario_key': 'scenario_value'}
         self.dependencies = [self.manager]   
 
+        GeneralIntermediate.relevant_scenario_keys = [('volume', 'project')]
+        GeneralIntermediate.use_cache = False
+        self.intermediate = GeneralIntermediate.__new__(GeneralIntermediate)
+        self.intermediate.search_date = self.search_date
+        self.intermediate.scenario_dict = self.scenario_dict
+        self.intermediate.dependencies = self.dependencies
 
-        self.intermediate = GeneralIntermediate(
-            search_date=self.search_date,
-            scenario_dict=self.scenario_dict,
-            dependencies=self.dependencies,
-        )
-        self.intermediate.relevant_scenario_keys = [('volume', 'project')]
+        # self.intermediate.relevant_scenario_keys = [('volume', 'project')]
 
 
     def test_get_start_date(self):

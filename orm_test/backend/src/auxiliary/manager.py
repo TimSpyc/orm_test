@@ -12,6 +12,7 @@ from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
+from django.conf import settings
 
 
 def transferToSnakeCase(name):
@@ -53,8 +54,8 @@ class ExternalDataManager:
 
     def __init__(self, search_date):
         self.search_date = search_date
-        self.start_date = self.__getStartDate()
-        self.end_date = self.__getEndDate()
+        self._start_date = self.__getStartDate()
+        self._end_date = self.__getEndDate()
         self._identification_dict = {
             'database_model': self.database_model,
         }
@@ -80,12 +81,56 @@ class ExternalDataManager:
 
 class GeneralManager:
     """
-    GeneralManager is a base class for managing objects with a group model and a data model.
-    It provides caching capabilities and initialization logic for derived classes.
+        GeneralManager is a base class for managing objects with a group model,
+        a data model and optional multiple data extension models. It provides
+        methods for creating, updating, deleting and retrieving objects. All
+        objects are cached by default. The cache can be disabled by setting the
+        class attribute. Every database attribute is mapped to an attribute of
+        the manager object. Foreign keys are mapped to the corresponding manager
+        object. Many to many relations are mapped to a list of manager objects.
+        This happens with @property decorators so the attributes are not
+        actually stored in the object but are generated on the fly.
 
-    Attributes:
-        group_model (Model): The group model class associated with this manager.
-        data_model (Model): The data model class associated with this manager.
+        Attributes:
+            group_model (Model): The group model of the manager.
+            data_model (Model): The data model of the manager.
+            data_extension_model_list (list[Model]): A list of data extension models.
+            use_cache (bool): A boolean indicating whether to use the cache.
+        
+        Methods:
+            all (classmethod): Retrieve all objects of the manager's class.
+            filter (classmethod): Retrieve objects based on the given parameters.
+                You can filter for every database attribute in the group and
+                data model. You can currently not filter for data extension
+                data. Filter accepts the search_date parameter to filter for a
+                specific date. If you don't provide a search_date, the latest
+                data will be returned. You can filter with operators if you
+                provide the operator as a tuple with the value. The operator
+                has to be the first element of the tuple and the value the
+                second. The following operators are supported:
+                    - ">" is only supported for dates and numbers
+                    - "<" is only supported for dates and numbers
+                    - ">=" is only supported for dates and numbers
+                    - "<=" is only supported for dates and numbers
+                    - "=" is supported for all data types
+                    - "like" is supported for strings
+                You will receive a list matching the filter conditions.
+            create (classmethod): Create a new object.
+                You need to provide every database attribute that can't be null
+                or has a default value. If you want to create data extension
+                data, you have to provide the data extension data as a list of
+                dictionaries with the keys like the attribute names of the data.
+            update (object method): Update an existing object.
+                You can't update the group data of an object. Each database
+                attribute that is not provided in the kwargs will be set to
+                the latest value of the attribute including the data extension
+                data. If you want to update the data extension data, you have
+                to provide the data extension data as a list of dictionaries
+                with the keys like the attribute names of the data extension
+                model. 
+            deactivate (object method): Deactivate an existing object.
+                Create a new data object with the same group data and active set
+                to False. Every other attribute will be set to the latest value.
     """
 
     MANY_TO_ONE = 'ManyToOneRel'
@@ -99,8 +144,9 @@ class GeneralManager:
     group_model: Model
     data_model: Model
     data_extension_model_list: list[Model]
+    use_cache: bool = True
 
-    def __new__(cls,group_id=None, search_date=None, use_cache=True, **kwargs):
+    def __new__(cls,group_id=None, search_date=None, **kwargs):
         """
         Create a new instance of the Manager or 
         return a cached instance if available.
@@ -110,13 +156,12 @@ class GeneralManager:
                 Defaults to None for caching only.
             search_date (datetime, optional): The date for which to 
                 search the data object. Defaults to None (latest data).
-            use_cache (bool, optional): Whether to use the cache when 
-                searching for instances. Defaults to True.
 
         Returns:
             manager: A new or cached instance of the manager.
         """
-
+        cls.use_cache = settings.USE_CACHE and cls.use_cache
+        
         if hasattr(cls, 'group_model'):
             group_table_id_name = f'''
                 {transferToSnakeCase(cls.group_model.__name__)}_id
@@ -127,14 +172,14 @@ class GeneralManager:
         if group_id is None:
             return super().__new__(cls)
 
-        if use_cache:
+        if cls.use_cache:
             cached_instance = cls.__handleCache(group_id, search_date)
             if cached_instance:
                 return cached_instance
 
         instance = super().__new__(cls)
         instance.__init__(group_id, search_date)
-        if use_cache:
+        if cls.use_cache:
             cls.updateCache(instance)
 
         return instance
@@ -143,7 +188,6 @@ class GeneralManager:
         self,
         group_id: int,
         search_date: datetime|None = None,
-        use_cache: bool = True
     ):
         """
         Initialize the manager with the given group_id and date.
@@ -154,7 +198,6 @@ class GeneralManager:
             search_date (datetime, optional): The date for which to search
                 the data object. Defaults to None (latest data).
         """
-        self.use_cache = use_cache
         self.search_date = search_date
         self.group_id = group_id
 
@@ -173,14 +216,14 @@ class GeneralManager:
         ]
         self.__setAllAttributesFromModel(group_obj, ignore_list)
         self.__setAllAttributesFromModel(data_obj, ignore_list)
-
-        self.start_date = data_obj.date
-        self.end_date = self.__getEndDate()
+        self.date = data_obj.date
+        self._start_date = data_obj.date
+        self._end_date = self.__getEndDate()
         self._identification_dict = {
             'group_id': self.group_id,
             'manager_name': self.__class__.__name__,
-            'start_date': self.start_date,
-            'end_date': self.end_date
+            'start_date': self._start_date,
+            'end_date': self._end_date
         }
 
     def __repr__(self):
@@ -199,6 +242,8 @@ class GeneralManager:
                 if key[0] == '_':
                     continue
                 attribute_name = f'{prefix}__{key}'
+                if key == 'id':
+                    attribute_name = f'{prefix}_{key}'
                 yield attribute_name, value
 
         def list_creator(list_obj):
@@ -213,9 +258,9 @@ class GeneralManager:
                             if value == self.__group_obj or value == self.__data_obj:
                                 continue
                             if value.table_type == 'GroupTable':
-                                output_key = f'{key}_group__id'
+                                output_key = f'{key}_group_id'
                             elif value.table_type == 'DataTable':
-                                output_key = f'{key}__id'
+                                output_key = f'{key}_id'
                             output_value = value.id
                             output_dict[output_key] = output_value
                         else:
@@ -244,7 +289,7 @@ class GeneralManager:
         return (
             isinstance(other, self.__class__) and
             self.group_id == other.group_id and
-            self.start_date == other.start_date
+            self._start_date == other._start_date
         )
 
     def __setAllAttributesFromModel(
@@ -277,6 +322,10 @@ class GeneralManager:
                     model_obj)
 
             else:
+                self.__createDirectAttribute(
+                    ref_table_type, 
+                    ref_type, column,
+                    model_obj)
                 self.__createManagerProperty(
                     column, model_obj, ref_table_type, ref_type
                 )
@@ -303,6 +352,8 @@ class GeneralManager:
         """
         methods = {
             self.REFERENCE_TABLE: self.__assignAttribute,
+            self.GROUP_TABLE: self.__assignIdAttribute,
+            self.DATA_TABLE: self.__assignIdAttribute,
             self.DATA_EXTENSION_TABLE: self.__assignExtensionDataDictAttribute,
             None: self.__assignAttribute
         }
@@ -310,6 +361,39 @@ class GeneralManager:
             methods[ref_table_type](column, model_obj, ref_type)
         except KeyError:
             raise ValueError('this is not implemented yet')
+
+    def __assignIdAttribute(
+            self, 
+            column: Field, 
+            model_obj: object, 
+            ref_type = None
+            ) -> None: 
+        """
+        Assign the attribute from the model object to the current object.
+
+        Args:
+            column: The column of the attribute in the model object.
+            model_obj: The model object to get the attribute from.
+            ref_type: The type of the reference. Not necessary here
+                only to use the same method signature as in the extension
+                data dict attribute.
+
+        Returns:
+            None
+        """
+        if ref_type == self.MANY_TO_ONE:
+            return
+        elif ref_type == self.MANY_TO_MANY:
+            data_source, column_name = self.__getDataSourceAndColumnBaseName(
+                column,
+                ref_type
+                )
+            setattr(self, f'{column_name}_id_list', [
+                model_object.id
+                for model_object in getattr(model_obj, data_source).all()
+            ])
+        else:
+            setattr(self, f'{column.name}_id', model_obj.id)
 
     def __assignAttribute(
             self, 
@@ -438,9 +522,7 @@ class GeneralManager:
         attribute_name = column_name.replace('group', 'manager_list')
 
         method = lambda self: [
-            group_data.getManager(self.search_date, self.use_cache)
-            #(group_data, self.search_date, self.use_cache, group_data.manager)
-
+            group_data.getManager(self.search_date)
             for group_data in getattr(model_obj, data_source).all()
         ]
       
@@ -474,7 +556,7 @@ class GeneralManager:
             manager_list = []
             for data_data in getattr(model_obj, data_source).all(): 
                 group_data = data_data.group_object
-                manager = group_data.getManager(self.search_date, self.use_cache)
+                manager = group_data.getManager(self.search_date)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
             return manager_list
@@ -501,7 +583,7 @@ class GeneralManager:
         attribute_name = f'{column.name}'.replace('group', 'manager')
         def method(self):
             group_data = getattr(model_obj, column.name)
-            return group_data.getManager(self.search_date, self.use_cache)
+            return group_data.getManager(self.search_date)
         return (method, attribute_name)
 
     def __getManagerFromDataModel(
@@ -527,7 +609,7 @@ class GeneralManager:
 
             data_data = getattr(model_obj, column.name)
             group_data = data_data.group_object
-            manager = group_data.getManager(self.search_date, self.use_cache)
+            manager = group_data.getManager(self.search_date)
             if manager.id == data_data.id:
                 return manager
         return (method, attribute_name)
@@ -642,7 +724,7 @@ class GeneralManager:
         return group_model_name
 
     @classmethod
-    def all(cls, search_date=None, use_cache=True) -> list:
+    def all(cls, search_date=None) -> list:
         """
         Retrieves all objects of the manager's class, 
         optionally filtering by search_date.
@@ -656,10 +738,10 @@ class GeneralManager:
             list: A list of manager objects, 
                 filtered by the optional search_date if provided.
         """
-        return cls.filter(search_date=search_date, use_cache=use_cache)
+        return cls.filter(search_date=search_date)
 
     @classmethod
-    def filter(cls, search_date=None, use_cache=True, **kwargs: any) -> list:
+    def filter(cls, search_date=None, **kwargs: any) -> list:
         """Creates a list of objects based on the given parameters.
         It's NOT possible to search for DataExtensionTable Data.
 
@@ -699,7 +781,6 @@ class GeneralManager:
             )
         return cls.__createManagerObjectsFromDictList(
             found_group_id_date_combination_dict_list,
-            use_cache=use_cache
             )
 
     @classmethod
@@ -981,7 +1062,6 @@ class GeneralManager:
     def __createManagerObjectsFromDictList(
         cls, 
         creation_dict_list: list,
-        use_cache
     ) -> list:
         """
         Creates a list of manager objects from a list of dictionaries.
@@ -996,7 +1076,7 @@ class GeneralManager:
                 A list of manager objects created 
                 from the provided dictionary data.
         """
-        return [cls(**data, use_cache=use_cache) for data in creation_dict_list]
+        return [cls(**data) for data in creation_dict_list]
 
     def __errorIfNotUpdatable(self) -> None:
         """
@@ -2100,7 +2180,7 @@ class GeneralManager:
         CacheManager.setCacheData(
             self.__class__.__name__, 
             self.group_id, self, 
-            self.start_date
+            self._start_date
         )
 
     @classmethod
@@ -2141,7 +2221,7 @@ class GeneralManager:
             data_obj = self.data_model.objects.filter(
                 **{
                     self.__group_model_name: self.__group_obj,
-                    'date__gt': self.start_date
+                    'date__gt': self._start_date
                 }
             ).earliest('date') #latest()
             return data_obj.date

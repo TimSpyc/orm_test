@@ -68,8 +68,8 @@ class StockExchangeData(ExternalDataTable):
     def __str__(self):
         return f"StockExchangeData from {self.stock_exchange_date}"
     
-    def manager(self, search_date, use_cache):
-        return StockExchangeDataManager(self.id, search_date, use_cache)
+    def manager(self, search_date):
+        return StockExchangeDataManager(self.id, search_date)
     
 
 class StockExchangeDataManager(ExternalDataManager):

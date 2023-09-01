@@ -53,12 +53,10 @@ class BillOfMaterialManager(GeneralManager):
         self,
         group_id,
         search_date=None,
-        use_cache=True
     ):
         super().__init__(
             group_id=group_id,
             search_date=search_date,
-            use_cache=use_cache
         )
 
         self.product_development_bom = self.getBillOfMaterialStructure('pd')

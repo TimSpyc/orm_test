@@ -31,14 +31,6 @@ class newAbcManager(GeneralManager):
     data_model = newAbc
     data_extension_model_list: list = []
 
-    def __init__(self, new_abc_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_abc_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )    
-
-
 
 
 
@@ -72,13 +64,6 @@ class newKundenManager(GeneralManager):
     data_model = newKunden
     data_extension_model_list: list = []
 
-    def __init__(self, new_kunden_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_kunden_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-
 
     
 
@@ -111,13 +96,6 @@ class newProjectManager(GeneralManager):
     group_model = newProjectGroup
     data_model = newProject
     data_extension_model_list: list = []
-
-    def __init__(self, new_project_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_project_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
 
 
 class newProjectUserGroup(TestGroupTable):
@@ -157,13 +135,6 @@ class newXyzManager(GeneralManager):
     data_model = newXyz
     data_extension_model_list: list = []
 
-    def __init__(self, new_project_user_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-    
 class newProjectUser(TestDataTable):
     new_kunden = models.ForeignKey(newKunden, on_delete=models.DO_NOTHING, null=True)
     new_project_user_group = models.ForeignKey(newProjectUserGroup, on_delete=models.DO_NOTHING)
@@ -182,13 +153,6 @@ class newProjectUserManager(GeneralManager):
     data_model = newProjectUser
     data_extension_model_list: list = []
 
-    def __init__(self, new_project_user_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-        
 
 
 

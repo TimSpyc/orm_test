@@ -35,15 +35,3 @@ class AutomatedScriptManager(GeneralManager):
     group_model = log__AutomatedScriptGroup
     data_model = log__AutomatedScript
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-        super().__init__(
-            group_id=group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )

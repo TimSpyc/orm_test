@@ -33,7 +33,7 @@ def createUrlsForReferenceModel(reference_model):
             'base_url': f'reference/{reference_model.__name__}',
             'required_permission_list': [],
             'detail_key_dict': {'id': 'int'},
-            'getList': lambda self: reference_model.objects.all().values(),
+            'getList': getListFunction(reference_model),
             'getDetail': getDetailFunction(reference_model),
         }
     )
@@ -41,10 +41,20 @@ def createUrlsForReferenceModel(reference_model):
 
 def getDetailFunction(reference_model):
     def getDetail(self):
-        query = reference_model.objects.filter(id=self.identifier['id'])
+        query = reference_model.objects.filter(
+            id=self.identifier['id'],
+        )
         result = query.values()
         if result:
             return result[0]
         else:
             return {}
     return getDetail
+
+def getListFunction(reference_model):
+    def getList(self):
+        filter_params = self.request_info_dict["query_params"].get('filter', {})
+        query = reference_model.objects.filter(**filter_params)
+        return query.values()
+    
+    return getList
