@@ -22,6 +22,7 @@ class Patent(DataTable):
     remark = models.TextField(null=True)
     abstract = models.TextField(null=True)
     priority_date = models.DateTimeField(null=True)
+    patent_tag = models.ManyToManyField('PatentTag', blank=True)
 
     @property
     def group_object(self):
