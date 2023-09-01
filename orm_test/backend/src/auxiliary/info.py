@@ -117,10 +117,10 @@ class GeneralInfo:
         Requests could handle the following query parameters:
             attributes: list of attributes to be returned
                 (default: all attributes)
-            search: string to be searched in all attributes
+            search: string to be searched in search key attributes
                 (default: None)
-            search_keys: list of attributes to be searched
-                (default: all attributes)
+            search_keys: list of keys to be searched
+                (default: all keys)
             sort_by: string to sort the results (e.g. "key:order")
             page: int to select the page (default: 1)
             page_size: int to select the page size (default: all results)
