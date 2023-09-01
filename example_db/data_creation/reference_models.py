@@ -1185,6 +1185,21 @@ def createSapAbbreviationDictionary():
         )
         sap_abbreviation_dictionary.save()
 
+def createPatentTags():
+    patent_tag_dict_list = [
+        {'id': 1, 'name': 'crash can', 'alternative_name1': 'crash box', 'alternative_name2': 'absorber'},
+        {'id': 2, 'name': 'cross member'},
+        {'id': 3, 'name': 'adapter'},
+        {'id': 4, 'name': 'crash management system', 'alternative_name1': 'cms'},
+        {'id': 5, 'name': 'method'},
+    ]
+
+    for patent_tag_dict in patent_tag_dict_list:
+        patent_tag = PatentTag(
+            **patent_tag_dict
+        )
+        patent_tag.save()
+
 def fillReferenceTables():
     createCurrencies()
     createNormTypes()
@@ -1213,3 +1228,4 @@ def fillReferenceTables():
     createProjectType()
     createTechnology()
     createSapAbbreviationDictionary()
+    createPatentTags()
