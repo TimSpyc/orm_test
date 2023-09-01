@@ -260,7 +260,7 @@ class AbsenceType(ReferenceTable):
 
     def __str__(self):
         return self.name
-    
+
 class PatentTag(ReferenceTable):
     """
     A Django model representing a patent tag, which includes a name.
@@ -268,6 +268,15 @@ class PatentTag(ReferenceTable):
     name = models.CharField(max_length=150, unique=True)
     alternative_name1 = models.CharField(max_length=150, unique=True, null=True)
     alternative_name2 = models.CharField(max_length=150, unique=True, null=True)
+
+
+
+class TimeCorrectionType(ReferenceTable):
+    """
+    A Django model representing a time correction type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
 
     def __str__(self):
         return self.name

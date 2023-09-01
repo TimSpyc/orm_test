@@ -7,12 +7,6 @@ class AbsenceGroup(GroupTable):
     """
     A Django model representing a absence group.
     """
-    absence_type = models.ForeignKey(
-        'AbsenceType', 
-        on_delete=models.DO_NOTHING, 
-    )
-    absence_start_date = models.DateTimeField()
-    absence_end_date = models.DateTimeField()
     user = models.ForeignKey(
         'User', 
         on_delete=models.DO_NOTHING, 
@@ -35,6 +29,12 @@ class Absence(DataTable):
     A Django model representing a absence.
     """
     absence_group = models.ForeignKey(AbsenceGroup, on_delete=models.DO_NOTHING)
+    absence_type = models.ForeignKey(
+        'AbsenceType', 
+        on_delete=models.DO_NOTHING, 
+    )
+    absence_start_date = models.DateTimeField()
+    absence_end_date = models.DateTimeField()
     description = models.TextField(null=True)
     is_accepted = models.BooleanField(null=True)
 

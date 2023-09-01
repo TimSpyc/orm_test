@@ -16,9 +16,9 @@ RUN apt-get -y install python3.11 \
 COPY ./site-config.conf /etc/apache2/sites-available/000-default.conf
 COPY ./site-config.conf /etc/apache2/sites-enabled/000-default.conf
 
-RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html
-
+RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html/orm_test
 WORKDIR /var/www/html/orm_test
+RUN mkdir logs
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=orm_test.settings
