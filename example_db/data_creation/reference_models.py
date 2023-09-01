@@ -1185,6 +1185,63 @@ def createSapAbbreviationDictionary():
         )
         sap_abbreviation_dictionary.save()
 
+def createAbsenceType():
+    absence_type_list = [
+        'home office',
+        '1/2 home office',
+        'paid vacation',
+        '1/2 paid vacation',
+        'free shift',
+        'reduction of season account',
+        'tariff supplement release (t-zug)',
+        'additional vacation',
+        'take flextime leave (glz)',
+        'unpaid vacation',
+        'unexplained absence unpaid',
+        'golden wedding parents',
+        'release on anniversary day',
+        'own wedding',
+        'wedding kids',
+        'birth of child',
+        'death spouse',
+        'death kid',
+        'death parent',
+        'death of in-laws',
+        'death siblings',
+        'change of residence',
+    ]
+
+    for absence_type in absence_type_list:
+        absence_type = AbsenceType(
+            name = absence_type
+        )
+        absence_type.save()
+
+def createPermissionType():
+    permission_type_list = [
+        'view',
+        'edit',
+    ]
+
+    for permission_type in permission_type_list:
+        permission_type = PermissionType(
+            name = permission_type
+        )
+        permission_type.save()
+
+def createTimeCorrectionType():
+    time_correction_type_list = [
+        'working time correction',
+        'away on business',
+        'sick without a certificate',
+    ]
+
+    for time_correction_type in time_correction_type_list:
+        time_correction_type = TimeCorrectionType(
+            name = time_correction_type
+        )
+        time_correction_type.save()
+
 def fillReferenceTables():
     createCurrencies()
     createNormTypes()
@@ -1213,3 +1270,6 @@ def fillReferenceTables():
     createProjectType()
     createTechnology()
     createSapAbbreviationDictionary()
+    createAbsenceType()
+    createTimeCorrectionType()
+    createPermissionType()
