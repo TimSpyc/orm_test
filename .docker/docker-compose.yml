@@ -6,8 +6,8 @@ services:
     volumes:
       - db_volume:/var/lib/mysql
     environment:
-      - MARIADB_USER=root
-      - MARIADB_PASSWORD=root
+      - MARIADB_USER=orm_test
+      - MARIADB_PASSWORD=orm_test
       - MARIADB_ROOT_PASSWORD=root123
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]

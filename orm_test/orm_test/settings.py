@@ -104,8 +104,8 @@ if mode == 'prod':
             'ENGINE': 'django.db.backends.mysql',
             'OPTIONS': {
                 'charset': 'utf8mb4',
-                'user': 'root',
-                'password': 'root',
+                'user': 'orm_test',
+                'password': 'orm_test',
                 'host': 'database',
             }
         }
