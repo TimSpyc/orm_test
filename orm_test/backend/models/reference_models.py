@@ -260,3 +260,13 @@ class AbsenceType(ReferenceTable):
 
     def __str__(self):
         return self.name
+
+
+class TimeCorrectionType(ReferenceTable):
+    """
+    A Django model representing a time correction type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name
