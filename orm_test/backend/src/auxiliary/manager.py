@@ -998,7 +998,8 @@ class GeneralManager:
                         {group_model_name}_id, max(date)
                     FROM
                         {data_table_name}
-                    {search_date is not None and f"WHERE date <= '{search_date}'"}
+                    {f"WHERE date <= '{search_date}'"
+                    if search_date is not None else ""}
                     GROUP BY
                         {group_model_name}_id
                 )

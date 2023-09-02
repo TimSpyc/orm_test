@@ -26,11 +26,12 @@ ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=orm_test.settings
 ENV PATH "/usr/local/bin:$PATH"
 ENV PYTHONPATH "${PYTHONPATH}:/var/www/html/orm_test/orm_test"
+ENV PYTHONPATH "${PYTHONPATH}:/var/www/html/orm_test/"
 ENV MODE "prod"
 
 COPY ./site-config.conf /etc/apache2/sites-available/000-default.conf
 COPY ./site-config.conf /etc/apache2/sites-enabled/000-default.conf
-ARG CACHEBUSTER=1
+ARG CACHEBUSTER=2
 RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html/orm_test 
 
 WORKDIR /var/www/html/orm_test

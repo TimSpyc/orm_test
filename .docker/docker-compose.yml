@@ -11,8 +11,8 @@ services:
       - MARIADB_PASSWORD=ormtestsecretkey
       - MARIADB_ROOT_PASSWORD=root123
     healthcheck:
-      # test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      test: ["CMD", "healthcheck.sh", "--connect", "--user", "orm_test", "--password", "orm_test_secret_key", "--host", "localhost"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      # test: ["CMD", "healthcheck.sh", "--connect", "--user", "orm_test", "--password", "orm_test_secret_key", "--host", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
