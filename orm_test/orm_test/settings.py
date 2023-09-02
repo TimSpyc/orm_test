@@ -38,7 +38,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-(r4&-_#u_p8wfu4jpij-ukd7b8#0plvd_k_na&2pan36&c4p$s'
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['http']
 
 
 # Application definition
@@ -103,9 +103,10 @@ if mode == 'prod':
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'OPTIONS': {
+                'database': 'orm_test',
                 'charset': 'utf8mb4',
                 'user': 'orm_test',
-                'password': 'orm_test',
+                'password': 'orm_test_secret_key',
                 'host': 'database',
             }
         }

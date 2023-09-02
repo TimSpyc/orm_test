@@ -1,13 +1,10 @@
 if __name__ == '__main__':
-#    import os
-#    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
-
     import django
     django.setup()
 
 from backend.src.auxiliary.db import truncate_all_tables
 import random
-from example_db.data_creation import *
+from data_creation import *
 from auxiliary import loadingBarForPopulateScripts
 from backend.src.auxiliary.string_modification import knowledgeHubLogoPrint
 

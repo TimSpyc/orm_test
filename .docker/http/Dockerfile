@@ -37,8 +37,7 @@ ENV MODE "prod"
 RUN chmod -R 777 /var/www/html/orm_test
 RUN chown :www-data /var/www/html/orm_test
 
-# RUN python3 orm_test/manage.py makemigrations
-# RUN python3 orm_test/manage.py migrate
+RUN python3 orm_test/manage.py migrate
 
 COPY ./site-config.conf /etc/apache2/sites-available/000-default.conf
 COPY ./site-config.conf /etc/apache2/sites-enabled/000-default.conf
