@@ -106,7 +106,7 @@ if mode == 'prod':
                 'database': 'orm_test',
                 'charset': 'utf8mb4',
                 'user': 'orm_test',
-                'password': 'orm_test_secret_key',
+                'password': 'ormtestsecretkey',
                 'host': 'database',
             }
         }
