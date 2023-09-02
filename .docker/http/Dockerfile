@@ -21,12 +21,6 @@ COPY ./requirements.txt /var/www/html/requirements.txt
 WORKDIR /var/www/html/
 
 RUN pip install --no-cache-dir -r requirements.txt
-# COPY . /var/www/html/orm_test/
-RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html/orm_test 
-
-WORKDIR /var/www/html/orm_test
-RUN mkdir logs
-RUN pip install --no-cache-dir -r requirements.txt
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=orm_test.settings
@@ -34,11 +28,17 @@ ENV PATH "/usr/local/bin:$PATH"
 ENV PYTHONPATH "${PYTHONPATH}:/var/www/html/orm_test/orm_test"
 ENV MODE "prod"
 
-RUN chmod -R 777 /var/www/html/orm_test
-RUN chown :www-data /var/www/html/orm_test
-
 COPY ./site-config.conf /etc/apache2/sites-available/000-default.conf
 COPY ./site-config.conf /etc/apache2/sites-enabled/000-default.conf
+ARG CACHEBUSTER=1
+RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html/orm_test 
+
+WORKDIR /var/www/html/orm_test
+RUN mkdir logs
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN chmod -R 777 /var/www/html/orm_test
+RUN chown :www-data /var/www/html/orm_test
 EXPOSE 80
 
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
