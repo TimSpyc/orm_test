@@ -174,8 +174,9 @@ class GeneralInfo:
     use_cache = True
 
     def __new__(cls, *args, **kwargs):
-        cls.use_cache = settings.USE_CACHE and cls.use_cache
-        return super().__new__(cls)
+        instance = super().__new__(cls)
+        instance.use_cache = settings.USE_CACHE and instance.use_cache
+        return instance
 
     def __init__(
         self,
@@ -205,6 +206,7 @@ class GeneralInfo:
             'base_url': self.base_url
         })
         self.identifier = identifier
+        self._dependencies = []
 
     @catchErrorsAndAdjustResponse
     def respond(self) -> list | dict | int:

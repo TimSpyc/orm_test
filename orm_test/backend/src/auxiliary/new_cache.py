@@ -5,6 +5,8 @@ import json, pickle
 from datetime import datetime
 from backend.src.auxiliary import GeneralIntermediate, GeneralManager, GeneralInfo
 from django.core.cache import cache
+import inspect
+
 
 class DatabaseCache(models.Model):
 
@@ -115,12 +117,13 @@ class CacheObserver:
         self.dependent_objects = {}
 
     def add(self, obj: object) -> None:
-        if obj.id_string not in self.dependent_objects:
-            self.dependent_objects[obj.id_string].append(obj)
+        id_string, _ = getIdString(obj._identification_dict)
+        if id_string not in self.dependent_objects:
+            self.dependent_objects[id_string].append(obj)
 
     def invalidate(self) -> None:
         for obj in self.dependent_objects.values():
-            id_string = getIdString(obj._identification_dict)
+            id_string, _ = getIdString(obj._identification_dict)
             RAMCache.invalidateCache(id_string)
             DatabaseCache.updateCacheEndDate(id_string, obj)
         self.destroy()
@@ -170,9 +173,10 @@ class CacheHandler:
         identification_dict: dict,
         search_date: datetime | None = None
     ):
-        id_string = getIdString(identification_dict)
+        id_string, set_cache = getIdString(identification_dict)
         data = None
-
+        if not set_cache:
+            return data
         if search_date is None:
             data = RAMCache.getCacheData(id_string)
         if data is None:
@@ -187,9 +191,10 @@ class CacheHandler:
         object: GeneralIntermediate | GeneralManager | GeneralInfo
     ) -> None:
         self = cls()
-        id_string = getIdString(object._identification_dict)
-        RAMCache.invalidateCache(id_string)
-        DatabaseCache.updateCacheEndDate(id_string, object)
+        id_string, set_cache = getIdString(object._identification_dict)
+        if set_cache:
+            RAMCache.invalidateCache(id_string)
+            DatabaseCache.updateCacheEndDate(id_string, object)
         if id_string in self.cache_observer_dict:
             self.cache_observer_dict[id_string].invalidate()
 
@@ -207,7 +212,7 @@ class CacheHandler:
         dependency_obj: GeneralIntermediate | GeneralManager,
         dependent_obj: GeneralIntermediate | GeneralInfo
     ) -> None:
-        id_string = getIdString(dependency_obj._identification_dict)
+        id_string, _ = getIdString(dependency_obj._identification_dict)
         if id_string not in self.cache_observer_dict:
             self.cache_observer_dict[id_string] = CacheObserver(id_string)
         self.cache_observer_dict[id_string].add(dependent_obj)
@@ -216,9 +221,10 @@ class CacheHandler:
         self,
         data: GeneralIntermediate | GeneralManager | GeneralInfo
     ) -> None:
-        id_string = getIdString(data._identification_dict)
-        DatabaseCache.setCacheData(id_string, data)
-        RAMCache.setCacheData(id_string, data)
+        id_string, set_cache = getIdString(data._identification_dict)
+        if set_cache:
+            DatabaseCache.setCacheData(id_string, data)
+            RAMCache.setCacheData(id_string, data)
 
 
 def updateCache(func):
@@ -264,13 +270,40 @@ def createCache(func):
         is_GeneralInfo = isinstance(result, GeneralInfo)
         if is_GeneralManager:
             CacheHandler.addGeneralManagerObjectToCache(result)
+            CacheHandler.invalidateCache(cls)
         elif is_GeneralIntermediate or is_GeneralInfo:
             CacheHandler.addDependentObjectToCache(result._dependencies, result)
         return result
     return wrapper
 
 
-def getIdString(identification_dict: dict) -> str:
+def getIdString(
+        general_object: GeneralInfo | GeneralIntermediate | GeneralManager
+    ) -> str:
+    """
+    Convert an identification_dict into a JSON string, with keys sorted. This
+    wil create a unique string for each identification_dict, which can be used
+    as a key in a cache.
+    """
+    is_managed_object = isinstance(
+        general_object,
+        (GeneralManager, GeneralIntermediate, GeneralInfo)
+    )
+    is_managed_class = (
+        GeneralManager in general_object.__bases__ or
+        GeneralIntermediate in general_object.__bases__ or
+        GeneralInfo in general_object.__bases__
+    )
+        
+    if is_managed_object:
+        return getIdStringFromDict(general_object._identification_dict), is_managed_object
+    elif is_managed_class: # is not an instance but the class itself
+        return general_object.__name__, is_managed_object
+
+
+def getIdStringFromDict(
+    identification_dict: dict
+) -> str:
     """
     Convert an identification_dict into a JSON string, with keys sorted. This
     wil create a unique string for each identification_dict, which can be used
@@ -285,3 +318,29 @@ class DateTimeEncoder(json.JSONEncoder):
         if isinstance(o, datetime):
             return o.isoformat()
         return super().default(o)
+
+
+def addDependencyToFunctionCaller(
+    dependency: GeneralIntermediate | GeneralInfo
+) -> None:
+    """
+    Identifies the caller of the function that called this function. If the
+    caller is a method, returns the instance of the class that called the
+    method.
+    """
+    frame = inspect.currentframe()
+    try:
+        frame = frame.f_back.f_back
+        instance = recursiveSearchForIntermediateOrInfo(frame)
+        if instance is not None:
+            instance._dependencies.append(dependency)
+    finally:
+        del frame # important to avoid memory leak!
+    
+def recursiveSearchForIntermediateOrInfo(frame):
+    if 'self' in frame.f_locals:
+        instance = frame.f_locals['self']
+        if isinstance(instance, (GeneralIntermediate, GeneralInfo)):
+            return instance
+        return recursiveSearchForIntermediateOrInfo(frame.f_back)
+    return None
