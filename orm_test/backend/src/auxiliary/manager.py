@@ -1516,6 +1516,7 @@ class GeneralManager:
         Returns:
             None
         """
+        data_data_dict = cls.__resolveForeignKeys(data_data_dict)
 
         new_data_model_obj = cls.__writeDataData(
             latest_data_data,
@@ -1529,6 +1530,26 @@ class GeneralManager:
             data_extension_data_dict,
             new_data_model_obj
         )
+
+    @staticmethod 
+    def __resolveForeignKeys(data_data_dict: dict) -> dict:
+        """
+        Given a dictionary of model data, this function checks each value to see
+        if it is a Django model instance. If a value is a model instance, it
+        replaces the value with the ID of the instance and add "_id" to the key.
+
+        Args:
+            data_data_dict (dict): A dictionary of model data.
+
+        Returns:
+            dict: A new dictionary with foreign key references replaced by their
+            IDs.
+        """
+        return {
+            (f"{key}_id" if isinstance(value, models.Model) else key):
+            (value.id if isinstance(value, models.Model) else value)
+            for key, value in data_data_dict.items()
+        }
 
     def __getLatestDataData(self):
         """
