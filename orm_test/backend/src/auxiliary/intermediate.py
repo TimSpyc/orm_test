@@ -137,6 +137,7 @@ class GeneralIntermediate:
         CacheHandler.add(self)
         self.updateCache()
 
+
     def __eq__(self, other: object) -> bool:
         """
         Overload the __eq__ method to allow for comparing instances based
@@ -175,6 +176,8 @@ class GeneralIntermediate:
             dependency._start_date for dependency in self.dependencies
             if dependency._start_date is not None
         ]
+        if not start_date_list:
+            raise ValueError('no valid start date found')
         return min(start_date_list)
         
     def __getEndDate(self) -> datetime | None:
@@ -227,8 +230,8 @@ class GeneralIntermediate:
             )
         for dependency in self.dependencies:
             if (
-                not isinstance(dependency, GeneralIntermediate) or 
-                not isinstance(dependency, GeneralManager) or
+                not isinstance(dependency, GeneralIntermediate) and 
+                not isinstance(dependency, GeneralManager) and
                 not isinstance(dependency, ExternalDataManager)
             ):
                 raise TypeError(
@@ -303,11 +306,12 @@ class GeneralIntermediate:
             cache.set(id_string, self)
         CacheIntermediate.setCacheData(
             intermediate_name=self.__class__.__name__,
-            _identification_dict=self._identification_dict,
+            identification_dict=self._identification_dict,
             data=self,
             start_date=self.start_date,
             end_date=self.end_date
         )
+        
 
     def checkIfCacheNeedsToExpire(
         self,
@@ -349,7 +353,7 @@ class GeneralIntermediate:
             self.end_date = date
             CacheIntermediate.setCacheData(
                 intermediate_name=self.__class__.__name__,
-                _identification_dict=self._identification_dict,
+                identification_dict=self._identification_dict,
                 data=self,
                 start_date=self.start_date,
                 end_date=self.end_date

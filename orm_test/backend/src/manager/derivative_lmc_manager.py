@@ -64,15 +64,6 @@ class DerivativeLmcManager(GeneralManager):
     data_model = DerivativeLmc
     data_extension_model_list = []
 
-    def __init__(
-        self,
-        derivative_lmc_group_id:int,
-        search_date: datetime | None = None,
-    ):
-        super().__init__(
-            group_id=derivative_lmc_group_id,
-            search_date=search_date,
-        )
 
 class DerivativeLmcVolume(ExternalDataTable):
     derivative_lmc_group = models.ForeignKey(DerivativeLmcGroup, on_delete=models.DO_NOTHING)
@@ -110,10 +101,19 @@ class DerivativeLmcVolumeManager(ExternalDataManager):
         return self.getVolumeForLmcRev(max_lmc_revision.revision_date)
     
     def getVolumeForLmcRev(self, lmc_revision: date) -> list[dict]:
+        """
+        Retrieves volume data for a given lmc revision date.
+
+        Args:
+            lmc_revision (date): The LMC revision date.
+
+        Returns:
+            List[Dict]: A list of dictionaries containing volume and date.
+        """
         lmc_revision = RevisionLMC.objects.get(revision_date=lmc_revision)
 
         return self.getData(
-            filters={
+            **{
                 'derivative_lmc_group_id': self.derivative_lmc_group_id,
                 'date__lte': self.search_date,
                 'lmc_revision': lmc_revision,
