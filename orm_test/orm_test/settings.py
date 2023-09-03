@@ -38,7 +38,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-(r4&-_#u_p8wfu4jpij-ukd7b8#0plvd_k_na&2pan36&c4p$s'
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['http']
 
 
 # Application definition
@@ -99,25 +99,22 @@ if mode == 'dev':
         }
     }
 if mode == 'prod':
-    db_user = os.environ.get('MARIADB_USER', 'root')
-    db_pw = os.environ.get('MARIADB_PASSWORD', 'root')
-    db_host = os.environ.get('MARIADB_HOST', 'localhost')
-
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': f'{app_name}',
-            'USER': db_user,
-            'PASSWORD': db_pw,
-            'HOST': db_host,
-            'PORT': '3306',
+            'OPTIONS': {
+                'database': 'orm_test',
+                'charset': 'utf8mb4',
+                'user': 'orm_test',
+                'password': 'ormtestsecretkey',
+                'host': 'database',
+            }
         }
     }
-    redis_host = os.environ.get('REDIS_HOST', 'localhost')
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': f'redis://{redis_host}:6379/{app_name}',
+            'LOCATION': f'redis://cache:6379/{app_name}',
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             }

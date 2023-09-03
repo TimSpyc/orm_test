@@ -6,7 +6,10 @@ class BackendConfig(AppConfig):
     name = 'backend'
 
     def ready(self):
-        if settings.USE_CACHE:
-            print('using cache')
-            from backend.src.auxiliary.db import clear_cache
-            clear_cache()
+        try:
+            if settings.USE_CACHE:
+                print('using cache')
+                from backend.src.auxiliary.db import clear_cache
+                clear_cache()
+        except:
+            print('cache currently not available')

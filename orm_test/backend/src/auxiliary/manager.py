@@ -131,6 +131,15 @@ class GeneralManager:
             deactivate (object method): Deactivate an existing object.
                 Create a new data object with the same group data and active set
                 to False. Every other attribute will be set to the latest value.
+        
+        Simple Example:
+            class ExampleManager(GeneralManager):
+                group_model = GroupModel
+                data_model = DataModel
+                data_extension_model_list = [
+                    DataExtensionModel1,
+                    DataExtensionModel2
+                ]
     """
 
     MANY_TO_ONE = 'ManyToOneRel'
@@ -989,7 +998,8 @@ class GeneralManager:
                         {group_model_name}_id, max(date)
                     FROM
                         {data_table_name}
-                    {search_date is not None and f"WHERE date <= '{search_date}'"}
+                    {f"WHERE date <= '{search_date}'"
+                    if search_date is not None else ""}
                     GROUP BY
                         {group_model_name}_id
                 )
