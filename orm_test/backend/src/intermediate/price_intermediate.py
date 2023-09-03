@@ -10,7 +10,6 @@ class PriceIntermediate(GeneralIntermediate):
         part_sold_group_id: int,
         search_date: datetime | None = None,
         scenario_dict: dict = {},
-        use_cache: bool = True
     ):
 
         self.part_sold_group_id = part_sold_group_id
@@ -19,7 +18,6 @@ class PriceIntermediate(GeneralIntermediate):
         self.part_sold_manager = PartSoldManager(
             part_sold_group_id,
             search_date,
-            use_cache
         )
 
         self.customer_manager = self.part_sold_manager.customer_manager
@@ -27,12 +25,10 @@ class PriceIntermediate(GeneralIntermediate):
             self.customer_manager.customer_group_id,
             search_date,
             scenario_dict,
-            use_cache
         )
 
         self.stock_exchange_data_manager = MaterialPriceIntermediate(
             search_date,
-            use_cache
         )
 
         dependencies = [

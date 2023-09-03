@@ -13,8 +13,9 @@ class PartSoldGroup(GroupTable):
     class Meta:
         unique_together = ('part_recipient', 'customer_part_number_sap')
 
-    def manager(self, search_date, use_cache):
-        return PartSoldManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartSoldManager
 
     def __str__(self):
         return f"PartSoldGroup {self.id}"
@@ -34,7 +35,7 @@ class PartSold(DataTable):
     cbd_date = models.DateTimeField()
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_sold_group
 
 
@@ -45,6 +46,10 @@ class PartSoldPriceComponent(DataExtensionTable):
     part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
+
+    @property
+    def data_object(self):
+        return self.part_sold
 
 
 class PartSoldMaterialPriceComponent(DataExtensionTable):
@@ -58,6 +63,10 @@ class PartSoldMaterialPriceComponent(DataExtensionTable):
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
 
+    @property
+    def data_object(self):
+        return self.part_sold
+
 
 class PartSoldMaterialWeight(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
@@ -68,12 +77,20 @@ class PartSoldMaterialWeight(DataExtensionTable):
     class Meta:
         unique_together = ('part_sold_material_type', 'part_sold')
 
+    @property
+    def data_object(self):
+        return self.part_sold
+
 
 class PartSoldSaving(DataExtensionTable):
     part_sold = models.ForeignKey(PartSold, on_delete= models.DO_NOTHING)
     saving_date = models.DateTimeField()
     saving_rate = models.FloatField()
     saving_unit = models.ForeignKey('SavingUnit', on_delete= models.DO_NOTHING)
+
+    @property
+    def data_object(self):
+        return self.part_sold
 
 
 class PartSoldManager(GeneralManager):
@@ -88,14 +105,3 @@ class PartSoldManager(GeneralManager):
         PartSoldMaterialWeight,
         PartSoldSaving
     ]
-
-    def __init__(self, project_group_id, search_date=None, use_cache=True):
-        """
-        Initialize a ProjectManager instance.
-
-        Args:
-            project_group_id (int): The ID of the ProjectGroup instance.
-            search_date (datetime.datetime, optional): The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
-        """
-        super().__init__(group_id=project_group_id, search_date=search_date, use_cache=use_cache)

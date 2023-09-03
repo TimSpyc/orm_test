@@ -9,8 +9,9 @@ class CrossSectionGroup(GroupTable):
     class meta:
         unique_together = ('drawing_no', 'drawing_rev')
 
-    def manager(self, search_date, use_cache):
-        return CrossSectionManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return CrossSectionManager
     
 class CrossSection(DataTable):
     cross_section_group = models.ForeignKey('CrossSectionGroup', on_delete= models.DO_NOTHING)
@@ -54,7 +55,7 @@ class CrossSection(DataTable):
     evaluation_info_dict = models.JSONField(null=True, default=None)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.cross_section_group
 
     def __str__(self):
@@ -64,6 +65,3 @@ class CrossSectionManager(GeneralManager):
     group_model = CrossSectionGroup
     data_model = CrossSection
     data_extension_model_list = []
-
-    def __init__(self, sap_number_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=sap_number_group_id, search_date=search_date, use_cache=use_cache)

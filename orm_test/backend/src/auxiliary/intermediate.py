@@ -7,6 +7,7 @@ from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, creat
 from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
 from django.core.cache import cache
 import copy
+from django.conf import settings
 
 
 class GeneralIntermediate:
@@ -18,7 +19,7 @@ class GeneralIntermediate:
     methods for comparing instances and verifying their dependencies.
     """
     relevant_scenario_keys: list
-
+    use_cache: bool = True
     
     def __new__(cls, *args: list, **kwargs: dict) -> object:
         """
@@ -32,6 +33,9 @@ class GeneralIntermediate:
             object: An instance of the class, either retrieved from cache or
             newly created.
         """
+        cls.use_cache = settings.USE_CACHE and cls.use_cache
+
+
         if kwargs == {} and args == []:
             return super().__new__(cls)
 
@@ -39,7 +43,6 @@ class GeneralIntermediate:
         initial_kwargs = copy.deepcopy(kwargs)
 
         search_date = kwargs.pop('search_date', None)
-        use_cache = kwargs.pop('use_cache', True)
         scenario_dict = kwargs.pop('scenario_dict', {})
 
         rel_scenario, _ = cls.__cleanScenarioDict(scenario_dict)
@@ -50,7 +53,7 @@ class GeneralIntermediate:
             'intermediate_name': intermediate_name,
             'kwargs': kwargs
         }
-        if use_cache:
+        if cls.use_cache:
             cached_instance = cls.__handleCache(
                 intermediate_name,
                 identification_dict,
@@ -60,7 +63,11 @@ class GeneralIntermediate:
                 return cached_instance
 
         instance = super().__new__(cls)
-        instance.__init__({**kwargs, 'search_date': search_date})
+        instance.__init__(**{
+            **kwargs,
+            'search_date': search_date,
+            'scenario_dict': scenario_dict
+        })
         instance._identification_dict = identification_dict
         instance._initial_kwargs = initial_kwargs
 
@@ -166,8 +173,8 @@ class GeneralIntermediate:
             datetime: The earliest start date.
         """
         start_date_list = [
-            dependency.start_date for dependency in self.dependencies
-            if dependency.start_date is not None
+            dependency._start_date for dependency in self.dependencies
+            if dependency._start_date is not None
         ]
         if not start_date_list:
             raise ValueError('no valid start date found')

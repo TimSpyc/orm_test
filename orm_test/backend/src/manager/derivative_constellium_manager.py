@@ -10,8 +10,9 @@ class DerivativeConstelliumGroup(GroupTable):
     """
     project_group = models.ForeignKey('ProjectGroup', on_delete=models.DO_NOTHING)
 
-    def manager(self, search_date, use_cache):
-        return DerivativeConstelliumManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return DerivativeConstelliumManager
 
     def __str__(self):
         return f"{self.id}"
@@ -43,7 +44,7 @@ class DerivativeConstellium(DataTable):
         return self.name
     
     @property
-    def group(self):
+    def group_object(self):
         return self.derivative_constellium_group
 
 
@@ -63,6 +64,10 @@ class DerivativeConstelliumDerivativeLmcConnection(DataExtensionTable):
     )
     take_rate = models.FloatField()
 
+    @property
+    def data_object(self):
+        return self.DerivativeConstellium
+
     def __str__(self):
         return f"{self.derivative_constellium} - {self.derivative_lmc}"
 
@@ -72,15 +77,3 @@ class DerivativeConstelliumManager(GeneralManager):
     group_model = DerivativeConstelliumGroup
     data_model = DerivativeConstellium
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        derivative_constellium_group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-        super().__init__(
-            group_id=derivative_constellium_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )

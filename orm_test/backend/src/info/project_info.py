@@ -1,11 +1,9 @@
-# Responsible Maximilian Kelm
-from backend.src.auxiliary.info_handler import addPrefixToDict
+from backend.src.auxiliary.info import GeneralInfo
 from backend.src.manager import ProjectManager
 
-def serializeProject(
-    project_manager_obj: ProjectManager
-) -> dict:
 
-    return {
-        **dict(project_manager_obj), 
-    }
+class ProjectInfo(GeneralInfo):
+    base_url = 'project'
+    allowed_method_list = ['GET_detail', 'GET_list', 'POST', 'PUT', 'DELETE']
+    required_permission_list = []
+    manager = ProjectManager

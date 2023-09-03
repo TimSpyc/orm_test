@@ -9,8 +9,9 @@ class PartSoldContractGroup(GroupTable):
     contract_number = models.CharField(max_length=255)
     contract_date = models.DateTimeField()
 
-    def manager(self, search_date, use_cache):
-        return PartSoldContractManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartSoldContractManager
 
     def __str__(self):
         return f"PartSoldContractGroup {self.id}"
@@ -20,7 +21,7 @@ class PartSoldContract(DataTable):
     description = models.TextField()
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_sold_contract_group
     
     def __str__(self):
@@ -31,6 +32,3 @@ class PartSoldContractManager(GeneralManager):
     group_model = PartSoldContractGroup
     data_model = PartSoldContract
     data_extension_models = []
-    
-    def __init__(self, part_sold_contract_group_id, search_date=None, use_cache=True):
-        super().__init__(part_sold_contract_group_id, search_date, use_cache)

@@ -9,8 +9,9 @@ class CustomerPlantGroup(GroupTable):
     def __str__(self):
         return f"{self.customer_group}|{self.plant_name} ({self.id})"
 
-    def manager(self, search_date, use_cache):
-        return CustomerPlantManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return CustomerPlantManager
 
 class CustomerPlant(DataTable):
     city = models.CharField(max_length=255)
@@ -23,7 +24,7 @@ class CustomerPlant(DataTable):
     customer_plant_group = models.ForeignKey(CustomerPlantGroup, on_delete=models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.customer_plant_group
 
 
@@ -31,6 +32,3 @@ class CustomerPlantManager(GeneralManager):
     group_model = CustomerPlantGroup
     data_model = CustomerPlant
     data_extension_model_list = []
-
-    def __init__(self, customer_plant_group_id, search_date=None, use_cache=True):
-        super().__init__(customer_plant_group_id, search_date, use_cache)

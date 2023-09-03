@@ -9,8 +9,9 @@ class MaterialAlloyTreatmentGroup(GroupTable):
     class meta:
         unique_together = ('temperature', 'duration')
 
-    def manager(self, search_date, use_cache):
-        return MaterialAlloyTreatmentManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return MaterialAlloyTreatmentManager
     
     def __str__(self):
         return f"MaterialAlloyTreatmentGroup {self.id}"
@@ -20,7 +21,7 @@ class MaterialAlloyTreatment(DataTable):
     remark = models.TextField(default=None, null=True)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.material_alloy_treatment_group
     
     def __str__(self):
@@ -30,6 +31,3 @@ class MaterialAlloyTreatmentManager(GeneralManager):
     group_model = MaterialAlloyTreatmentGroup
     data_model = MaterialAlloyTreatment
     data_extension_model_list = []
-
-    def __init__(self, material_alloy_treatment_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=material_alloy_treatment_group_id, search_date=search_date, use_cache=use_cache)

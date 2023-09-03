@@ -9,6 +9,10 @@ class PartSoldCustomerPriceGroup(GroupTable):
     """
     part_sold_group = models.ForeignKey('PartSoldGroup', on_delete= models.DO_NOTHING)
     price_date = models.DateTimeField()
+
+    @property
+    def manager(self):
+        return PartSoldCustomerPriceManager
     
     class Meta:
         unique_together = ('part_sold_group', 'price_date')
@@ -24,11 +28,12 @@ class PartSoldCustomerPriceComponent(DataExtensionTable):
     part_sold_price_component_type = models.ForeignKey('PartSoldPriceComponentType', on_delete= models.DO_NOTHING)
     value = models.FloatField()
 
+    @property
+    def data_object(self):
+        return self.PartSoldCustomerPrice
+
 
 class PartSoldCustomerPriceManager(GeneralManager):
     group_model = PartSoldCustomerPriceGroup
     data_model = PartSoldCustomerPrice
     data_extension_models = [PartSoldCustomerPriceComponent]
-    
-    def __init__(self, part_sold_customer_price_group_id, search_date=None, use_cache=True):
-        super().__init__(part_sold_customer_price_group_id, search_date, use_cache)

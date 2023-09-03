@@ -241,6 +241,7 @@ class TestCleanScenarioDict(TestCase):
             search_date=self.search_date
         )
 
+
     def test_clean_scenario_dict(self):
         scenario_dict = {
             'key1': {'key2': 'value1'},

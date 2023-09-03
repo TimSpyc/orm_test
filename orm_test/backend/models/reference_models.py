@@ -154,3 +154,129 @@ class ProjectStaffCostTask(ReferenceTable):
 
     def __str__(self):
         return self.name
+
+
+class log_AutomatedExecutionInterval(ReferenceTable):
+    name = models.CharField(max_length=255)
+    interval_seconds = models.IntegerField()
+    description = models.TextField()
+
+    def __str__(self):
+        return f"{self.interval_name}"
+
+
+class ChangeRequestCostCategory(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class ChangeRequestRiskCategory(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class ChangeRequestRiskImpact(ReferenceTable):
+    name = models.CharField(max_length=255, unique=True)
+    factor = models.PositiveSmallIntegerField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class ChangeRequestRiskProbability(ReferenceTable):
+    name = models.CharField(max_length=255, unique=True)
+    factor = models.PositiveSmallIntegerField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class FileExtension(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class FileType(ReferenceTable):
+    name = models.CharField(max_length=255)
+    file_extension = models.ManyToManyField(FileExtension)
+
+    def __str__(self):
+        return self.name
+
+
+class PartReleaseStatus(ReferenceTable):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    release_hierarchy = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+    
+class ProjectStatus(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+class ProjectType(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+class Technology(ReferenceTable):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+class SapAbbreviationDictionary(ReferenceTable):
+    sap_abbreviation = models.CharField(max_length=255)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.sap_abbreviation
+    
+class PermissionType(ReferenceTable):
+    """
+    A Django model representing a permission type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class AbsenceType(ReferenceTable):
+    """
+    A Django model representing a absence type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class PatentTag(ReferenceTable):
+    """
+    A Django model representing a patent tag, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+    alternative_name1 = models.CharField(max_length=150, unique=True, null=True)
+    alternative_name2 = models.CharField(max_length=150, unique=True, null=True)
+
+
+
+class TimeCorrectionType(ReferenceTable):
+    """
+    A Django model representing a time correction type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+
+
+    def __str__(self):
+        return self.name

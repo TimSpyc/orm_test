@@ -10,8 +10,9 @@ class PartSoldPriceUploadGroup(GroupTable):
     class _Meta:
         unique_together = ('part_sold_group', 'valid_from')
 
-    def manager(self, search_date, use_cache):
-        return PartSoldPriceUploadManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartSoldPriceUploadManager
 
     def __str__(self):
         return f"PartSoldPriceUploadGroup {self.id}"
@@ -25,7 +26,7 @@ class PartSoldPriceUpload(DataTable):
     source = models.CharField(max_length=255)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_sold_price_upload_group
 
     def __str__(self):
@@ -36,9 +37,6 @@ class PartSoldPriceUploadManager(GeneralManager):
     group_model = PartSoldPriceUploadGroup
     data_model = PartSoldPriceUpload
     data_extension_models = []
-    
-    def __init__(self, part_sold_price_upload_group_id, search_date=None, use_cache=True):
-        super().__init__(part_sold_price_upload_group_id, search_date, use_cache)
 
     def uploadPriceToSap(self):
         pass

@@ -12,14 +12,15 @@ class CustomerGroup(GroupTable):
     class meta:
         unique_together = ('company_name', 'group_name')
 
-    def manager(self, search_date, use_cache):
-        return CustomerManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return CustomerManager
 
 class Customer(DataTable):
     customer_group = models.ForeignKey(CustomerGroup, on_delete=models.CASCADE)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.customer_group
 
 
@@ -32,10 +33,11 @@ class CustomerMaterialCondition(DataExtensionTable):
     validity_start_date = models.DateTimeField(null=True)
     validity_end_date = models.DateTimeField(null=True)
 
+    @property
+    def data_object(self):
+        return self.Customer
+
 class CustomerManager(GeneralManager):
     group_model = CustomerGroup
     data_model = Customer
     data_extension_model_list = [CustomerMaterialCondition]
-
-    def __init__(self, customer_group_id, search_date=None, use_cache=True):
-        super().__init__(customer_group_id, search_date, use_cache)

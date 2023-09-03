@@ -12,9 +12,10 @@ class DerivativeLmcGroup(GroupTable):
 
     def __str__(self):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
-    
-    def manager(self, search_date, use_cache):
-        return DerivativeLmcManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return DerivativeLmcManager
 
 class DerivativeLmc(DataTable):
     derivative_lmc_group = models.ForeignKey(DerivativeLmcGroup, on_delete=models.DO_NOTHING)
@@ -53,7 +54,7 @@ class DerivativeLmc(DataTable):
         return f"{self.derivative_group_lmc} - {self.local_make} {self.local_model_line}"
     
     @property
-    def group(self):
+    def group_object(self):
         return self.derivative_group_lmc
     
 
@@ -85,14 +86,14 @@ class DerivativeLmcVolumeManager(ExternalDataManager):
 
     def __init__(
         self,
-        derivative_lmc_group_id:int,
+        group_id:int,
         search_date: datetime | None = None,
     ):
         super().__init__(
             search_date=search_date,
         )
 
-        self.derivative_lmc_group_id = derivative_lmc_group_id
+        self.derivative_lmc_group_id = group_id
 
     @property
     def current_volume(self) -> list[dict]:

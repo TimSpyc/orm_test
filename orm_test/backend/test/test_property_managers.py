@@ -7,8 +7,9 @@ class newAbcGroup(TestGroupTable):
     class Meta:
         app_label = 'backend'   
 
-    def manager(self, search_date, use_cache):
-        return newAbcManager(self.id, search_date, use_cache)        
+    @property
+    def manager(self):
+        return newAbcManager      
 
     
 class newAbc(TestDataTable):
@@ -16,7 +17,7 @@ class newAbc(TestDataTable):
     new_abc_group = models.ForeignKey(newAbcGroup, on_delete=models.DO_NOTHING)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.new_abc_group
     
     class Meta:
@@ -30,14 +31,6 @@ class newAbcManager(GeneralManager):
     data_model = newAbc
     data_extension_model_list: list = []
 
-    def __init__(self, new_abc_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_abc_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )    
-
-
 
 
 
@@ -45,8 +38,9 @@ class newAbcManager(GeneralManager):
     
 class newKundenGroup(TestGroupTable):
 
-    def manager(self, search_date, use_cache):
-        return newKundenManager(self.id, search_date, use_cache)   
+    @property
+    def manager(self):
+        return newKundenManager
     class Meta:
         app_label = 'backend'           
  
@@ -56,7 +50,7 @@ class newKunden(TestDataTable):
     new_kunden_group = models.ForeignKey(newKundenGroup, on_delete=models.DO_NOTHING)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.new_kunden_group
     
     class Meta:
@@ -70,13 +64,6 @@ class newKundenManager(GeneralManager):
     data_model = newKunden
     data_extension_model_list: list = []
 
-    def __init__(self, new_kunden_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_kunden_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-
 
     
 
@@ -85,9 +72,9 @@ class newKundenManager(GeneralManager):
 class newProjectGroup(TestGroupTable):
     new_abc_group = models.ForeignKey(newAbcGroup, on_delete=models.DO_NOTHING)
 
-    
-    def manager(self, search_date, use_cache):
-        return newProjectManager(self.id, search_date, use_cache)  
+    @property
+    def manager(self):
+        return newProjectManager
     class Meta:
         app_label = 'backend'           
 
@@ -97,7 +84,7 @@ class newProject(TestDataTable):
     new_kunden = models.ForeignKey(newKunden, on_delete=models.DO_NOTHING) ##refernce to data model of kundenManager
     
     @property
-    def group(self):
+    def group_object(self):
         return self.new_project_group
     class Meta:
         app_label = 'backend'           
@@ -110,19 +97,12 @@ class newProjectManager(GeneralManager):
     data_model = newProject
     data_extension_model_list: list = []
 
-    def __init__(self, new_project_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_project_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-
 
 class newProjectUserGroup(TestGroupTable):
-    new_project_group = models.ForeignKey(newProjectGroup, on_delete=models.DO_NOTHING) 
-
-    def manager(self, search_date, use_cache):
-        return newProjectUserManager(self.id, search_date, use_cache) 
+    new_project_group = models.ForeignKey(newProjectGroup, on_delete=models.DO_NOTHING)
+    @property
+    def manager(self):
+        return newProjectUserManager
     class Meta:
         app_label = 'backend'           
 
@@ -134,9 +114,9 @@ class newProjectUserRoles(TestReferenceTable):
         app_label = 'backend'    
 
 class newXyzGroup(TestGroupTable):
-
-    def manager(self, search_date, use_cache):
-        return newXyzManager(self.id, search_date, use_cache) 
+    @property
+    def manager(self):
+        return newXyzManager
     class Meta:
         app_label = 'backend'
 
@@ -144,7 +124,7 @@ class newXyz(TestDataTable):
     new_xyz_group = models.ForeignKey(newXyzGroup, on_delete=models.DO_NOTHING)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.new_xyz_group
     class Meta:
         app_label = 'backend'           
@@ -155,13 +135,6 @@ class newXyzManager(GeneralManager):
     data_model = newXyz
     data_extension_model_list: list = []
 
-    def __init__(self, new_project_user_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-    
 class newProjectUser(TestDataTable):
     new_kunden = models.ForeignKey(newKunden, on_delete=models.DO_NOTHING, null=True)
     new_project_user_group = models.ForeignKey(newProjectUserGroup, on_delete=models.DO_NOTHING)
@@ -169,7 +142,7 @@ class newProjectUser(TestDataTable):
     new_xyz = models.ManyToManyField(newXyz,null=True)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.new_project_user_group
     class Meta:
         app_label = 'backend'           
@@ -180,13 +153,6 @@ class newProjectUserManager(GeneralManager):
     data_model = newProjectUser
     data_extension_model_list: list = []
 
-    def __init__(self, new_project_user_group_id, search_date=None, use_cache=True):
-        super().__init__(
-            group_id=new_project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-            )
-        
 
 
 

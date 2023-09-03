@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable #, PartType, SemiFinishedProductType, CrossSectionGroup, NormGroup, MaterialGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class PartGroup(GroupTable):
@@ -9,8 +9,9 @@ class PartGroup(GroupTable):
     class meta:
         unique_together = ('drawing_no', 'drawing_rev')
 
-    def manager(self, search_date, use_cache):
-        return PartManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return PartManager
     
     def __str__(self):
         return f"PartGroup {self.drawing_no}-{self.drawing_rev}"
@@ -38,7 +39,7 @@ class Part(DataTable):
     material_norm_customer = models.ForeignKey('NormGroup', on_delete= models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.part_group
 
     def __str__(self):
@@ -48,6 +49,3 @@ class PartManager(GeneralManager):
     group_model = PartGroup
     data_model = Part
     data_extension_model_list = []
-
-    def __init__(self, part_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=part_group_id, search_date=search_date, use_cache=use_cache)

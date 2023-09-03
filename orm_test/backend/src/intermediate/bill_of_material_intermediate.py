@@ -11,7 +11,6 @@ class BillOfMaterialIntermediate(GeneralIntermediate):
         bill_of_material_group_id: int,
         search_date: datetime | None = None,
         scenario_dict: dict = {},
-        use_cache: bool = True
     ):
         
         self.bill_of_material_group_id = bill_of_material_group_id
@@ -20,11 +19,9 @@ class BillOfMaterialIntermediate(GeneralIntermediate):
         self.bill_of_material_manager = BillOfMaterialManager(
             bill_of_material_group_id,
             search_date,
-            use_cache
         )
 
         self.bill_of_material_structure_manager_list = BillOfMaterialStructureManager(
             self.bill_of_material_manager.bill_of_material_group_id,
             search_date,
-            use_cache
         )

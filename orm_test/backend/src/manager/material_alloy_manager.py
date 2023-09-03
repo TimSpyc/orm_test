@@ -1,11 +1,12 @@
 from django.db import models
-from backend.models import GroupTable, DataTable #NormGroup
+from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class MaterialAlloyGroup(GroupTable):
 
-    def manager(self, search_date, use_cache):
-        return MaterialAlloyManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return MaterialAlloyManager
     
     def __str__(self):
         return f"MaterialAlloyGroup {self.number}"
@@ -51,7 +52,7 @@ class MaterialAlloy(DataTable):
     permissible_additions = models.FloatField(null=True)
     
     @property
-    def group(self):
+    def group_object(self):
         return self.material_alloy_group
     
     def __str__(self):
@@ -61,6 +62,3 @@ class MaterialAlloyManager(GeneralManager):
     group_model = MaterialAlloyGroup
     data_model = MaterialAlloy
     data_extension_model_list = []
-
-    def __init__(self, material_alloy_group_id, search_date=None, use_cache=True):
-        super().__init__(group_id=material_alloy_group_id, search_date=search_date, use_cache=use_cache)

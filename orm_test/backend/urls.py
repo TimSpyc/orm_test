@@ -1,9 +1,16 @@
-from django.urls import path
-from . import views
+from backend.src.info import *
+from backend.src.info.reference_model_info import createReferenceUrls
 
-urlpatterns = [
-    path('project/', views.getProject_list),
-    path('project/<int:project_group_id>', views.getProject_detail),
-    path('derivative_constellium/', views.getDerivativeConstellium_list),
-    path('derivative_constellium/<int:derivative_constellium_group_id>', views.getDerivativeConstellium_detail),
+info_list = [
+    ProjectInfo,
+    DerivativeConstelliumInfo,
 ]
+
+def createInfoUrls():
+    urlpatterns = []
+    for info_class in info_list:
+        urlpatterns += info_class.getUrlList()
+    return urlpatterns
+
+urlpatterns = createInfoUrls() + createReferenceUrls()
+

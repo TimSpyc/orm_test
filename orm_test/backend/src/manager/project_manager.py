@@ -7,8 +7,9 @@ class ProjectGroup(GroupTable):
     A Django model representing a project group.
     """
 
-    def manager(self, search_date, use_cache):
-        return ProjectManager(self.id, search_date, use_cache)
+    @property
+    def manager(self):
+        return ProjectManager
 
     def __str__(self):
         return f'Project Group with {self.id}'
@@ -24,7 +25,7 @@ class Project(DataTable):
     project_group = models.ForeignKey(ProjectGroup, on_delete=models.DO_NOTHING)
 
     @property
-    def group(self):
+    def group_object(self):
         return self.project_group
 
     def __str__(self):
@@ -43,14 +44,3 @@ class ProjectManager(GeneralManager):
     group_model = ProjectGroup
     data_model = Project
     data_extension_model_list = []
-
-    def __init__(self, project_group_id, search_date=None, use_cache=True):
-        """
-        Initialize a ProjectManager instance.
-
-        Args:
-            project_group_id (int): The ID of the ProjectGroup instance.
-            search_date (datetime.datetime, optional): The date used for filtering data. Defaults to None.
-            use_cache (bool, optional): Whether to use the cache for data retrieval. Defaults to True.
-        """
-        super().__init__(group_id=project_group_id, search_date=search_date, use_cache=use_cache)

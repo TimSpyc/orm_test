@@ -16,9 +16,10 @@ class ProjectUserGroup(GroupTable):
 
     def __str__(self):
         return f"{self.user} - {self.project_group}"
-    
-    def manager(self, search_date, use_cache):
-        return ProjectUserManager(self.id, search_date, use_cache)
+
+    @property
+    def manager(self):
+        return ProjectUserManager
 
 
 class ProjectUser(DataTable):
@@ -36,7 +37,7 @@ class ProjectUser(DataTable):
         return f'ProjectUser {self.id}'
 
     @property
-    def group(self):
+    def group_object(self):
         return self.project_user_group
 
 class ProjectUserManager(GeneralManager):
@@ -44,16 +45,3 @@ class ProjectUserManager(GeneralManager):
     group_model = ProjectUserGroup
     data_model = ProjectUser
     data_extension_model_list = []
-
-    def __init__(
-        self,
-        project_user_group_id:int,
-        search_date: datetime | None = None,
-        use_cache: bool = True
-    ):
-
-        super().__init__(
-            group_id=project_user_group_id,
-            search_date=search_date,
-            use_cache=use_cache
-        )
