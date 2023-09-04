@@ -1412,7 +1412,7 @@ class GeneralManager:
                         Date is always the current date and
                         {manager_object.__group_model_name}_id is unchangeable
                         unless you create a new instance with .create(). The
-                        creator_user_id is an extra kwarg because its
+                        creator_id is an extra kwarg because its
                         mandatory and not allowed here.
                     '''
                 )
@@ -1425,7 +1425,7 @@ class GeneralManager:
         return [
                 'date',
                 self.__group_model_name,
-                'creator_user_id'
+                'creator_id'
             ]
     
     def __getToCheckListForCreation() -> list:
@@ -1435,7 +1435,7 @@ class GeneralManager:
         """
         return [
                 'date',
-                'creator_user_id'
+                'creator_id'
             ]
 
     @staticmethod
@@ -1453,13 +1453,13 @@ class GeneralManager:
         return column_list
 
     @updateCache
-    def update(self, creator_user_id: int, **kwargs: any):
+    def update(self, creator_id: int, **kwargs: any):
         """
         Update the current instance with new data, 
         uploads to db and refresh the cache.
 
         Args:
-            creator_user_id (int): The ID of the user who is making the update.
+            creator_id (int): The ID of the user who is making the update.
             **kwargs: Key-value pairs representing the new data to be updated.
         """
         self.__errorIfNotUpdatable()
@@ -1490,7 +1490,7 @@ class GeneralManager:
         self.__writeData(
             latest_data_data,
             data_data_dict,
-            creator_user_id, 
+            creator_id, 
             self.__group_obj,
             latest_extension_data,
             data_extension_data_dict,
@@ -1504,7 +1504,7 @@ class GeneralManager:
         cls, 
         latest_data_data: dict, 
         data_data_dict: dict,
-        creator_user_id: int, 
+        creator_id: int, 
         group_obj: models.Model,
         latest_extension_data: dict,
         data_extension_data_dict: dict,
@@ -1516,7 +1516,7 @@ class GeneralManager:
             latest_data (dict): The latest data fetched from the data model.
             data_data_dict (dict): 
                 Dictionary containing the new data to be updated.
-            creator_user_id (int): The ID of the user who is making the update.
+            creator_id (int): The ID of the user who is making the update.
             group_obj (GroupModel): 
                 The group model instance to which the data belongs.
             latest_extension_data (dict);
@@ -1531,7 +1531,7 @@ class GeneralManager:
         new_data_model_obj = cls.__writeDataData(
             latest_data_data,
             data_data_dict,
-            creator_user_id, 
+            creator_id, 
             group_obj,
         )
 
@@ -1619,7 +1619,7 @@ class GeneralManager:
         cls, 
         latest_data: dict, 
         data_data_dict: dict,
-        creator_user_id: int, 
+        creator_id: int, 
         group_obj: models.Model
     ) -> models.Model:
         """
@@ -1629,7 +1629,7 @@ class GeneralManager:
             latest_data (dict): The latest data fetched from the data model.
             data_data_dict (dict): 
                 Dictionary containing the new data to be updated.
-            creator_user_id (int): The ID of the user who is making the update.
+            creator_id (int): The ID of the user who is making the update.
             group_obj (GroupModel): 
                 The group model instance to which the data belongs.
         """
@@ -1640,7 +1640,7 @@ class GeneralManager:
             **data_data_dict,
             **{
                 'date': datetime.now(),
-                'creator':User.objects.get(id=creator_user_id),
+                'creator_id': creator_id,
                 group_table_name: group_obj
             }
         }
@@ -1781,18 +1781,18 @@ class GeneralManager:
 
         return new_data_model_obj
 
-    def deactivate(self, creator_user_id: int) -> None:
+    def deactivate(self, creator_id: int) -> None:
         """
         Deactivate the current instance and set active=False in db.
 
         Args:
-            creator_user_id (int): 
+            creator_id (int): 
                 The ID of the user who is deactivating the instance.
         """
         if not self.active:
             raise NotUpdatableError('This manager is already deactivated')
 
-        self.update(creator_user_id, active=False)
+        self.update(creator_id, active=False)
 
     @staticmethod
     def __getNotNullFields(model: models.Model) -> list:
@@ -2085,12 +2085,12 @@ class GeneralManager:
 
     @classmethod
     @createCache
-    def create(cls, creator_user_id: int, **kwargs: any) -> object:
+    def create(cls, creator_id: int, **kwargs: any) -> object:
         """
         Create a new instance of the current class and initialize cache.
 
         Args:
-            creator_user_id (int): 
+            creator_id (int): 
                 The ID of the user who is creating the new instance.
             **kwargs: Key-value pairs representing the data to be used for 
                 creating the new instance.
@@ -2132,7 +2132,7 @@ class GeneralManager:
             cls.__writeData(
                 {},
                 data_data_dict,
-                creator_user_id, 
+                creator_id, 
                 group_obj,
                 #datetime.now(),
                 {},
