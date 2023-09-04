@@ -764,13 +764,13 @@ class TestCheckInputDictForInvalidKeys(TestCase):
         self.manager._GeneralManager__group_model_name = 'test_project_group'
 
     def test_valid_keys(self):
-        column_list = ['name', 'description', 'creator_user_id']
+        column_list = ['name', 'description', 'creator_user']
         invalid_key_list = ['date', 'group_id']
 
         self.manager._GeneralManager__checkInputDictForInvalidKeys(self.manager,column_list, invalid_key_list)
 
     def test_invalid_keys(self):
-        column_list = ['date', 'name', 'group_id', 'creator_user_id']
+        column_list = ['date', 'name', 'group_id', 'creator_user']
         invalid_key_list = ['date', 'group_id']
 
         with self.assertRaises(ValueError):
@@ -782,13 +782,13 @@ class TestGetToCheckListForUpdate(TestCase):
         self.manager._GeneralManager__group_model_name = 'test_project_group'
 
     def test_get_to_check_list(self):
-        expected_list = ['date', 'test_project_group', 'creator_user_id']
+        expected_list = ['date', 'test_project_group', 'creator_user']
         actual_list = self.manager._GeneralManager__getToCheckListForUpdate()
         self.assertEqual(actual_list, expected_list)
 
 class TestGetToCheckListForCreation(TestCase):
     def test_get_to_check_list(self):
-        expected_list = ['date', 'creator_user_id']
+        expected_list = ['date', 'creator_user']
         actual_list = GeneralManager._GeneralManager__getToCheckListForCreation()
         self.assertEqual(actual_list, expected_list)
         
@@ -818,10 +818,10 @@ class TestWriteDataData(TestCase):
             'project_number': '1234567',
             'name' : 'TestProject2'
         }
-        creator_user_id = self.user.id
+        creator_user = self.user.id
         group_obj = self.test_project_group
 
-        self.manager._GeneralManager__writeDataData(latest_data, data_data_dict, creator_user_id, group_obj)
+        self.manager._GeneralManager__writeDataData(latest_data, data_data_dict, creator_user, group_obj)
         updated_data_obj = TestProject.objects.latest('id')
         self.assertEqual(updated_data_obj.project_number, '1234567')
         self.assertEqual(updated_data_obj.name, 'TestProject2')
@@ -848,12 +848,12 @@ class TestUpdate(TestCase):
         self.manager._GeneralManager__group_obj = self.test_project_group
         self.manager._GeneralManager__group_model_name = 'test_project_group'
         self.manager.id = self.test_project.id
-        self.creator_user_id = self.user.id
+        self.creator_user = self.user.id
 
     def test_update(self):
         project_number_updated = '1234567890'
         self.manager.update(
-            creator_user_id=self.creator_user_id, 
+            creator_user=self.creator_user, 
             project_number= project_number_updated
             )
         updated_data_obj = TestProject.objects.latest('id')
@@ -863,7 +863,7 @@ class TestUpdate(TestCase):
         project_number_updated = '1234567890'
         name_updated = 'TestProject1Updated'        
 
-        self.manager.update(creator_user_id=self.creator_user_id, project_number= project_number_updated, name=name_updated)
+        self.manager.update(creator_user=self.creator_user, project_number= project_number_updated, name=name_updated)
         updated_data_obj = TestProject.objects.latest('id')
         self.assertEqual(updated_data_obj.project_number, '1234567890') 
         self.assertEqual(updated_data_obj.name, 'TestProject1Updated')
@@ -871,13 +871,13 @@ class TestUpdate(TestCase):
     def test_update_changing_date(self):
         date_updated = datetime.now()
         with self.assertRaises(ValueError):
-           self.manager.update(creator_user_id=self.creator_user_id, date = date_updated)
+           self.manager.update(creator_user=self.creator_user, date = date_updated)
         
     def test_update_changing_group_id(self):
         new_group = TestProjectGroup.objects.create()
         group_updated = new_group.id
         with self.assertRaises(ValueError):
-           self.manager.update(creator_user_id=self.creator_user_id, group_id = group_updated )
+           self.manager.update(creator_user=self.creator_user, group_id = group_updated )
 
 class TestDeactivate(TestCase):
     def setUp(self):
@@ -896,21 +896,21 @@ class TestDeactivate(TestCase):
              creator = self.user,
              active = True
         )
-        self.creator_user_id = self.user.id
+        self.creator_user = self.user.id
         self.manager = GeneralManager(
             group_id=self.test_project_group.id
             )
 
     def test_deactivate(self):
         self.assertTrue(self.test_project.active)
-        self.manager.deactivate(creator_user_id=self.creator_user_id)
+        self.manager.deactivate(creator_user=self.creator_user)
         deactivated_data_obj = TestProject2.objects.latest('id')
         self.assertFalse(deactivated_data_obj.active)
 
     def test_deactivate_twice(self):
-        self.manager.deactivate(creator_user_id=self.creator_user_id)
+        self.manager.deactivate(creator_user=self.creator_user)
         with self.assertRaises(NotUpdatableError):
-            self.manager.deactivate(creator_user_id=self.creator_user_id)
+            self.manager.deactivate(creator_user=self.creator_user)
 
 class TestCreate(TestCase):
     def setUp(self):
@@ -920,7 +920,7 @@ class TestCreate(TestCase):
         GeneralManager.data_extension_model_list = []
 
         self.user = User.objects.create(microsoft_id= 'a')
-        self.creator_user_id = self.user.id
+        self.creator_user = self.user.id
         self.test_project_group2 = TestProjectGroup2.objects.create(
             unique1 = 'a',
             unique2 = 'a'
@@ -958,7 +958,7 @@ class TestCreate(TestCase):
             self.start_date = datetime.now()
             self.search_date = search_date
         with patch.object(GeneralManager, '__init__', new = dummy_init):
-            self.manager.create(self.creator_user_id, **group_data, **data_data)
+            self.manager.create(self.creator_user, **group_data, **data_data)
 
             group_entries = TestProjectGroup2.objects.count()
             data_entries = TestProject3.objects.count()
@@ -972,7 +972,7 @@ class TestCreate(TestCase):
             self.assertTrue(created_data.active)
 
     def test_create_not_new(self):
-        creator_user_id = self.creator_user_id
+        creator_user = self.creator_user
         group_data = {
             "unique1": 'a',
             "unique2": 'a'
@@ -989,7 +989,7 @@ class TestCreate(TestCase):
             self.start_date = datetime.now()
             self.search_date = search_date
         with patch.object(GeneralManager, '__init__', new = dummy_init):
-            self.manager.create(creator_user_id, **group_data, **data_data)
+            self.manager.create(creator_user, **group_data, **data_data)
 
             group_entries = TestProjectGroup2.objects.count()
             data_entries = TestProject3.objects.count()
@@ -1008,7 +1008,7 @@ class TestCreate(TestCase):
         GeneralManager.group_model = TestProjectUserGroup2
         GeneralManager.data_model = TestProjectUser2
 
-        creator_user_id = self.creator_user_id
+        creator_user = self.creator_user
         group_data = {
             'unique1ProjectUserGroup': 'a',
             'unique2ProjectUserGroup': 'a'
@@ -1027,7 +1027,7 @@ class TestCreate(TestCase):
             self.search_date = search_date
 
         with patch.object(GeneralManager, '__init__', new = dummy_init):
-            self.manager.create(creator_user_id, **group_data, **data_data)
+            self.manager.create(creator_user, **group_data, **data_data)
 
             group_entries = TestProjectUserGroup2.objects.count()
             data_entries = TestProjectUser2.objects.count()
@@ -1048,7 +1048,7 @@ class TestCreate(TestCase):
         self.manager = GeneralManager.__new__(GeneralManager)
         GeneralManager.group_model = TestProjectUserGroup2
         GeneralManager.data_model = TestProjectUser2
-        creator_user_id = self.creator_user_id
+        creator_user = self.creator_user
 
         group_data = {
             'unique1ProjectUserGroup': 'b',
@@ -1068,7 +1068,7 @@ class TestCreate(TestCase):
             self.search_date = search_date
 
         with patch.object(GeneralManager, '__init__', new = dummy_init):
-            self.manager.create(creator_user_id, **group_data, **data_data)
+            self.manager.create(creator_user, **group_data, **data_data)
 
             group_entries = TestProjectUserGroup2.objects.count()
             data_entries = TestProjectUser2.objects.count()
@@ -1085,7 +1085,7 @@ class TestCreate(TestCase):
             self.assertTrue(created_data.test_project_user_role.filter(role_name='Role 2').exists())
 
     def test_create_no_corresponding_column_in_dict(self):
-        creator_user_id = self.creator_user_id
+        creator_user = self.creator_user
         group_data = {
             "unique1": 'a',   
             "unique2": 'a'
@@ -1098,7 +1098,7 @@ class TestCreate(TestCase):
         }
 
         with self.assertRaises(ValueError): 
-            self.manager.create(creator_user_id, **group_data, **data_data)   
+            self.manager.create(creator_user, **group_data, **data_data)   
     
     
 class TestGetRefAndTableType(TestCase):
@@ -1776,7 +1776,7 @@ class TestWriteData(TestCase):
         new_data_model_obj = self.manager._GeneralManager__writeData(
             latest_data_data,
             data_data_dict,
-            creator_user_id=self.creator_user.id,
+            creator_user=self.creator_user.id,
             group_obj=self.test_project_group,
             latest_extension_data=latest_extension_data,
             data_extension_data_dict=data_extension_data_dict,
