@@ -2,17 +2,56 @@ import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from backend.src.auxiliary.manager import GeneralManager
 from backend.src.auxiliary.intermediate import GeneralIntermediate
+from backend.src.auxiliary.manager import GeneralManager
+from backend.src.auxiliary.new_cache import CacheHandler
 from django.urls import path
 from django.http.request import HttpRequest
 from backend.src.auxiliary.exceptions import *
 import json
-from django.core.cache import cache
 from backend.src.auxiliary.timing import timeit
-from backend.src.auxiliary.cache_handler import InfoCacheHandler
-from backend.models.caching_models import CacheIntermediate
 from django.conf import settings
+
+from backend.src.auxiliary.new_cache import CacheHandler
+
+def updateCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for object methods.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(self, *args, **kwargs):
+        CacheHandler.invalidateCache(self)
+        result = func(self, *args, **kwargs)
+        CacheHandler.addDependentObjectToCache(self._dependencies, self)
+        return result
+    return wrapper
+
+
+def createCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for class methods.
+    
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(cls, *args, **kwargs):
+        result = func(cls, *args, **kwargs)
+        CacheHandler.addDependentObjectToCache(result._dependencies, result)
+        return result
+    return wrapper
+
+
+
 
 
 def selectStatusWithErrorType(error_type):
@@ -168,7 +207,7 @@ class GeneralInfo:
     required_permission_list: list
     detail_key_dict: dict = {'group_id': 'int'}
 
-    manager: GeneralManager # Optional
+    manager: "GeneralManager" # Optional
     datasetPermissionFunction = lambda data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
     use_cache = True
@@ -201,10 +240,10 @@ class GeneralInfo:
 
         self.request_info_dict = self.__getRequestInfos()
         filter_params = self.request_info_dict["query_params"].get('filter', {})
-        self.id_string = CacheIntermediate.getIdString({
+        self._identification_dict = {
             **filter_params,
             'base_url': self.base_url
-        })
+        }
         self.identifier = identifier
         self._dependencies = []
 
@@ -216,7 +255,7 @@ class GeneralInfo:
         else:
             return self.__responseIfMethodNotAvailable()
 
-    def getDetail(self) -> GeneralManager:
+    def getDetail(self) -> "GeneralManager":
         search_date = self.request_info_dict['query_params'].get(
             'search_date',
             None
@@ -275,25 +314,28 @@ class GeneralInfo:
 
     def __getCacheData(self) -> 'GeneralInfo':
         if self.use_cache:
-            return cache.get(self.id_string)
+            return CacheHandler.getObjectFromCache(self._identification_dict)
         else:
             return None
 
-    def __setCacheData(self, result_list_dict: list) -> None:
-        InfoCacheHandler.addRequestUrl(self)
-        cache.set(self.id_string, result_list_dict)
+    def __setCacheData(self) -> None:
+        if self.use_cache:
+            CacheHandler.addDependentObjectToCache(
+                self._dependencies,
+                self.result_list_dict
+            )
 
     def _updateCache(self) -> None:
         self.__getNewResultDict()
 
     def __getNewResultDict(self) -> dict:
         object_list = self.getList()
-        result_list_dict = list(map(
+        self.result_list_dict = list(map(
             lambda manager_obj: self.__serializeData(manager_obj),
             object_list
         ))
-        self.__setCacheData(result_list_dict)
-        return result_list_dict
+        self.__setCacheData()
+        return self.result_list_dict
 
     def __checkConfiguration(self) -> None:
         has_manager = hasattr(self, 'manager')
@@ -304,7 +346,7 @@ class GeneralInfo:
     
     def __serializeData(
         self,
-        data_object: GeneralManager | GeneralIntermediate | object
+        data_object: object
     ) -> dict:
         return self.__class__.serializerFunction(data_object)
 

@@ -3,10 +3,8 @@ from django.db.models import Q
 from hashlib import md5
 import json, pickle
 from datetime import datetime
-from backend.src.auxiliary import GeneralIntermediate, GeneralManager, GeneralInfo
 from django.core.cache import cache
 import inspect
-
 
 class DatabaseCache(models.Model):
 
@@ -23,7 +21,7 @@ class DatabaseCache(models.Model):
         cls,
         id_string: str,
         search_date: datetime | None = None
-    ) -> GeneralIntermediate | GeneralManager | GeneralInfo | None:
+    ) -> object | None:
         
         if search_date is None:
             search_date = datetime.now()
@@ -45,7 +43,7 @@ class DatabaseCache(models.Model):
     def setCacheData(
         cls,
         id_string: str,
-        data: GeneralIntermediate | GeneralManager | GeneralInfo,
+        data: object,
     ) -> None:
         if hasattr(data, '_start_date'):
             start_date = data._start_date
@@ -67,7 +65,7 @@ class DatabaseCache(models.Model):
     def updateCacheEndDate(
         cls,
         id_string: str,
-        data: GeneralIntermediate | GeneralManager | GeneralInfo,
+        data: object,
     ) -> None:
         if hasattr(data, '_start_date'):
             start_date = data._start_date
@@ -78,29 +76,37 @@ class DatabaseCache(models.Model):
         if hasattr(data, '_end_date'):
             data._end_date = new_end_date
 
-        entry, _ = cls.objects.get_or_create(
+        cached_object_list = cls.objects.filter(
             id_string=id_string,
             start_date=start_date,
             end_date=None
         )
-        entry.end_date = new_end_date
-        entry.data=pickle.dumps(data)
-        entry.save()
+        if cached_object_list.exists():
+            entry = cached_object_list.first()
+            entry.end_date = new_end_date
+            entry.data=pickle.dumps(data)
+            entry.save()
 
 
 class RAMCache:
     @staticmethod
     def getCacheData(
         id_string: str,
-    ) -> GeneralIntermediate | GeneralManager | GeneralInfo | None:
+    ) -> object | None:
         return cache.get(id_string)
     
     @staticmethod
     def setCacheData(
         id_string: str,
-        data: GeneralIntermediate | GeneralManager | GeneralInfo,
+        data: object,
     ) -> None:
-        if data._end_date is None or isinstance(data, GeneralInfo):
+        is_newest_data = (
+            (not hasattr(data, '_end_date'))
+            or data._end_date is None
+            or id_string == 'CacheHandler'
+        )
+
+        if is_newest_data:
             cache.set(id_string, data)
     
     @staticmethod
@@ -116,16 +122,20 @@ class CacheObserver:
         self.id_string = id_string
         self.dependent_objects = {}
 
-    def add(self, obj: object) -> None:
-        id_string, _ = getIdString(obj._identification_dict)
-        if id_string not in self.dependent_objects:
-            self.dependent_objects[id_string].append(obj)
+    def add(
+        self,
+        dependent_object: object,
+    ) -> None:
+        dependent_object_id_string = getIdString(dependent_object)
+        if dependent_object_id_string not in self.dependent_objects:
+            self.dependent_objects[dependent_object_id_string].append(
+                dependent_object
+            )
 
     def invalidate(self) -> None:
-        for obj in self.dependent_objects.values():
-            id_string, _ = getIdString(obj._identification_dict)
+        for id_string, dependent_object in self.dependent_objects.items():
             RAMCache.invalidateCache(id_string)
-            DatabaseCache.updateCacheEndDate(id_string, obj)
+            DatabaseCache.updateCacheEndDate(id_string, dependent_object)
         self.destroy()
 
     def destroy(self) -> None:
@@ -141,18 +151,18 @@ class CacheHandler:
         Create a new instance of CacheHandler if one does not already exist.
         """
         if not cls.__instance:
-            DatabaseCache.objects.all().delete()
             cls.__instance = super().__new__(cls)
+            cache_observer_dict = RAMCache.getCacheData('CacheHandler')
+            if cache_observer_dict is None:
+                DatabaseCache.objects.all().delete()
+                cache_observer_dict = {}
+            cls.__instance.cache_observer_dict = cache_observer_dict
         return cls.__instance
-
-    def __init__(self) -> None:
-        if not self.cache_observer_dict:
-            self.__startUpCache()
 
     @classmethod
     def addGeneralManagerObjectToCache(
         cls,
-        manager: GeneralManager
+        manager: object
     ) -> None:
         self = cls()
         self._createCache(manager)
@@ -160,8 +170,8 @@ class CacheHandler:
     @classmethod
     def addDependentObjectToCache(
         cls,
-        dependency_obj_list: GeneralIntermediate | GeneralManager,
-        dependent_obj: GeneralIntermediate | GeneralInfo
+        dependency_obj_list: object,
+        dependent_obj: object
     ) -> None:
         self = cls()
         for dependency_obj in dependency_obj_list:
@@ -173,11 +183,13 @@ class CacheHandler:
         identification_dict: dict,
         search_date: datetime | None = None
     ):
-        id_string, set_cache = getIdString(identification_dict)
+        id_string, is_managed_object = getIdString(identification_dict)
         data = None
-        if not set_cache:
+        if not is_managed_object:
             return data
-        if search_date is None:
+        if (search_date is None or
+            search_date > datetime.now() - datetime.timedelta(second=5)
+        ):
             data = RAMCache.getCacheData(id_string)
         if data is None:
             data = DatabaseCache.getCacheData(id_string, search_date)
@@ -188,117 +200,65 @@ class CacheHandler:
     @classmethod
     def invalidateCache(
         cls,
-        object: GeneralIntermediate | GeneralManager | GeneralInfo
+        object: object
     ) -> None:
         self = cls()
-        id_string, set_cache = getIdString(object._identification_dict)
-        if set_cache:
+        id_string, is_managed_object = getIdString(object._identification_dict)
+        if is_managed_object:
             RAMCache.invalidateCache(id_string)
             DatabaseCache.updateCacheEndDate(id_string, object)
         if id_string in self.cache_observer_dict:
             self.cache_observer_dict[id_string].invalidate()
+            RAMCache.setCacheData('CacheHandler', self.cache_observer_dict)
 
     @classmethod
     def removeObserver(cls, id_string: str) -> None:
         self = cls()
         del self.cache_observer_dict[id_string]
+        RAMCache.setCacheData('CacheHandler', self.cache_observer_dict)
 
-    @classmethod
-    def startUpCache(cls) -> None:
-        pass
 
     def _addDependentObjectToObserver(
         self,
-        dependency_obj: GeneralIntermediate | GeneralManager,
-        dependent_obj: GeneralIntermediate | GeneralInfo
+        dependency_obj: object,
+        dependent_obj: object
     ) -> None:
         id_string, _ = getIdString(dependency_obj._identification_dict)
         if id_string not in self.cache_observer_dict:
             self.cache_observer_dict[id_string] = CacheObserver(id_string)
         self.cache_observer_dict[id_string].add(dependent_obj)
+        RAMCache.setCacheData('CacheHandler', self.cache_observer_dict)
 
     def _createCache(
         self,
-        data: GeneralIntermediate | GeneralManager | GeneralInfo
+        data: object
     ) -> None:
-        id_string, set_cache = getIdString(data._identification_dict)
-        if set_cache:
+        id_string, is_managed_object = getIdString(data._identification_dict)
+        if is_managed_object:
             DatabaseCache.setCacheData(id_string, data)
             RAMCache.setCacheData(id_string, data)
 
-
-def updateCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-    Use this for object methods.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(self, *args, **kwargs):
-        CacheHandler.invalidateCache(self)
-        result = func(self, *args, **kwargs)
-        is_GeneralManager = isinstance(self, GeneralManager)
-        is_GeneralIntermediate = isinstance(self, GeneralIntermediate)
-        is_GeneralInfo = isinstance(self, GeneralInfo)
-        if is_GeneralManager:
-            CacheHandler.addGeneralManagerObjectToCache(self)
-        elif is_GeneralIntermediate or is_GeneralInfo:
-            CacheHandler.addDependentObjectToCache(self._dependencies, self)
-        return result
-    return wrapper
-
-
-def createCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-    Use this for class methods.
-    
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(cls, *args, **kwargs):
-        result = func(cls, *args, **kwargs)
-        is_GeneralManager = isinstance(result, GeneralManager)
-        is_GeneralIntermediate = isinstance(result, GeneralIntermediate)
-        is_GeneralInfo = isinstance(result, GeneralInfo)
-        if is_GeneralManager:
-            CacheHandler.addGeneralManagerObjectToCache(result)
-            CacheHandler.invalidateCache(cls)
-        elif is_GeneralIntermediate or is_GeneralInfo:
-            CacheHandler.addDependentObjectToCache(result._dependencies, result)
-        return result
-    return wrapper
-
-
 def getIdString(
-        general_object: GeneralInfo | GeneralIntermediate | GeneralManager
+        general_object: object
     ) -> str:
     """
     Convert an identification_dict into a JSON string, with keys sorted. This
     wil create a unique string for each identification_dict, which can be used
     as a key in a cache.
     """
-    is_managed_object = isinstance(
+    is_object = isinstance(
         general_object,
-        (GeneralManager, GeneralIntermediate, GeneralInfo)
+        object
     )
-    is_managed_class = (
-        GeneralManager in general_object.__bases__ or
-        GeneralIntermediate in general_object.__bases__ or
-        GeneralInfo in general_object.__bases__
+    is_class = isinstance(
+        general_object,
+        type
     )
         
-    if is_managed_object:
-        return getIdStringFromDict(general_object._identification_dict), is_managed_object
-    elif is_managed_class: # is not an instance but the class itself
-        return general_object.__name__, is_managed_object
+    if is_object:
+        return getIdStringFromDict(general_object._identification_dict), is_object
+    elif is_class: # is not an instance but the class itself
+        return general_object.__name__, is_object
 
 
 def getIdStringFromDict(
@@ -319,9 +279,8 @@ class DateTimeEncoder(json.JSONEncoder):
             return o.isoformat()
         return super().default(o)
 
-
 def addDependencyToFunctionCaller(
-    dependency: GeneralIntermediate | GeneralInfo
+    dependency: object
 ) -> None:
     """
     Identifies the caller of the function that called this function. If the
@@ -338,6 +297,9 @@ def addDependencyToFunctionCaller(
         del frame # important to avoid memory leak!
     
 def recursiveSearchForIntermediateOrInfo(frame):
+    from backend.src.auxiliary.info import GeneralInfo
+    from backend.src.auxiliary.intermediate import GeneralIntermediate
+
     if 'self' in frame.f_locals:
         instance = frame.f_locals['self']
         if isinstance(instance, (GeneralIntermediate, GeneralInfo)):

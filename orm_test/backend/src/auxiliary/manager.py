@@ -9,8 +9,46 @@ from django.db.models.query import QuerySet
 from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
-from backend.src.auxiliary.new_cache import CacheHandler, updateCache, createCache, addDependencyToFunctionCaller
 from django.conf import settings
+from backend.src.auxiliary.new_cache import CacheHandler
+
+def updateCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for object methods.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(self, *args, **kwargs):
+        CacheHandler.invalidateCache(self)
+        result = func(self, *args, **kwargs)
+        CacheHandler.addGeneralManagerObjectToCache(self)
+        return result
+    return wrapper
+
+
+def createCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for class methods.
+    
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(cls, *args, **kwargs):
+        result = func(cls, *args, **kwargs)
+        CacheHandler.addGeneralManagerObjectToCache(result)
+        CacheHandler.invalidateCache(cls)
+        return result
+    return wrapper
+
 
 def transferToSnakeCase(name):
     """
@@ -151,6 +189,7 @@ class GeneralManager:
     use_cache: bool = True
 
     def __new__(cls,group_id=None, search_date=None, **kwargs):
+        from backend.src.auxiliary.new_cache import CacheHandler
         """
         Create a new instance of the Manager or 
         return a cached instance if available.
@@ -194,7 +233,7 @@ class GeneralManager:
             if use_cache:
                 CacheHandler.addGeneralManagerObjectToCache(instance)
 
-        addDependencyToFunctionCaller(instance)
+        new_cache_handleraddDependencyToFunctionCaller(instance)
         return instance
 
     def __init__(
@@ -765,7 +804,7 @@ class GeneralManager:
         To create a list of all manager objects where the 'name' column 
         is equal to 'foo': filter(name='foo')
         """
-        addDependencyToFunctionCaller(cls)
+        new_cache_handler.addDependencyToFunctionCaller(cls)
         group_model_column_list = cls.__getColumnNameList(cls.group_model)
         data_model_column_list = cls.__getColumnNameList(cls.data_model)
 

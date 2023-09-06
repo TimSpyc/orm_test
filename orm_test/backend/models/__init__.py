@@ -1,5 +1,5 @@
 from .abstract_models import GroupTable, ReferenceTable, DataTable, DataExtensionTable, ExternalDataTable
-from .caching_models import CacheManager, CacheIntermediate
+from backend.src.auxiliary.new_cache import DatabaseCache
 from .reference_models import *
 
 from backend.src.manager.absence_manager import Absence, AbsenceGroup
