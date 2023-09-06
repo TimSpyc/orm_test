@@ -1,4 +1,3 @@
-# FROM python:latest
 FROM ubuntu:latest
 
 RUN apt update && \
@@ -31,7 +30,7 @@ ENV MODE "prod"
 
 COPY ./site-config.conf /etc/apache2/sites-available/000-default.conf
 COPY ./site-config.conf /etc/apache2/sites-enabled/000-default.conf
-ARG CACHEBUSTER=2
+ARG CACHEBUSTER
 RUN git clone https://github.com/TimSpyc/orm_test.git /var/www/html/orm_test 
 
 WORKDIR /var/www/html/orm_test

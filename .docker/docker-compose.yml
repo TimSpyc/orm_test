@@ -12,9 +12,8 @@ services:
       - MARIADB_ROOT_PASSWORD=root123
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      # test: ["CMD", "healthcheck.sh", "--connect", "--user", "orm_test", "--password", "orm_test_secret_key", "--host", "localhost"]
-      interval: 10s
-      timeout: 5s
+      interval: 1s
+      timeout: 20s
       retries: 5
   cache:
     container_name: cache
@@ -23,8 +22,8 @@ services:
       - cache_volume:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      interval: 1s
+      timeout: 20s
       retries: 5
   http:
     container_name: http
