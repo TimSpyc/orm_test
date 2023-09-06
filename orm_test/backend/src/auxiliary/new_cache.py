@@ -183,7 +183,7 @@ class CacheHandler:
         identification_dict: dict,
         search_date: datetime | None = None
     ):
-        id_string, is_managed_object = getIdString(identification_dict)
+        id_string, is_managed_object = getIdStringFromDict(identification_dict)
         data = None
         if not is_managed_object:
             return data
@@ -203,7 +203,7 @@ class CacheHandler:
         object: object
     ) -> None:
         self = cls()
-        id_string, is_managed_object = getIdString(object._identification_dict)
+        id_string, is_managed_object = getIdString(object)
         if is_managed_object:
             RAMCache.invalidateCache(id_string)
             DatabaseCache.updateCacheEndDate(id_string, object)
@@ -223,7 +223,7 @@ class CacheHandler:
         dependency_obj: object,
         dependent_obj: object
     ) -> None:
-        id_string, _ = getIdString(dependency_obj._identification_dict)
+        id_string, _ = getIdString(dependency_obj)
         if id_string not in self.cache_observer_dict:
             self.cache_observer_dict[id_string] = CacheObserver(id_string)
         self.cache_observer_dict[id_string].add(dependent_obj)
@@ -233,7 +233,7 @@ class CacheHandler:
         self,
         data: object
     ) -> None:
-        id_string, is_managed_object = getIdString(data._identification_dict)
+        id_string, is_managed_object = getIdString(data)
         if is_managed_object:
             DatabaseCache.setCacheData(id_string, data)
             RAMCache.setCacheData(id_string, data)

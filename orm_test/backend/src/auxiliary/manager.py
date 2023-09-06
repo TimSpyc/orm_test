@@ -10,7 +10,7 @@ from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
-from backend.src.auxiliary.new_cache import CacheHandler
+from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller
 
 def updateCache(func):
     """
@@ -233,7 +233,7 @@ class GeneralManager:
             if use_cache:
                 CacheHandler.addGeneralManagerObjectToCache(instance)
 
-        new_cache_handleraddDependencyToFunctionCaller(instance)
+        addDependencyToFunctionCaller(instance)
         return instance
 
     def __init__(
@@ -273,12 +273,13 @@ class GeneralManager:
         self._end_date = self.__getEndDate()
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
+        class_name = self.__class__.__name__
+        return f'{class_name}({self.group_id}, search_date={self.search_date})'
 
     def __str__(self):
         return f'''
             {self.__class__.__name__} with group_id:{self.group_id}
-            and validity from {self.start_date} to {self.end_date}
+            and validity from {self._start_date} to {self._end_date}
         '''
 
     def __iter__(self):
@@ -804,7 +805,7 @@ class GeneralManager:
         To create a list of all manager objects where the 'name' column 
         is equal to 'foo': filter(name='foo')
         """
-        new_cache_handler.addDependencyToFunctionCaller(cls)
+        addDependencyToFunctionCaller(cls)
         group_model_column_list = cls.__getColumnNameList(cls.group_model)
         data_model_column_list = cls.__getColumnNameList(cls.data_model)
 
