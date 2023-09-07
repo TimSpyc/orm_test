@@ -31,17 +31,9 @@ class PriceIntermediate(GeneralIntermediate):
             search_date,
         )
 
-        dependencies = [
-            self.part_sold_manager,
-            self.customer_manager,
-            self.material_price_intermediate,
-            self.stock_exchange_data_manager,
-        ]
-
         self.super().__init__(
             search_date,
             scenario_dict,
-            dependencies
         )
 
         self._price_component_development: list | None = None
