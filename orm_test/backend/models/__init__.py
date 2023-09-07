@@ -7,7 +7,7 @@ from backend.src.manager.asset_item_manager import AssetItem, AssetItemGroup
 from backend.src.manager.asset_item_site_connection_manager import AssetItemSiteConnection, AssetItemSiteConnectionGroup
 from backend.src.manager.asset_layout_manager import AssetLayout, AssetLayoutGroup
 from backend.src.manager.asset_site_manager import AssetSite, AssetSiteGroup
-from backend.src.manager.bom_manager import BillOfMaterial, BillOfMaterialGroup, BillOfMaterialStructure
+from backend.src.manager.bill_of_material_manager import BillOfMaterial, BillOfMaterialGroup, BillOfMaterialStructure
 from backend.src.manager.change_request_manager import ChangeRequest, ChangeRequestGroup
 from backend.src.manager.change_request_file_manager import ChangeRequestFile, ChangeRequestFileGroup
 from backend.src.manager.change_request_feasibility_manager import ChangeRequestFeasibility, ChangeRequestFeasibilityGroup
