@@ -51,9 +51,6 @@ def createCache(func):
     return wrapper
 
 
-
-
-
 def selectStatusWithErrorType(error_type):
     """
     Maps an exception type to an HTTP status code.
@@ -77,6 +74,7 @@ def selectStatusWithErrorType(error_type):
         NotValidIdError: status.HTTP_404_NOT_FOUND
     }.get(type(error_type), status.HTTP_400_BAD_REQUEST)
 
+
 def adjustStatusWithResponse(response):
     """
     Adjusts the HTTP status code based on the response data.
@@ -99,6 +97,7 @@ def adjustStatusWithResponse(response):
         temp_status = status.HTTP_204_NO_CONTENT
 
     return Response(data=response, status=temp_status)
+
 
 def catchErrorsAndAdjustResponse(createRequestResponse):
     """
@@ -129,6 +128,7 @@ def catchErrorsAndAdjustResponse(createRequestResponse):
     
     return tryExceptWrapper
 
+
 def addPrefix(prefix: str, dictionary: dict) -> dict:
     """
     Adds a prefix to all keys in a dictionary.
@@ -149,6 +149,7 @@ def addPrefix(prefix: str, dictionary: dict) -> dict:
         f'{prefix}__{key}': value
         for key, value in dictionary.items()
     }
+
 
 class GeneralInfo:
     """

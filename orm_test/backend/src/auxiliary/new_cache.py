@@ -292,7 +292,8 @@ def addDependencyToFunctionCaller(
         frame = frame.f_back.f_back
         instance = recursiveSearchForIntermediateOrInfo(frame)
         if instance is not None:
-            instance._dependencies.append(dependency)
+            if dependency not in instance._dependencies:
+                instance._dependencies.append(dependency)
     finally:
         del frame # important to avoid memory leak!
     
@@ -304,5 +305,4 @@ def recursiveSearchForIntermediateOrInfo(frame):
         instance = frame.f_locals['self']
         if isinstance(instance, (GeneralIntermediate, GeneralInfo)):
             return instance
-        return recursiveSearchForIntermediateOrInfo(frame.f_back)
-    return None
+    return recursiveSearchForIntermediateOrInfo(frame.f_back)
