@@ -5,6 +5,7 @@ import json, pickle
 from datetime import datetime, timedelta
 from django.core.cache import cache
 import inspect
+import requests
 
 class DatabaseCache(models.Model):
 
@@ -112,7 +113,6 @@ class RAMCache:
     def invalidateCache(
         id_string: str,
     ) -> None:
-        print('invalidate_cache')
         cache.delete(id_string)
 
 
@@ -131,13 +131,26 @@ class CacheObserver:
         if dependent_object_data is None:
             dependent_object_data = dependent_object
         if dependent_object_id_string not in self.dependent_objects.keys():
-            self.dependent_objects[dependent_object_id_string] = dependent_object_data
+            self.dependent_objects[dependent_object_id_string] = {
+                "data": dependent_object_data,
+                "object": dependent_object
+            }
 
     def invalidate(self) -> None:
-        for id_string, dependent_object in self.dependent_objects.items():
+        from backend.src.auxiliary.info import GeneralInfo
+        for id_string, dependent_object_data in self.dependent_objects.items():
+            dependent_object = dependent_object_data["object"]
+            dependent_object_data = dependent_object_data["data"]
             RAMCache.invalidateCache(id_string)
-            DatabaseCache.updateCacheEndDate(id_string, dependent_object)
+            if isinstance(dependent_object, GeneralInfo):
+                self.startNewRequest(dependent_object)
+            else:
+                DatabaseCache.updateCacheEndDate(id_string, dependent_object)
         self.destroy()
+
+    def startNewRequest(self, dependent_object: object) -> None:
+        request_url = dependent_object.request.build_absolute_uri()
+        CacheRefresher.addCacheRefreshUrl(request_url)
 
     def destroy(self) -> None:
         CacheHandler.removeObserver(self.id_string)
@@ -204,13 +217,16 @@ class CacheHandler:
         cls,
         object: object
     ) -> None:
+        from backend.src.auxiliary.info import GeneralInfo
         self = cls()
         id_string, is_managed_object = getIdString(object)
         if is_managed_object:
             RAMCache.invalidateCache(id_string)
-            DatabaseCache.updateCacheEndDate(id_string, object)
+            if not isinstance(object, GeneralInfo):
+                DatabaseCache.updateCacheEndDate(id_string, object)
         if id_string in self.cache_observer_dict:
             self.cache_observer_dict[id_string].invalidate()
+        CacheRefresher.refreshCache()
 
     @classmethod
     def removeObserver(cls, id_string: str) -> None:
@@ -236,13 +252,46 @@ class CacheHandler:
         data_object: object,
         object_data_dict: dict = None
     ) -> None:
+        from backend.src.auxiliary.info import GeneralInfo
         id_string, is_managed_object = getIdString(data_object)
         if is_managed_object:
             data_to_upload = data_object
             if object_data_dict is not None:
                 data_to_upload = object_data_dict
-            DatabaseCache.setCacheData(id_string, data_to_upload)
+            if not isinstance(data_object, GeneralInfo):
+                DatabaseCache.setCacheData(id_string, data_to_upload)
             RAMCache.setCacheData(id_string, data_to_upload)
+
+
+class CacheRefresher:
+    __instance = None
+    _cache_refresh_url_list = []
+
+    def __new__(cls) -> "CacheRefresher":
+        """
+        Create a new instance of CacheRefresher if one does not already exist.
+        """
+        if not cls.__instance:
+            cls.__instance = super().__new__(cls)
+            cls._cache_refresh_url_list = []
+        return cls.__instance
+    
+    @classmethod
+    def addCacheRefreshUrl(cls, url: str) -> None:
+        self = cls()
+        self._cache_refresh_url_list.append(url)
+
+    @classmethod
+    def refreshCache(cls) -> None:
+        self = cls()
+        for url in self._cache_refresh_url_list:
+            self._refreshCache(url)
+    
+    @staticmethod
+    def _refreshCache(url: str) -> None:
+        request_url = url
+        requests.get(request_url)
+
 
 def getIdString(
         general_object: object
@@ -275,7 +324,6 @@ def getIdString(
         ''')
 
 
-
 def getIdStringFromDict(
     identification_dict: dict
 ) -> str:
@@ -294,6 +342,7 @@ class DateTimeEncoder(json.JSONEncoder):
             return o.isoformat()
         return super().default(o)
 
+
 def addDependencyToFunctionCaller(
     dependency: object
 ) -> None:
@@ -311,7 +360,8 @@ def addDependencyToFunctionCaller(
                 instance._dependencies.append(dependency)
     finally:
         del frame # important to avoid memory leak!
-    
+
+
 def recursiveSearchForIntermediateOrInfo(frame):
     from backend.src.auxiliary.info import GeneralInfo
     from backend.src.auxiliary.intermediate import GeneralIntermediate
