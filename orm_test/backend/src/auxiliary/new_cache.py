@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models import Q
 from hashlib import md5
 import json, pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.core.cache import cache
 import inspect
 
@@ -22,7 +22,6 @@ class DatabaseCache(models.Model):
         id_string: str,
         search_date: datetime | None = None
     ) -> object | None:
-        
         if search_date is None:
             search_date = datetime.now()
         try:
@@ -113,6 +112,7 @@ class RAMCache:
     def invalidateCache(
         id_string: str,
     ) -> None:
+        print('invalidate_cache')
         cache.delete(id_string)
 
 
@@ -125,12 +125,13 @@ class CacheObserver:
     def add(
         self,
         dependent_object: object,
+        dependent_object_data: dict | None = None
     ) -> None:
-        dependent_object_id_string = getIdString(dependent_object)
-        if dependent_object_id_string not in self.dependent_objects:
-            self.dependent_objects[dependent_object_id_string].append(
-                dependent_object
-            )
+        dependent_object_id_string, _ = getIdString(dependent_object)
+        if dependent_object_data is None:
+            dependent_object_data = dependent_object
+        if dependent_object_id_string not in self.dependent_objects.keys():
+            self.dependent_objects[dependent_object_id_string] = dependent_object_data
 
     def invalidate(self) -> None:
         for id_string, dependent_object in self.dependent_objects.items():
@@ -152,11 +153,8 @@ class CacheHandler:
         """
         if not cls.__instance:
             cls.__instance = super().__new__(cls)
-            cache_observer_dict = RAMCache.getCacheData('CacheHandler')
-            if cache_observer_dict is None:
-                DatabaseCache.objects.all().delete()
-                cache_observer_dict = {}
-            cls.__instance.cache_observer_dict = cache_observer_dict
+            DatabaseCache.objects.all().delete()
+            cls.__instance.cache_observer_dict = {}
         return cls.__instance
 
     @classmethod
@@ -171,24 +169,28 @@ class CacheHandler:
     def addDependentObjectToCache(
         cls,
         dependency_obj_list: object,
-        dependent_obj: object
+        dependent_obj: object,
+        dependent_object_data: dict = None
     ) -> None:
+        #TODO: write docstring
         self = cls()
         for dependency_obj in dependency_obj_list:
-            self._addDependentObjectToObserver(dependency_obj, dependent_obj)
-        self._createCache(dependent_obj)
+            self._addDependentObjectToObserver(
+                dependency_obj,
+                dependent_obj,
+                dependent_object_data
+            )
+        self._createCache(dependent_obj, dependent_object_data)
 
     @staticmethod
     def getObjectFromCache(
         identification_dict: dict,
         search_date: datetime | None = None
     ):
-        id_string, is_managed_object = getIdStringFromDict(identification_dict)
+        id_string = getIdStringFromDict(identification_dict)
         data = None
-        if not is_managed_object:
-            return data
         if (search_date is None or
-            search_date > datetime.now() - datetime.timedelta(second=5)
+            search_date > datetime.now() - timedelta(second=5)
         ):
             data = RAMCache.getCacheData(id_string)
         if data is None:
@@ -209,38 +211,45 @@ class CacheHandler:
             DatabaseCache.updateCacheEndDate(id_string, object)
         if id_string in self.cache_observer_dict:
             self.cache_observer_dict[id_string].invalidate()
-            RAMCache.setCacheData('CacheHandler', self.cache_observer_dict)
 
     @classmethod
     def removeObserver(cls, id_string: str) -> None:
         self = cls()
         del self.cache_observer_dict[id_string]
-        RAMCache.setCacheData('CacheHandler', self.cache_observer_dict)
-
 
     def _addDependentObjectToObserver(
         self,
         dependency_obj: object,
-        dependent_obj: object
+        dependent_obj: object,
+        dependent_object_data: dict | None = None
     ) -> None:
         id_string, _ = getIdString(dependency_obj)
         if id_string not in self.cache_observer_dict:
             self.cache_observer_dict[id_string] = CacheObserver(id_string)
-        self.cache_observer_dict[id_string].add(dependent_obj)
-        RAMCache.setCacheData('CacheHandler', self.cache_observer_dict)
+        self.cache_observer_dict[id_string].add(
+            dependent_obj,
+            dependent_object_data
+        )
 
     def _createCache(
         self,
-        data: object
+        data_object: object,
+        object_data_dict: dict = None
     ) -> None:
-        id_string, is_managed_object = getIdString(data)
+        id_string, is_managed_object = getIdString(data_object)
         if is_managed_object:
-            DatabaseCache.setCacheData(id_string, data)
-            RAMCache.setCacheData(id_string, data)
+            data_to_upload = data_object
+            if object_data_dict is not None:
+                data_to_upload = object_data_dict
+            DatabaseCache.setCacheData(id_string, data_to_upload)
+            RAMCache.setCacheData(id_string, data_to_upload)
 
 def getIdString(
         general_object: object
     ) -> str:
+    from backend.src.auxiliary.manager import GeneralManager
+    from backend.src.auxiliary.info import GeneralInfo
+    from backend.src.auxiliary.intermediate import GeneralIntermediate
     """
     Convert an identification_dict into a JSON string, with keys sorted. This
     wil create a unique string for each identification_dict, which can be used
@@ -248,17 +257,23 @@ def getIdString(
     """
     is_object = isinstance(
         general_object,
-        object
+        (GeneralManager, GeneralInfo, GeneralIntermediate)
     )
-    is_class = isinstance(
+    is_class = inspect.isclass(general_object) and issubclass(
         general_object,
-        type
+        (GeneralManager, GeneralInfo, GeneralIntermediate)
     )
-        
-    if is_object:
+
+    if is_class: # is not an instance but the class itself
+        return general_object.__name__, is_object        
+    elif is_object:
         return getIdStringFromDict(general_object._identification_dict), is_object
-    elif is_class: # is not an instance but the class itself
-        return general_object.__name__, is_object
+    else:
+        raise ValueError(f'''
+            {general_object} must be a GeneralManager, GeneralInfo or
+            GeneralIntermediate instance or class
+        ''')
+
 
 
 def getIdStringFromDict(

@@ -125,7 +125,7 @@ def catchErrorsAndAdjustResponse(createRequestResponse):
         except Exception as e:
             logging.exception(e)
             return Response(status=selectStatusWithErrorType(e))
-    
+
     return tryExceptWrapper
 
 
@@ -323,6 +323,7 @@ class GeneralInfo:
         if self.use_cache:
             CacheHandler.addDependentObjectToCache(
                 self._dependencies,
+                self,
                 self.result_list_dict
             )
 
@@ -340,7 +341,7 @@ class GeneralInfo:
 
     def __checkConfiguration(self) -> None:
         has_manager = hasattr(self, 'manager')
-        is_manager = isinstance(self.manager, GeneralManager)
+        is_manager = issubclass(self.manager, GeneralManager)
 
         if not has_manager or not is_manager:
             raise Exception('manager not found')

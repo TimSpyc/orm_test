@@ -6,7 +6,7 @@ from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
 from django.core.cache import cache
 import copy
 from django.conf import settings
-from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller
+from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller, getIdStringFromDict
 
 def updateCache(func):
     """
@@ -110,7 +110,6 @@ class GeneralIntermediate:
         self,
         search_date: datetime | None,
         scenario_dict: dict,
-        dependencies: list
     ) -> None:
         """
         Initialize an instance of the class with the given search date and
@@ -124,7 +123,6 @@ class GeneralIntermediate:
         """
         self._identification_dict: dict
         self.scenario_handler = ScenarioHandler(scenario_dict)
-        self.dependencies = dependencies
         self.search_date = search_date
         self.__checkIfDependenciesAreFilled()
         
@@ -147,10 +145,10 @@ class GeneralIntermediate:
         if not isinstance(other, GeneralIntermediate):
             return False
 
-        own_id_string = CacheIntermediate.getIdString(
+        own_id_string = getIdStringFromDict(
             self._identification_dict
         )
-        other_id_string = CacheIntermediate.getIdString(
+        other_id_string = getIdStringFromDict(
             other._identification_dict
         )
         
@@ -199,7 +197,7 @@ class GeneralIntermediate:
             TypeError: If the dependencies attribute is not of type list.
             ValueError: If the dependencies attribute is empty.
         """
-        if not hasattr(self, 'dependencies'):
+        if not hasattr(self, '_dependencies'):
             raise MissingAttributeError(
                 '''
                 Every intermediate class needs to have a dependencies attribute
@@ -207,14 +205,14 @@ class GeneralIntermediate:
                 intermediate and manager objects.
                 '''
             )
-        if type(self.dependencies) != list:
+        if type(self._dependencies) != list:
             raise TypeError(
                 f'''
                 The attribute "dependencies" needs to be of type list not
                 {type(self.dependencies)}
                 '''
             )
-        if len(self.dependencies) == 0:
+        if len(self._dependencies) == 0:
             raise ValueError(
                 '''
                 The attribute "dependencies" needs to contain all necessary
@@ -222,7 +220,7 @@ class GeneralIntermediate:
                 dependencies is not possible.
                 '''
             )
-        for dependency in self.dependencies:
+        for dependency in self._dependencies:
             if (
                 not isinstance(dependency, GeneralIntermediate) and 
                 not isinstance(dependency, GeneralManager) and
@@ -287,25 +285,6 @@ class GeneralIntermediate:
             getRelevantScenarioDict(cls.relevant_scenario_keys)
 
         return relevant_scenarios, scenario_handler
-
-    def updateCache(self):
-        """
-        Updates the cache with the current data. If the end date is not set,
-        the cache is updated with the current data. Otherwise, the cache is
-        updated with the current data and the end date is set to the current
-        date.
-        """
-        if self.end_date is None:
-            id_string = CacheIntermediate.getIdString(self._identification_dict)
-            cache.set(id_string, self)
-        CacheIntermediate.setCacheData(
-            intermediate_name=self.__class__.__name__,
-            identification_dict=self._identification_dict,
-            data=self,
-            start_date=self.start_date,
-            end_date=self.end_date
-        )
-        
 
     def checkIfCacheNeedsToExpire(
         self,
