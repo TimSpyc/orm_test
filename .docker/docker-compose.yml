@@ -11,10 +11,9 @@ services:
       - MARIADB_PASSWORD=ormtestsecretkey
       - MARIADB_ROOT_PASSWORD=root123
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      interval: 1s
-      timeout: 20s
-      retries: 5
+      test: ["CMD", "mariadb", "-u", "orm_test", "-pormtestsecretkey", "-e", "SHOW DATABASES;"]
+      timeout: 3s
+      retries: 20
   cache:
     container_name: cache
     image: redis:latest
@@ -22,18 +21,28 @@ services:
       - cache_volume:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 1s
-      timeout: 20s
-      retries: 5
-  http:
-    container_name: http
-    build: ./http
-    ports:
-      - "80:80"
+      timeout: 3s
+      retries: 20
+  daphne:
+    build: ./django
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     depends_on:
       db:
         condition: service_healthy
       cache:
+        condition: service_healthy
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx-config.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    depends_on:
+      daphne:
         condition: service_healthy
   phpmyadmin:
     container_name: phpmyadmin
@@ -52,7 +61,7 @@ services:
       cache:
         condition: service_healthy
     environment:
-      - CELERY_BROKER_URL=redis://cache:6379/celery
+      - CELERY_BROKER_URL=redis://cache:6379/0
 volumes:
   db_volume:
   cache_volume:
