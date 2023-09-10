@@ -7,7 +7,3 @@ def main(request):
 
 def derivative_constellium(request):
     return render(request, 'frontend/derivative_constellium.html')
-
-def refresh(request):
-    ApiRequestConsumer.informCacheInvalid("/api/project/")
-    return HttpResponse('<h1>refresh</h1>')
