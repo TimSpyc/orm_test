@@ -22,7 +22,7 @@ if mode == 'prod':
     USE_CACHE = True
 elif mode == 'dev':
     DEBUG = True
-    USE_CACHE = True
+    USE_CACHE = False
 else:
     raise ValueError('Invalid MODE environment variable value')
 
@@ -43,6 +43,8 @@ ALLOWED_HOSTS = ['localhost', 'http', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,7 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'backend',
-    'rest_framework',
+    'frontend',
 ]
 
 MIDDLEWARE = [
@@ -83,6 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'orm_test.wsgi.application'
+ASGI_APPLICATION = 'orm_test.asgi.application'
 
 if 'test' in sys.argv:
     MIGRATION_MODULES = {'backend': None}
@@ -95,6 +98,11 @@ if mode == 'dev':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer'
         }
     }
 if mode == 'prod':
@@ -119,6 +127,16 @@ if mode == 'prod':
             }
         }
     }
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [f'redis://cache:6379/websocket'],
+            },
+        },
+    }
+    CELERY_BROKER_URL = 'redis://localhost:6379/celery'
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 

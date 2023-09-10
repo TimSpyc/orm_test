@@ -2,7 +2,6 @@ import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from backend.src.auxiliary.intermediate import GeneralIntermediate
 from backend.src.auxiliary.manager import GeneralManager
 from backend.src.auxiliary.new_cache import CacheHandler
 from django.urls import path
@@ -13,42 +12,6 @@ from backend.src.auxiliary.timing import timeit
 from django.conf import settings
 
 from backend.src.auxiliary.new_cache import CacheHandler
-
-def updateCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-    Use this for object methods.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(self, *args, **kwargs):
-        CacheHandler.invalidateCache(self)
-        result = func(self, *args, **kwargs)
-        CacheHandler.addDependentObjectToCache(self._dependencies, self)
-        return result
-    return wrapper
-
-
-def createCache(func):
-    """
-    Decorator function to update the cache after executing the wrapped function.
-    Use this for class methods.
-    
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The wrapped function with cache update functionality.
-    """
-    def wrapper(cls, *args, **kwargs):
-        result = func(cls, *args, **kwargs)
-        CacheHandler.addDependentObjectToCache(result._dependencies, result)
-        return result
-    return wrapper
 
 
 def selectStatusWithErrorType(error_type):
@@ -269,13 +232,23 @@ class GeneralInfo:
     def put(self) -> None:
         self.__checkConfiguration()
 
+        # manager_obj = self.manager(
+        #     self.identifier['group_id'],
+        #     self.request_info_dict['request_data']['creation_date']
+        # )
+        
+        # manager_obj.update(
+        #         creator_id = self.request_info_dict["request_user_id"],
+        #         **self.request_info_dict['request_data']
+        #     )
+
+
         manager_obj = self.manager(
             self.identifier['group_id'],
-            self.request_info_dict['request_data']['creation_date']
         )
         
         manager_obj.update(
-                creator_id = self.request_info_dict["request_user_id"],
+                creator_id = 1,
                 **self.request_info_dict['request_data']
             )
 
@@ -320,15 +293,15 @@ class GeneralInfo:
             return None
 
     def __setCacheData(self) -> None:
-        if self.use_cache:
-            CacheHandler.addDependentObjectToCache(
-                self._dependencies,
-                self,
-                self.result_list_dict
-            )
+        CacheHandler.addDependentObjectToCache(
+            self._dependencies,
+            self,
+            self.result_list_dict
+        )
 
     def _updateCache(self) -> None:
-        self.__getNewResultDict()
+        if self.use_cache:
+            self.__getNewResultDict()
 
     def __getNewResultDict(self) -> dict:
         object_list = self.getList()
