@@ -30,18 +30,18 @@
                 sendMessage(JSON.stringify(data));
             }
             function fetchData() {
-                fetch('/api/project/')
+                fetch('/api/derivative_constellium/')
                     .then(response => response.json())
                     .then(response_data => {
                         let data = response_data.data;
                         console.log("data", data);
                         let table_body = document.getElementById("project_table_body");
                         table_body.innerHTML = "";
-                        data.forEach(project => {
+                        data.forEach(derivative => {
                             let row = document.createElement("tr");
-                            let project_group_id = project.group_id;
-                            let project_name = project.name;
-                            let project_number = project.project_number;
+                            let project_group_id = derivative.group_id;
+                            let project_name = derivative.name;
+                            let project_number = derivative.project__project_number;
                             row.innerHTML = `
                                 <td>${project_group_id}</td>
                                 <td>${project_name}</td>
@@ -50,7 +50,7 @@
                             table_body.appendChild(row);
                         });
                     });
-                registerUrlToSocketServer(`${window.location.host}/api/project/`);
+                registerUrlToSocketServer(`${window.location.host}/api/derivative_constellium/`);
             }
 
             let url = `ws://${window.location.host}/api/ws/cache_invalidator/`;
@@ -59,7 +59,7 @@
             ws.onmessage = function(event) {
                 let data = JSON.parse(event.data);
                 console.log("data", data);
-                if (data?.type === "refetch" && data?.url === '{"base_url": "project"}') {
+                if (data?.type === "refetch" && data?.url === '{"base_url": "derivative_constellium"}') {
                     fetchData();
                 }
             };

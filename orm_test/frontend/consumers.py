@@ -19,6 +19,8 @@ class ApiRequestConsumer(WebsocketConsumer):
         text_data = json.loads(text_data)
         message_type = text_data['type']
         if message_type == 'register_url':
+            print(text_data['url'])
+
             url = md5(text_data['url'].encode()).hexdigest()
             async_to_sync(self.channel_layer.group_add)(
                 url,

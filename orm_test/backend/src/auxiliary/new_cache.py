@@ -5,7 +5,8 @@ import json, pickle
 from datetime import datetime, timedelta
 from django.core.cache import cache
 import inspect
-import requests
+from time import sleep
+import os
 
 class DatabaseCache(models.Model):
 
@@ -142,15 +143,13 @@ class CacheObserver:
             dependent_object = dependent_object_data["object"]
             dependent_object_data = dependent_object_data["data"]
             RAMCache.invalidateCache(id_string)
-            if isinstance(dependent_object, GeneralInfo):
-                self.startNewRequest(dependent_object)
-            else:
+            if not isinstance(dependent_object, GeneralInfo):
                 DatabaseCache.updateCacheEndDate(id_string, dependent_object)
         self.destroy()
-
-    def startNewRequest(self, dependent_object: object) -> None:
-        request_url = dependent_object.request.build_absolute_uri()
-        CacheRefresher.addCacheRefreshUrl(request_url)
+        for dependent_object_data in self.dependent_objects.values():
+            dependent_object = dependent_object_data["object"]
+            if isinstance(dependent_object, GeneralInfo):
+                CacheRefresher.update_on_client_side(dependent_object)
 
     def destroy(self) -> None:
         CacheHandler.removeObserver(self.id_string)
@@ -226,7 +225,6 @@ class CacheHandler:
                 DatabaseCache.updateCacheEndDate(id_string, object)
         if id_string in self.cache_observer_dict:
             self.cache_observer_dict[id_string].invalidate()
-        CacheRefresher.refreshCache()
 
     @classmethod
     def removeObserver(cls, id_string: str) -> None:
@@ -265,7 +263,6 @@ class CacheHandler:
 
 class CacheRefresher:
     __instance = None
-    _cache_refresh_url_list = []
 
     def __new__(cls) -> "CacheRefresher":
         """
@@ -273,33 +270,34 @@ class CacheRefresher:
         """
         if not cls.__instance:
             cls.__instance = super().__new__(cls)
-            cls._cache_refresh_url_list = []
         return cls.__instance
     
     @classmethod
-    def addCacheRefreshUrl(cls, url: str) -> None:
+    def update_on_client_side(cls, info_object: object) -> None:
+        mode = os.environ.get('MODE', 'dev')
         self = cls()
-        self._cache_refresh_url_list.append(url)
+        if mode == 'dev':
+            self.refreshCache(info_object)
+        else:
+            self.informWorkerToRefreshCache(info_object)
 
-    @classmethod
-    def refreshCache(cls) -> None:
-        self = cls()
-        for url in self._cache_refresh_url_list:
-            self.__refreshCache(url)
-            self.__informWebsocket(url)
+    def informWorkerToRefreshCache(self, info_object):
+        #TODO: implement
+        pass
+
+    def refreshCache(self, info_object: object) -> None:    
+        self.__refreshCache(info_object)
+        self.__informWebsocket(info_object)
     
     @staticmethod
-    def __refreshCache(url: str) -> None:
-        request_url = url
-        requests.get(request_url)
+    def __refreshCache(info_object: object) -> None:
+        #TODO: implement
+        pass 
 
     @staticmethod
-    def __informWebsocket(url: str) -> None:
-        from frontend.consumers import ApiRequestConsumer
-        ApiRequestConsumer.sendToAllConsumers({
-            'message': 'cache_refreshed',
-            'url': url
-        })
+    def __informWebsocket(info_object: object) -> None:
+        from backend.src.auxiliary.websocket import ApiRequestConsumer
+        ApiRequestConsumer.informCacheInvalid(info_object._identification_dict)
 
 
 def getIdString(
