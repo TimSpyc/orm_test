@@ -121,7 +121,7 @@ if mode == 'prod':
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': f'redis://cache:6379/{app_name}',
+            'LOCATION': f'redis://cache:6379/2',
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             }
@@ -131,11 +131,11 @@ if mode == 'prod':
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
-                'hosts': [f'redis://cache:6379/websocket'],
+                'hosts': [f'redis://cache:6379/1'],
             },
         },
     }
-    CELERY_BROKER_URL = 'redis://localhost:6379/celery'
+    CELERY_BROKER_URL = 'redis://cache:6379/0'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
