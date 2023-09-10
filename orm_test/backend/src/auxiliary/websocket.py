@@ -9,7 +9,6 @@ from urllib.parse import urlparse, parse_qs
 def extractBaseUrlAndFilter(url:str) -> (str, dict):
     parsed_url = urlparse(url)
     base_url = '/'.join(parsed_url.path.rstrip('/').split('/')[2:])
-    print("base_url", base_url)
     query_params = parse_qs(parsed_url.query)
     filter_dict = {}
     filter_str = query_params.get('filter', [None])[0]
@@ -42,13 +41,13 @@ class ApiRequestConsumer(WebsocketConsumer):
             )
 
     @classmethod
-    def informCacheInvalid(cls, _identification_dict):
+    def letClientsRefetch(cls, _identification_dict):
         """
-        Informiert alle Verbraucher, die sich für die URL registriert haben.
+        inform all connected clients that the cache for the given url should be
+        invalidated and re-fetched.
         """
         channel_layer = get_channel_layer()
         id_string = json.dumps(_identification_dict, sort_keys=True)
-        print("id_string", id_string)
         url_hash = md5(id_string.encode()).hexdigest()
         async_to_sync(channel_layer.group_send)(
             url_hash, {

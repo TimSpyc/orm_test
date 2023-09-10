@@ -293,15 +293,15 @@ class GeneralInfo:
             return None
 
     def __setCacheData(self) -> None:
-        if self.use_cache:
-            CacheHandler.addDependentObjectToCache(
-                self._dependencies,
-                self,
-                self.result_list_dict
-            )
+        CacheHandler.addDependentObjectToCache(
+            self._dependencies,
+            self,
+            self.result_list_dict
+        )
 
     def _updateCache(self) -> None:
-        self.__getNewResultDict()
+        if self.use_cache:
+            self.__getNewResultDict()
 
     def __getNewResultDict(self) -> dict:
         object_list = self.getList()

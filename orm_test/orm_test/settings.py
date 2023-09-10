@@ -22,7 +22,7 @@ if mode == 'prod':
     USE_CACHE = True
 elif mode == 'dev':
     DEBUG = True
-    USE_CACHE = True
+    USE_CACHE = False
 else:
     raise ValueError('Invalid MODE environment variable value')
 

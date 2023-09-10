@@ -149,7 +149,7 @@ class CacheObserver:
         for dependent_object_data in self.dependent_objects.values():
             dependent_object = dependent_object_data["object"]
             if isinstance(dependent_object, GeneralInfo):
-                CacheRefresher.update_on_client_side(dependent_object)
+                CacheRefresher.addToQue(dependent_object)
 
     def destroy(self) -> None:
         CacheHandler.removeObserver(self.id_string)
@@ -263,6 +263,7 @@ class CacheHandler:
 
 class CacheRefresher:
     __instance = None
+    que = []
 
     def __new__(cls) -> "CacheRefresher":
         """
@@ -273,13 +274,19 @@ class CacheRefresher:
         return cls.__instance
     
     @classmethod
-    def update_on_client_side(cls, info_object: object) -> None:
+    def addToQue(cls, info_object: object) -> None:
+        self = cls()
+        self.que.append(info_object)
+
+    @classmethod
+    def update_on_client_side(cls) -> None:
         mode = os.environ.get('MODE', 'dev')
         self = cls()
-        if mode == 'dev':
-            self.refreshCache(info_object)
-        else:
-            self.informWorkerToRefreshCache(info_object)
+        for info_object in self.que:
+            if mode == 'dev':
+                self.refreshCache(info_object)
+            else:
+                self.informWorkerToRefreshCache(info_object)
 
     def informWorkerToRefreshCache(self, info_object):
         #TODO: implement
@@ -291,13 +298,12 @@ class CacheRefresher:
     
     @staticmethod
     def __refreshCache(info_object: object) -> None:
-        #TODO: implement
-        pass 
+        info_object._updateCache()
 
     @staticmethod
     def __informWebsocket(info_object: object) -> None:
         from backend.src.auxiliary.websocket import ApiRequestConsumer
-        ApiRequestConsumer.informCacheInvalid(info_object._identification_dict)
+        ApiRequestConsumer.letClientsRefetch(info_object._identification_dict)
 
 
 def getIdString(

@@ -10,7 +10,7 @@ from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
-from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller
+from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller, CacheRefresher
 
 def updateCache(func):
     """
@@ -27,6 +27,7 @@ def updateCache(func):
         CacheHandler.invalidateCache(self)
         result = func(self, *args, **kwargs)
         CacheHandler.addGeneralManagerObjectToCache(self)
+        CacheRefresher.update_on_client_side()
         return result
     return wrapper
 
