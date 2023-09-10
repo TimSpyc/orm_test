@@ -135,6 +135,8 @@ if mode == 'prod':
             },
         },
     }
+    CELERY_BROKER_URL = 'redis://localhost:6379/celery'
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 

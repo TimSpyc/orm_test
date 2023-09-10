@@ -43,7 +43,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
+  celery_worker:
+    container_name: celery_worker
+    build: ./celery
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    environment:
+      - CELERY_BROKER_URL=redis://cache:6379/celery
 volumes:
   db_volume:
   cache_volume:

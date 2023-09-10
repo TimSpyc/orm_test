@@ -5,7 +5,6 @@ import json, pickle
 from datetime import datetime, timedelta
 from django.core.cache import cache
 import inspect
-from time import sleep
 import os
 
 class DatabaseCache(models.Model):
@@ -287,10 +286,16 @@ class CacheRefresher:
                 self.refreshCache(info_object)
             else:
                 self.informWorkerToRefreshCache(info_object)
+        self.que = []
 
     def informWorkerToRefreshCache(self, info_object):
-        #TODO: implement
-        pass
+        from celery import shared_task
+
+        @shared_task
+        def refreshCache() -> None:
+            self.refreshCache(info_object)
+
+        refreshCache.delay()
 
     def refreshCache(self, info_object: object) -> None:    
         self.__refreshCache(info_object)
