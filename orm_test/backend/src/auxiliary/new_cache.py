@@ -285,12 +285,21 @@ class CacheRefresher:
     def refreshCache(cls) -> None:
         self = cls()
         for url in self._cache_refresh_url_list:
-            self._refreshCache(url)
+            self.__refreshCache(url)
+            self.__informWebsocket(url)
     
     @staticmethod
-    def _refreshCache(url: str) -> None:
+    def __refreshCache(url: str) -> None:
         request_url = url
         requests.get(request_url)
+
+    @staticmethod
+    def __informWebsocket(url: str) -> None:
+        from frontend.consumers import ApiRequestConsumer
+        ApiRequestConsumer.sendToAllConsumers({
+            'message': 'cache_refreshed',
+            'url': url
+        })
 
 
 def getIdString(
