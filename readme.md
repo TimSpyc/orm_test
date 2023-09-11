@@ -14,6 +14,7 @@ GroupTables inherit from GroupTable Class and name ends with "Group"
             return f"{self.user} - {self.project_group}"
 ```
 
+
 ## Data Table
 Table for data storage of user changeable data. Always contains the following columns: date, creator, active. There is only ONE Data Table for each Topic.
 ```python
