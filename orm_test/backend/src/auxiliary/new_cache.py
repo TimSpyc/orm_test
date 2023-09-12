@@ -289,13 +289,8 @@ class CacheRefresher:
         self.que = []
 
     def informWorkerToRefreshCache(self, info_object):
-        from celery import shared_task
-
-        @shared_task
-        def refreshCache() -> None:
-            self.refreshCache(info_object)
-
-        refreshCache.delay()
+        from backend.tasks import informWorkerToRefreshCache
+        informWorkerToRefreshCache(info_object)
 
     def refreshCache(self, info_object: object) -> None:    
         self.__refreshCache(info_object)
