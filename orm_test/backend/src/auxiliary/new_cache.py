@@ -376,7 +376,8 @@ def addDependencyToFunctionCaller(
 def recursiveSearchForIntermediateOrInfo(frame):
     from backend.src.auxiliary.info import GeneralInfo
     from backend.src.auxiliary.intermediate import GeneralIntermediate
-
+    if frame is None:
+        return
     if 'self' in frame.f_locals:
         instance = frame.f_locals['self']
         if isinstance(instance, (GeneralIntermediate, GeneralInfo)):
