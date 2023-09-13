@@ -287,7 +287,7 @@ class CacheRefresher:
             if mode == 'dev':
                 self.refreshCache(info_object)
             else:
-                informWorkerToRefreshCache.delay(info_object)
+                informWorkerToRefreshCache(info_object)
         self.que = []
 
     def refreshCache(self, info_object: object) -> None:    
