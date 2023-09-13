@@ -56,6 +56,24 @@
             let url = `ws://${window.location.host}/api/ws/cache_invalidator/`;
             const ws = new WebSocket(url);
 
+            ws.onopen = function(event) {
+                console.log('Verbindung geöffnet');
+            };
+
+            ws.onclose = function(event) {
+                if (event.wasClean) {
+                    console.log(`Verbindung geschlossen. Code=${event.code}, Ursache=${event.reason}`);
+                } else {
+                    console.log('Verbindungsabbruch'); 
+                }
+                location.reload();
+            };
+
+            ws.onerror = function(error) {
+                console.error(`WebSocket Fehler: ${error.message}`);
+            };
+
+
             ws.onmessage = function(event) {
                 let data = JSON.parse(event.data);
                 console.log("data", data);
