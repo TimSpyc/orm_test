@@ -24,5 +24,5 @@ def getUrlOutOfInfoIdentificationDict(request, identification_dict):
     filter_dict = copy.deepcopy(identification_dict)
     filter_dict.pop('base_url')
     filter_str = json.dumps(filter_dict, sort_keys=True)
-    url = f'{host}/api/{identification_dict["base_url"]}/?filter={filter_str}'
+    url = f'http://{host}/api/{identification_dict["base_url"]}/?filter={filter_str}'
     return url
