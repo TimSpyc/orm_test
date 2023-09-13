@@ -24,7 +24,7 @@ services:
       timeout: 3s
       retries: 20
   daphne:
-    container_name: daphne(django)
+    container_name: daphne
     build: ./django
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8001"]
