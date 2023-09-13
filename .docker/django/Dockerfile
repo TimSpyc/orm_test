@@ -13,7 +13,7 @@ ENV PATH "/usr/local/bin:$PATH"
 ENV PYTHONPATH "${PYTHONPATH}:/app/orm_test/orm_test"
 ENV PYTHONPATH "${PYTHONPATH}:/app/orm_test/"
 ENV MODE "prod"
-ARG CACHEBUSTER=10
+ARG CACHEBUSTER=20
 
 RUN git clone https://github.com/TimSpyc/orm_test.git /app/orm_test
 WORKDIR /app/orm_test
