@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from django.core.cache import cache
 import inspect
 import os
+from backend.tasks import informWorkerToRefreshCache
+
 
 class DatabaseCache(models.Model):
 
@@ -285,12 +287,8 @@ class CacheRefresher:
             if mode == 'dev':
                 self.refreshCache(info_object)
             else:
-                self.informWorkerToRefreshCache(info_object)
+                informWorkerToRefreshCache.delay(info_object)
         self.que = []
-
-    def informWorkerToRefreshCache(self, info_object):
-        from backend.tasks import informWorkerToRefreshCache
-        informWorkerToRefreshCache(info_object)
 
     def refreshCache(self, info_object: object) -> None:    
         self.__refreshCache(info_object)
