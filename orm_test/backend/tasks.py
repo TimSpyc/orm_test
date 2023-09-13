@@ -4,25 +4,18 @@ from requests import request
 import json
 import copy
 
-def informWorkerToRefreshCache(info_object):
-    url = getUrlOutOfInfoIdentificationDict(
-        info_object.request,
-        info_object._identification_dict
-    )
-    identification_dict = info_object._identification_dict
-    taskForCacheInvalidation.delay(identification_dict, url)
-
-
 @shared_task
-def taskForCacheInvalidation(identification_dict, url):
+def taskForCacheInvalidation(identification_dict):
+    url = getUrlOutOfInfoIdentificationDict(
+        identification_dict
+    )
     request('GET', url)
     ApiRequestConsumer.letClientsRefetch(identification_dict)    
 
 
-def getUrlOutOfInfoIdentificationDict(request, identification_dict):
-    host = request._request.headers['host']
+def getUrlOutOfInfoIdentificationDict(identification_dict):
     filter_dict = copy.deepcopy(identification_dict)
     filter_dict.pop('base_url')
     filter_str = json.dumps(filter_dict, sort_keys=True)
-    url = f'http://{host}/api/{identification_dict["base_url"]}/?filter={filter_str}'
+    url = f'http://daphne:8001/api/{identification_dict["base_url"]}/?filter={filter_str}'
     return url
