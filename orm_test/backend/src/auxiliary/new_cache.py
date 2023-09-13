@@ -287,7 +287,8 @@ class CacheRefresher:
             if mode == 'dev':
                 self.refreshCache(info_object)
             else:
-                taskForCacheInvalidation.delay(info_object._identification_dict)
+                identification_dict = info_object._identification_dict
+                taskForCacheInvalidation.delay(identification_dict)
         self.que = []
 
     def refreshCache(self, info_object: object) -> None:    
@@ -376,7 +377,8 @@ def addDependencyToFunctionCaller(
 def recursiveSearchForIntermediateOrInfo(frame):
     from backend.src.auxiliary.info import GeneralInfo
     from backend.src.auxiliary.intermediate import GeneralIntermediate
-
+    if frame is None:
+        return
     if 'self' in frame.f_locals:
         instance = frame.f_locals['self']
         if isinstance(instance, (GeneralIntermediate, GeneralInfo)):
