@@ -602,10 +602,3 @@ class GeneralInfo:
             key: json.loads(value)
             for key, value in request.query_params.dict().items()
         }
-
-def getUrlOutOfInfoIdentificationDict(request, identification_dict):
-    host = request._request.headers['host']
-    filter_dict = addPrefix('filter', identification_dict)
-    filter_str = json.dumps(filter_dict, sort_keys=True)
-    url = f'{host}/api/{identification_dict["base_url"]}/?filter={filter_str}'
-    return url
