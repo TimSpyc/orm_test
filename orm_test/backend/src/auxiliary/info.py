@@ -345,13 +345,17 @@ class GeneralInfo:
 
         if group_by is None:
             return result_list_dict
-        self.__checkGroupByFormat(group_by)
+        self.__checkGroupByFormat(group_by, result_list_dict)
         
         level_1_list, level_2_dict = self.__getGroupLevelDict(group_by)
         grouped_data = self.__buildGroups(result_list_dict, level_1_list)
         return self.__combineData(grouped_data, level_1_list, level_2_dict)
 
-    def __checkGroupByFormat(self, group_by: list[str]) -> None:
+    def __checkGroupByFormat(
+        self,
+        group_by: list[str],
+        result_list_dict: list[dict]
+    ) -> None:
         if type(group_by) is not list:
             raise ValueError('group_by must be a list of strings')
         for group in group_by:
@@ -360,7 +364,7 @@ class GeneralInfo:
             group_list = group.split('.')
             if len(group_list) > 2:
                 raise Exception("Group by is not supported for more than 2 levels")
-            if group_list[0] not in self.result_list_dict[0].keys():
+            if group_list[0] not in result_list_dict[0].keys():
                 raise Exception(f"Group by key {group_list[0]} not found")
 
     @staticmethod
