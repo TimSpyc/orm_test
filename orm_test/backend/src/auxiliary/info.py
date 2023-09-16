@@ -128,6 +128,7 @@ class GeneralInfo:
             page: int to select the page (default: 1)
             page_size: int to select the page size (default: all results)
             filter: dict to filter on db level (e.g. {"key": "value"})
+            group_by: list of keys to group by (e.g. ["key1", "key2"])
         
         Attributes:
             base_url: str => url to be used in urls.py (e.g. 'example')
@@ -350,7 +351,6 @@ class GeneralInfo:
         grouped_data = self.__buildGroups(result_list_dict, level_1_list)
         return self.__combineData(grouped_data, level_1_list, level_2_dict)
 
-
     def __checkGroupByFormat(self, group_by: list[str]) -> None:
         if type(group_by) is not list:
             raise ValueError('group_by must be a list of strings')
@@ -360,6 +360,8 @@ class GeneralInfo:
             group_list = group.split('.')
             if len(group_list) > 2:
                 raise Exception("Group by is not supported for more than 2 levels")
+            if group_list[0] not in self.result_list_dict[0].keys():
+                raise Exception(f"Group by key {group_list[0]} not found")
 
     @staticmethod
     def __getGroupLevelDict(group_by: list[str]) -> list[str]:
