@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from django.core.cache import cache
 import inspect
 import os
+from backend.tasks import taskForCacheInvalidation
+
 
 class DatabaseCache(models.Model):
 
@@ -285,17 +287,9 @@ class CacheRefresher:
             if mode == 'dev':
                 self.refreshCache(info_object)
             else:
-                self.informWorkerToRefreshCache(info_object)
+                identification_dict = info_object._identification_dict
+                taskForCacheInvalidation.delay(identification_dict)
         self.que = []
-
-    def informWorkerToRefreshCache(self, info_object):
-        from celery import shared_task
-
-        @shared_task
-        def refreshCache() -> None:
-            self.refreshCache(info_object)
-
-        refreshCache.delay()
 
     def refreshCache(self, info_object: object) -> None:    
         self.__refreshCache(info_object)
@@ -383,7 +377,8 @@ def addDependencyToFunctionCaller(
 def recursiveSearchForIntermediateOrInfo(frame):
     from backend.src.auxiliary.info import GeneralInfo
     from backend.src.auxiliary.intermediate import GeneralIntermediate
-
+    if frame is None:
+        return
     if 'self' in frame.f_locals:
         instance = frame.f_locals['self']
         if isinstance(instance, (GeneralIntermediate, GeneralInfo)):

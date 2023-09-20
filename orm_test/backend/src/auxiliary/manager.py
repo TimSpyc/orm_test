@@ -441,7 +441,7 @@ class GeneralManager:
                 for model_object in getattr(model_obj, data_source).all()
             ])
         else:
-            setattr(self, f'{column.name}_id', model_obj.id)
+            setattr(self, f'{column.name}_id', getattr(model_obj, f'{column.name}_id'))
 
     def __assignAttribute(
             self, 
@@ -568,10 +568,15 @@ class GeneralManager:
             )
 
         attribute_name = column_name.replace('group', 'manager_list')
+        setattr(
+            self,
+            f'_{attribute_name}',
+            [group_data for group_data in getattr(model_obj, data_source).all()]
+        )
 
         method = lambda self: [
-            group_data.getManager(self.search_date)
-            for group_data in getattr(model_obj, data_source).all()
+            group_data.getManager(self.search_date) for group_data in
+            getattr(self, f'_{attribute_name}')
         ]
       
         return (method, attribute_name)
@@ -600,10 +605,20 @@ class GeneralManager:
             )
         attribute_name = f'{column_name}_manager_list'
 
+        setattr(
+            self,
+            f'_{attribute_name}_data_dict',
+            [{
+                "data":data_data,
+                "group":data_data.group_object
+            } for data_data in getattr(model_obj, data_source).all()]
+        )
+
         def method(self):
             manager_list = []
-            for data_data in getattr(model_obj, data_source).all(): 
-                group_data = data_data.group_object
+            for data_dict in getattr(self, f'_{attribute_name}_data_dict'):
+                data_data = data_dict['data']
+                group_data = data_dict['group']
                 manager = group_data.getManager(self.search_date)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
@@ -629,9 +644,10 @@ class GeneralManager:
             tuple: A tuple containing the generated method and attribute name.
         """
         attribute_name = f'{column.name}'.replace('group', 'manager')
+        setattr(self, f'_{attribute_name}', getattr(model_obj, column.name))
+
         def method(self):
-            group_data = getattr(model_obj, column.name)
-            return group_data.getManager(self.search_date)
+            return getattr(self, f'_{attribute_name}').getManager(self.search_date)
         return (method, attribute_name)
 
     def __getManagerFromDataModel(
@@ -653,12 +669,23 @@ class GeneralManager:
             tuple: A tuple containing the generated method and attribute name.
         """
         attribute_name = f'{column.name}_manager'
-        def method(self):
+        setattr(
+            self,
+            f'_{attribute_name}_data_data',
+            getattr(model_obj, column.name)
+        )
+        setattr(
+            self,
+            f'_{attribute_name}',
+            getattr(self, f'_{attribute_name}_data_data').group_object
+        )
 
-            data_data = getattr(model_obj, column.name)
-            group_data = data_data.group_object
-            manager = group_data.getManager(self.search_date)
-            if manager.id == data_data.id:
+        def method(self):
+            manager = getattr(
+                self,
+                f'_{attribute_name}'
+            ).getManager(self.search_date)
+            if manager.id == getattr(self, f'_{attribute_name}_data_data').id:
                 return manager
         return (method, attribute_name)
 
