@@ -19,15 +19,15 @@ class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
 
         self.current_volume = self.getCurrentVolume()
 
-        self.super().__init__(
+        super().__init__(
             search_date,
             scenario_dict,
         )
 
     def getCurrentVolume(self):
         total_volume = {}
-        for extension_data in self.derivative_constellium_manager.derivative_constellium_derivative_lmc_connection:
-            derivative_lmc_group_id = extension_data['derivative_lmc_group_id']
+        for extension_data in self.derivative_constellium_manager.derivative_constellium_derivative_lmc_connection_dict_list:
+            derivative_lmc_group_id = extension_data['derivative_lmc'].id
             der_lmc_volume = DerivativeLmcVolumeManager(derivative_lmc_group_id)
             current_lmc_volume = der_lmc_volume.current_volume
             for datum, volume in current_lmc_volume:

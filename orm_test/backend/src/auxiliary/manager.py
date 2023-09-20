@@ -89,7 +89,10 @@ class ExternalDataManager:
     database_model: Model
 
     def __init__(self, search_date):
-        self.search_date = search_date
+        if search_date is None:
+            self.search_date = datetime.now()
+        else:
+            self.search_date = search_date
         self._start_date = self.__getStartDate()
         self._end_date = self.__getEndDate()
         self._identification_dict = {

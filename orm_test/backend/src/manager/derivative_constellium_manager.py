@@ -76,4 +76,4 @@ class DerivativeConstelliumManager(GeneralManager):
 
     group_model = DerivativeConstelliumGroup
     data_model = DerivativeConstellium
-    data_extension_model_list = []
+    data_extension_model_list = [DerivativeConstelliumDerivativeLmcConnection]

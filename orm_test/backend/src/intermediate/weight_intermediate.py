@@ -2,7 +2,7 @@ from backend.src.manager import PartManager, BillOfMaterialManager, MaterialMana
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime, date
 from statistics import mean
-from backend.models import CacheIntermediate
+from backend.src.auxiliary.new_cache import getIdStringFromDict
 
 class WeightIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
@@ -194,10 +194,10 @@ class WeightIntermediate(GeneralIntermediate):
                 dependency.group_id,
                 search_date=date,
             )
-            old_id = CacheIntermediate.getIdString(
+            old_id = getIdStringFromDict(
                 dependency.bill_of_material_structure_dict_list
             )
-            new_id = CacheIntermediate.getIdString(
+            new_id = getIdStringFromDict(
                 new_bom.bill_of_material_structure_dict_list
             )
             return not old_id == new_id
