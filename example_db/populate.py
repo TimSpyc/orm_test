@@ -578,6 +578,13 @@ class GeneralPopulate:
         max_value: int = 999999
     ) -> int:
         return cls.fake.random_int(min_value, max_value)
+    
+    @staticmethod
+    def getRandomFloat(
+        min_value: float = 0, 
+        max_value: float = 999999
+    ) -> float:
+        return random.uniform(min_value, max_value)
 
     @classmethod
     def getRandomText(cls, max_nb_chars: int = 50) -> str:
@@ -586,6 +593,20 @@ class GeneralPopulate:
     @classmethod
     def getRandomDescription(cls) -> str:
         return cls.getRandomText(250)
+    
+    @classmethod
+    def getUniqueValue(
+        cls,
+        model: Model,
+        column_name: str,
+        value_function
+    ) -> any:
+        unique = False
+        while not unique:
+            value = value_function()
+            if not model.objects.filter(**{column_name: value}):
+                unique = True
+        return value
 
 
     # def randomLetters(length = 4):
