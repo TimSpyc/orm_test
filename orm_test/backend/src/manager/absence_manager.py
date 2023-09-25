@@ -28,8 +28,8 @@ class Absence(DataTable):
         'AbsenceType', 
         on_delete=models.DO_NOTHING, 
     )
-    absence_start_date = models.DateTimeField()
-    absence_end_date = models.DateTimeField()
+    absence_start_date = models.DateField()
+    absence_end_date = models.DateField()
     description = models.TextField(null=True)
     is_accepted = models.BooleanField(null=True)
 
