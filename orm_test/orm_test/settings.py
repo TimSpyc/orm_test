@@ -22,10 +22,9 @@ if mode == 'prod':
     USE_CACHE = True
 elif mode == 'dev':
     DEBUG = True
-    USE_CACHE = False
+    USE_CACHE = True
 else:
     raise ValueError('Invalid MODE environment variable value')
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,12 +37,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-(r4&-_#u_p8wfu4jpij-ukd7b8#0plvd_k_na&2pan36&c4p$s'
 
 
-ALLOWED_HOSTS = ['http']
+ALLOWED_HOSTS = ['localhost', 'http', '127.0.0.1']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,7 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'backend',
-    'rest_framework',
+    'frontend',
 ]
 
 MIDDLEWARE = [
@@ -84,6 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'orm_test.wsgi.application'
+ASGI_APPLICATION = 'orm_test.asgi.application'
 
 if 'test' in sys.argv:
     MIGRATION_MODULES = {'backend': None}
@@ -96,6 +98,11 @@ if mode == 'dev':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer'
         }
     }
 if mode == 'prod':
@@ -114,12 +121,28 @@ if mode == 'prod':
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': f'redis://cache:6379/{app_name}',
+            'LOCATION': f'redis://cache:6379/2',
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             }
         }
     }
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [f'redis://cache:6379/1'],
+            },
+        },
+    }
+    CELERY_BROKER_URL = 'redis://cache:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://cache:6379/0'
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'UTC'
+
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 

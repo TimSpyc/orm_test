@@ -1,7 +1,7 @@
 
 
 from backend.models.reference_models import User
-from backend.src.manager.bom_manager import BillOfMaterial, BillOfMaterialGroup, BillOfMaterialManager
+from backend.src.manager.bill_of_material_manager import BillOfMaterial, BillOfMaterialGroup, BillOfMaterialManager
 from backend.src.manager.derivative_constellium_manager import DerivativeConstelliumGroup
 from backend.src.manager.project_manager import ProjectGroup
 from django.test import TestCase

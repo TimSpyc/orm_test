@@ -15,7 +15,7 @@ class WeightIntermediate(GeneralIntermediate):
     ):
         
         self.part_manager = PartManager(
-            part_group_id=part_group_id,
+            group_id=part_group_id,
             search_date=search_date,
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
@@ -37,17 +37,9 @@ class WeightIntermediate(GeneralIntermediate):
         self.steel_net_weight = self.__getAverageWeight('steel_net_weight')
         self.other_net_weight = self.__getAverageWeight('other_net_weight')
 
-        dependencies = [
-            self.part_manager,
-            *self.bom_manager_list,
-            *self.relevant_part_manager_list,
-            *self.relevant_material_manager_list
-        ]
-
         self.super().__init__(
             search_date,
             scenario_dict,
-            dependencies
         )
     
     def __getAverageWeight(

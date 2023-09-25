@@ -3,16 +3,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from backend.src.auxiliary.manager import GeneralManager
-from backend.src.auxiliary.intermediate import GeneralIntermediate
+from backend.src.auxiliary.new_cache import CacheHandler
 from django.urls import path
 from django.http.request import HttpRequest
 from backend.src.auxiliary.exceptions import *
 import json
-from django.core.cache import cache
 from backend.src.auxiliary.timing import timeit
-from backend.src.auxiliary.cache_handler import InfoCacheHandler
-from backend.models.caching_models import CacheIntermediate
 from django.conf import settings
+
+from backend.src.auxiliary.new_cache import CacheHandler
 
 
 def selectStatusWithErrorType(error_type):
@@ -38,6 +37,7 @@ def selectStatusWithErrorType(error_type):
         NotValidIdError: status.HTTP_404_NOT_FOUND
     }.get(type(error_type), status.HTTP_400_BAD_REQUEST)
 
+
 def adjustStatusWithResponse(response):
     """
     Adjusts the HTTP status code based on the response data.
@@ -60,6 +60,7 @@ def adjustStatusWithResponse(response):
         temp_status = status.HTTP_204_NO_CONTENT
 
     return Response(data=response, status=temp_status)
+
 
 def catchErrorsAndAdjustResponse(createRequestResponse):
     """
@@ -87,8 +88,9 @@ def catchErrorsAndAdjustResponse(createRequestResponse):
         except Exception as e:
             logging.exception(e)
             return Response(status=selectStatusWithErrorType(e))
-    
+
     return tryExceptWrapper
+
 
 def addPrefix(prefix: str, dictionary: dict) -> dict:
     """
@@ -111,6 +113,7 @@ def addPrefix(prefix: str, dictionary: dict) -> dict:
         for key, value in dictionary.items()
     }
 
+
 class GeneralInfo:
     """
         Abstract class for handling requests, responses and define urls.
@@ -125,6 +128,7 @@ class GeneralInfo:
             page: int to select the page (default: 1)
             page_size: int to select the page size (default: all results)
             filter: dict to filter on db level (e.g. {"key": "value"})
+            group_by: list of keys to group by (e.g. ["key1", "key2"])
         
         Attributes:
             base_url: str => url to be used in urls.py (e.g. 'example')
@@ -168,14 +172,15 @@ class GeneralInfo:
     required_permission_list: list
     detail_key_dict: dict = {'group_id': 'int'}
 
-    manager: GeneralManager # Optional
+    manager: "GeneralManager" # Optional
     datasetPermissionFunction = lambda data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
     use_cache = True
 
     def __new__(cls, *args, **kwargs):
-        cls.use_cache = settings.USE_CACHE and cls.use_cache
-        return super().__new__(cls)
+        instance = super().__new__(cls)
+        instance.use_cache = settings.USE_CACHE and instance.use_cache
+        return instance
 
     def __init__(
         self,
@@ -200,11 +205,12 @@ class GeneralInfo:
 
         self.request_info_dict = self.__getRequestInfos()
         filter_params = self.request_info_dict["query_params"].get('filter', {})
-        self.id_string = CacheIntermediate.getIdString({
+        self._identification_dict = {
             **filter_params,
             'base_url': self.base_url
-        })
+        }
         self.identifier = identifier
+        self._dependencies = []
 
     @catchErrorsAndAdjustResponse
     def respond(self) -> list | dict | int:
@@ -214,7 +220,7 @@ class GeneralInfo:
         else:
             return self.__responseIfMethodNotAvailable()
 
-    def getDetail(self) -> GeneralManager:
+    def getDetail(self) -> "GeneralManager":
         search_date = self.request_info_dict['query_params'].get(
             'search_date',
             None
@@ -227,13 +233,23 @@ class GeneralInfo:
     def put(self) -> None:
         self.__checkConfiguration()
 
+        # manager_obj = self.manager(
+        #     self.identifier['group_id'],
+        #     self.request_info_dict['request_data']['creation_date']
+        # )
+        
+        # manager_obj.update(
+        #         creator_id = self.request_info_dict["request_user_id"],
+        #         **self.request_info_dict['request_data']
+        #     )
+
+
         manager_obj = self.manager(
             self.identifier['group_id'],
-            self.request_info_dict['request_data']['creation_date']
         )
         
         manager_obj.update(
-                creator_id = self.request_info_dict["request_user_id"],
+                creator_id = 1,
                 **self.request_info_dict['request_data']
             )
 
@@ -273,36 +289,40 @@ class GeneralInfo:
 
     def __getCacheData(self) -> 'GeneralInfo':
         if self.use_cache:
-            return cache.get(self.id_string)
+            return CacheHandler.getObjectFromCache(self._identification_dict)
         else:
             return None
 
-    def __setCacheData(self, result_list_dict: list) -> None:
-        InfoCacheHandler.addRequestUrl(self)
-        cache.set(self.id_string, result_list_dict)
+    def __setCacheData(self) -> None:
+        CacheHandler.addDependentObjectToCache(
+            self._dependencies,
+            self,
+            self.result_list_dict
+        )
 
     def _updateCache(self) -> None:
-        self.__getNewResultDict()
+        if self.use_cache:
+            self.__getNewResultDict()
 
     def __getNewResultDict(self) -> dict:
         object_list = self.getList()
-        result_list_dict = list(map(
+        self.result_list_dict = list(map(
             lambda manager_obj: self.__serializeData(manager_obj),
             object_list
         ))
-        self.__setCacheData(result_list_dict)
-        return result_list_dict
+        self.__setCacheData()
+        return self.result_list_dict
 
     def __checkConfiguration(self) -> None:
         has_manager = hasattr(self, 'manager')
-        is_manager = isinstance(self.manager, GeneralManager)
+        is_manager = issubclass(self.manager, GeneralManager)
 
         if not has_manager or not is_manager:
             raise Exception('manager not found')
     
     def __serializeData(
         self,
-        data_object: GeneralManager | GeneralIntermediate | object
+        data_object: object
     ) -> dict:
         return self.__class__.serializerFunction(data_object)
 
@@ -313,8 +333,105 @@ class GeneralInfo:
             result_list_dict = self.__getNewResultDict()
         result_list_dict = self.__reduceGetResultList(result_list_dict)
         result_list_dict = self.__search(result_list_dict)
+        result_list_dict = self.__groupBy(result_list_dict)
         result_list_dict = self.__sort(result_list_dict)
         return self.__paginate(result_list_dict)
+
+    def __groupBy(self, result_list_dict: list[dict]) -> list[dict]:
+        group_by = self.request_info_dict['query_params'].get(
+            'group_by',
+            None
+        )
+
+        if group_by is None:
+            return result_list_dict
+        self.__checkGroupByFormat(group_by, result_list_dict)
+        
+        level_1_list, level_2_dict = self.__getGroupLevelDict(group_by)
+        grouped_data = self.__buildGroups(result_list_dict, level_1_list)
+        return self.__combineData(grouped_data, level_1_list, level_2_dict)
+
+    def __checkGroupByFormat(
+        self,
+        group_by: list[str],
+        result_list_dict: list[dict]
+    ) -> None:
+        if type(group_by) is not list:
+            raise ValueError('group_by must be a list of strings')
+        for group in group_by:
+            if type(group) is not str:
+                raise ValueError('group_by must be a list of strings')
+            group_list = group.split('.')
+            if len(group_list) > 2:
+                raise Exception("Group by is not supported for more than 2 levels")
+            if group_list[0] not in result_list_dict[0].keys():
+                raise Exception(f"Group by key {group_list[0]} not found")
+
+    @staticmethod
+    def __getGroupLevelDict(group_by: list[str]) -> list[str]:
+        group_level_dict = {}
+        for group in group_by:
+            group_list = group.split('.')
+            if group_list[0] not in group_level_dict:
+                group_level_dict[group_list[0]] = []
+            if len(group_list) == 2:
+                group_level_dict[group_list[0]].append(group_list[1])
+        level_1_list = [
+            data for data, values in group_level_dict.items()
+            if len(values) == 0
+        ]
+        level_2_dict = {
+            data: values for data, values in group_level_dict.items()
+            if len(values) != 0
+        }
+        return level_1_list, level_2_dict
+
+    @staticmethod
+    def __buildGroups(data, group_by):
+        groups = {}
+        for item in data:
+            key = tuple([item[key] for key in group_by])
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(item)
+        return groups
+
+    def __combineData(self, data, level_1_list, level_2_dict):
+        output_data = []
+        for group_data_list in data.values():    
+            list_for_combined_data = self.__buildListForToCombineData(group_data_list)
+            combined_data = self.__combineGroupedData(list_for_combined_data, level_1_list, level_2_dict)
+            output_data.append(combined_data)
+        return output_data
+
+    @staticmethod
+    def __buildListForToCombineData(group_data_list):
+        combined_data = {}
+        for data in group_data_list:
+            for key, value in data.items():
+                if key not in combined_data:
+                    combined_data[key] = []
+                combined_data[key].append(value)
+        return combined_data
+
+    def __combineGroupedData(self, combined_data, level_1_list, level_2_dict):
+        group_by = level_1_list
+        for key, value in combined_data.items():
+            if key in group_by:
+                combined_data[key] = value[0]
+            elif all(isinstance(x, int) or isinstance(x, float) for x in value):
+                combined_data[key] = sum(value)
+            elif all(isinstance(x, str) for x in value):
+                combined_data[key] = ", ".join(set(value))
+            elif all(isinstance(x, list) for x in value):
+                combined_data[key] = [item for sublist in value for item in sublist]
+                if key in level_2_dict.keys():
+                    combined_data[key] = self.__combineData(
+                        self.__buildGroups(combined_data[key], level_2_dict[key]),
+                    level_2_dict[key], [])
+            else:
+                raise Exception(f"Cannot combine {key} with values {value}")
+        return combined_data
 
     def __sort(self, result_list_dict: list[dict]) -> list[dict]:
         sort_by = self.request_info_dict['query_params'].get(
@@ -531,14 +648,6 @@ class GeneralInfo:
                         => (Method Not Allowed).
         """
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    
-    @staticmethod
-    def __responseIfNotAllowed():
-        Response(status=status.HTTP_403_FORBIDDEN)
-
-    @staticmethod
-    def __responseIfAlright():
-        return Response(status=status.HTTP_200_OK)
 
     @staticmethod
     def __reduceDictWithKeyList(

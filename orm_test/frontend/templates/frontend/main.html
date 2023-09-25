@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+
+    <title>ORM Test</title>
+    <body>
+        <h1>ORM Test request project as list</h1>
+        <table id="project_table">
+            <thead>
+                <tr>
+                    <th>Group ID</th>
+                    <th>Name</th>
+                    <th>Project Number</th>
+                </tr>
+            </thead>
+            <tbody id="project_table_body">
+                <tr>
+                    <td colspan="3">Data is loading...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <script type="text/javascript">
+            function registerUrlToSocketServer(url) {
+                let data = {
+                    "type": "register_url",
+                    "url": url
+                };
+                sendMessage(JSON.stringify(data));
+            }
+            function fetchData() {
+                fetch('/api/project/')
+                    .then(response => response.json())
+                    .then(response_data => {
+                        let data = response_data.data;
+                        console.log("data", data);
+                        let table_body = document.getElementById("project_table_body");
+                        table_body.innerHTML = "";
+                        data.forEach(project => {
+                            let row = document.createElement("tr");
+                            let project_group_id = project.group_id;
+                            let project_name = project.name;
+                            let project_number = project.project_number;
+                            row.innerHTML = `
+                                <td>${project_group_id}</td>
+                                <td>${project_name}</td>
+                                <td>${project_number}</td>
+                            `;
+                            table_body.appendChild(row);
+                        });
+                    });
+                registerUrlToSocketServer(`${window.location.host}/api/project/`);
+            }
+
+            let url = `ws://${window.location.host}/api/ws/cache_invalidator/`;
+            const ws = new WebSocket(url);
+
+            ws.onopen = function(event) {
+                console.log('Verbindung geöffnet');
+            };
+
+            ws.onclose = function(event) {
+                if (event.wasClean) {
+                    console.log(`Verbindung geschlossen. Code=${event.code}, Ursache=${event.reason}`);
+                } else {
+                    console.log('Verbindungsabbruch'); 
+                }
+                location.reload();
+            };
+
+            ws.onerror = function(error) {
+                console.error(`WebSocket Fehler: ${error.message}`);
+            };
+
+
+            ws.onmessage = function(event) {
+                let data = JSON.parse(event.data);
+                console.log("data", data);
+                if (data?.type === "refetch" && data?.url === '{"base_url": "project"}') {
+                    fetchData();
+                }
+            };
+            function waitForConnection() {
+                return new Promise((resolve, reject) => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        resolve();
+                    } else {
+                        ws.addEventListener('open', () => resolve());
+                        ws.addEventListener('error', error => reject(error));
+                    }
+                });
+            }
+
+            async function sendMessage(message) {
+                try {
+                    await waitForConnection();
+                    ws.send(message);
+                } catch (error) {
+                    console.error('Fehler beim Senden der Nachricht:', error);
+                }
+            }
+
+            fetchData();
+        </script>
+    </body>
+</html>

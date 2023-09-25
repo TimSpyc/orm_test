@@ -2,8 +2,6 @@ from backend import models
 from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
 import re
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.cache import cache
-from backend.models import CacheManager
 from backend.models import User
 from datetime import datetime
 from django.db.models import Model, Field
@@ -11,8 +9,46 @@ from django.db.models.query import QuerySet
 from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
-from backend.src.auxiliary.cache_handler import CacheHandler, updateCache, createCache
 from django.conf import settings
+from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller, CacheRefresher
+
+def updateCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for object methods.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(self, *args, **kwargs):
+        CacheHandler.invalidateCache(self)
+        result = func(self, *args, **kwargs)
+        CacheHandler.addGeneralManagerObjectToCache(self)
+        CacheRefresher.update_on_client_side()
+        return result
+    return wrapper
+
+
+def createCache(func):
+    """
+    Decorator function to update the cache after executing the wrapped function.
+    Use this for class methods.
+    
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function with cache update functionality.
+    """
+    def wrapper(cls, *args, **kwargs):
+        result = func(cls, *args, **kwargs)
+        CacheHandler.addGeneralManagerObjectToCache(result)
+        CacheHandler.invalidateCache(cls)
+        return result
+    return wrapper
 
 
 def transferToSnakeCase(name):
@@ -72,11 +108,9 @@ class ExternalDataManager:
 
     def create(self, **kwargs: dict):
         self.database_model.objects.create(**kwargs)
-        CacheHandler.update(self)
 
     def bulkCreate(self, data_list: list):
         self.database_model.objects.bulk_create(data_list)
-        CacheHandler.update(self)
 
 
 class GeneralManager:
@@ -156,6 +190,7 @@ class GeneralManager:
     use_cache: bool = True
 
     def __new__(cls,group_id=None, search_date=None, **kwargs):
+        from backend.src.auxiliary.new_cache import CacheHandler
         """
         Create a new instance of the Manager or 
         return a cached instance if available.
@@ -169,7 +204,7 @@ class GeneralManager:
         Returns:
             manager: A new or cached instance of the manager.
         """
-        cls.use_cache = settings.USE_CACHE and cls.use_cache
+        use_cache = settings.USE_CACHE and cls.use_cache
         
         if hasattr(cls, 'group_model'):
             group_table_id_name = f'''
@@ -181,16 +216,25 @@ class GeneralManager:
         if group_id is None:
             return super().__new__(cls)
 
-        if cls.use_cache:
-            cached_instance = cls.__handleCache(group_id, search_date)
-            if cached_instance:
-                return cached_instance
+        identification_dict = {
+            'group_id': group_id,
+            'manager_name': cls.__name__,
+        }
+        instance = None
+        if use_cache:
+            instance = CacheHandler.getObjectFromCache(
+                identification_dict,
+                search_date
+            )
 
-        instance = super().__new__(cls)
-        instance.__init__(group_id, search_date)
-        if cls.use_cache:
-            cls.updateCache(instance)
+        if not instance:
+            instance = super().__new__(cls)
+            instance.__init__(group_id, search_date)
+            instance._identification_dict = identification_dict
+            if use_cache:
+                CacheHandler.addGeneralManagerObjectToCache(instance)
 
+        addDependencyToFunctionCaller(instance)
         return instance
 
     def __init__(
@@ -228,20 +272,15 @@ class GeneralManager:
         self.date = data_obj.date
         self._start_date = data_obj.date
         self._end_date = self.__getEndDate()
-        self._identification_dict = {
-            'group_id': self.group_id,
-            'manager_name': self.__class__.__name__,
-            'start_date': self._start_date,
-            'end_date': self._end_date
-        }
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.group_id}, {self.search_date})'
+        class_name = self.__class__.__name__
+        return f'{class_name}({self.group_id}, search_date={self.search_date})'
 
     def __str__(self):
         return f'''
             {self.__class__.__name__} with group_id:{self.group_id}
-            and validity from {self.start_date} to {self.end_date}
+            and validity from {self._start_date} to {self._end_date}
         '''
 
     def __iter__(self):
@@ -402,7 +441,7 @@ class GeneralManager:
                 for model_object in getattr(model_obj, data_source).all()
             ])
         else:
-            setattr(self, f'{column.name}_id', model_obj.id)
+            setattr(self, f'{column.name}_id', getattr(model_obj, f'{column.name}_id'))
 
     def __assignAttribute(
             self, 
@@ -529,10 +568,15 @@ class GeneralManager:
             )
 
         attribute_name = column_name.replace('group', 'manager_list')
+        setattr(
+            self,
+            f'_{attribute_name}',
+            [group_data for group_data in getattr(model_obj, data_source).all()]
+        )
 
         method = lambda self: [
-            group_data.getManager(self.search_date)
-            for group_data in getattr(model_obj, data_source).all()
+            group_data.getManager(self.search_date) for group_data in
+            getattr(self, f'_{attribute_name}')
         ]
       
         return (method, attribute_name)
@@ -561,10 +605,20 @@ class GeneralManager:
             )
         attribute_name = f'{column_name}_manager_list'
 
+        setattr(
+            self,
+            f'_{attribute_name}_data_dict',
+            [{
+                "data":data_data,
+                "group":data_data.group_object
+            } for data_data in getattr(model_obj, data_source).all()]
+        )
+
         def method(self):
             manager_list = []
-            for data_data in getattr(model_obj, data_source).all(): 
-                group_data = data_data.group_object
+            for data_dict in getattr(self, f'_{attribute_name}_data_dict'):
+                data_data = data_dict['data']
+                group_data = data_dict['group']
                 manager = group_data.getManager(self.search_date)
                 if manager.id == data_data.id:
                     manager_list.append(manager)
@@ -590,9 +644,10 @@ class GeneralManager:
             tuple: A tuple containing the generated method and attribute name.
         """
         attribute_name = f'{column.name}'.replace('group', 'manager')
+        setattr(self, f'_{attribute_name}', getattr(model_obj, column.name))
+
         def method(self):
-            group_data = getattr(model_obj, column.name)
-            return group_data.getManager(self.search_date)
+            return getattr(self, f'_{attribute_name}').getManager(self.search_date)
         return (method, attribute_name)
 
     def __getManagerFromDataModel(
@@ -614,12 +669,23 @@ class GeneralManager:
             tuple: A tuple containing the generated method and attribute name.
         """
         attribute_name = f'{column.name}_manager'
-        def method(self):
+        setattr(
+            self,
+            f'_{attribute_name}_data_data',
+            getattr(model_obj, column.name)
+        )
+        setattr(
+            self,
+            f'_{attribute_name}',
+            getattr(self, f'_{attribute_name}_data_data').group_object
+        )
 
-            data_data = getattr(model_obj, column.name)
-            group_data = data_data.group_object
-            manager = group_data.getManager(self.search_date)
-            if manager.id == data_data.id:
+        def method(self):
+            manager = getattr(
+                self,
+                f'_{attribute_name}'
+            ).getManager(self.search_date)
+            if manager.id == getattr(self, f'_{attribute_name}_data_data').id:
                 return manager
         return (method, attribute_name)
 
@@ -767,7 +833,7 @@ class GeneralManager:
         To create a list of all manager objects where the 'name' column 
         is equal to 'foo': filter(name='foo')
         """
-
+        addDependencyToFunctionCaller(cls)
         group_model_column_list = cls.__getColumnNameList(cls.group_model)
         data_model_column_list = cls.__getColumnNameList(cls.data_model)
 
@@ -1496,7 +1562,6 @@ class GeneralManager:
             data_extension_data_dict,
         )
 
-        CacheHandler.update(self)
         self.__init__(self.group_id)
 
     @classmethod
@@ -1640,7 +1705,7 @@ class GeneralManager:
             **data_data_dict,
             **{
                 'date': datetime.now(),
-                'creator_id': creator_id,
+                'creator':User.objects.get(id=creator_user_id),
                 group_table_name: group_obj
             }
         }
@@ -1913,7 +1978,7 @@ class GeneralManager:
         ## TODO: Guck dir das data extension model nochmal an
         elif model_type == 'data_extension_model': 
             name = 'data extension table data'
-            model = cls.data_extension_model_list[0] 
+            model = cls.data_extension_model_list
           
         raise ValueError(
             f''' 
@@ -2010,7 +2075,7 @@ class GeneralManager:
         cls,
         data_extension_model: Model,
         data_extension_data_dict: dict
-    ):
+    ) -> bool:
         """
         Check if the data provided in the data_extension_data_dict is uploadable
         to a specific data extension model.
@@ -2193,50 +2258,6 @@ class GeneralManager:
                 does not exist at date {search_date}''')
 
         return data_obj
-
-    def _setManagerObjectDjangoCache(self) -> None:
-        """
-        Set the current manager object in the Django cache.
-        """
-        cache_key = f"{self.__class__.__name__}|{self.group_id}"
-        cache.set(cache_key, self)
-
-    def updateCache(self) -> None:
-        """
-        Update the cache for the current instance.
-        """
-        if self.search_date is None:
-            self._setManagerObjectDjangoCache()
-
-        CacheManager.setCacheData(
-            self.__class__.__name__, 
-            self.group_id, self, 
-            self._start_date
-        )
-
-    @classmethod
-    def __handleCache(cls, group_id, search_date):
-            
-        manager_name = cls.__name__
-        group_model_name = transferToSnakeCase(cls.group_model.__name__)
-        group_model_obj = cls.group_model(group_id)
-
-        if search_date is None:
-            cached_instance = cache.get(f"{manager_name}|{group_id}")
-            if cached_instance:
-                return cached_instance
-        cached_instance = CacheManager.getCacheData(
-            manager_name, 
-            group_model_obj, 
-            group_model_name, 
-            cls.data_model, 
-            group_id, 
-            search_date
-            )
-        if cached_instance and search_date is None:
-            cached_instance.search_date = None
-            cached_instance._setManagerObjectDjangoCache()
-        return cached_instance
 
     def __getEndDate(self) -> datetime | None:
         """

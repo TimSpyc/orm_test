@@ -3,7 +3,7 @@ from .asset_item_manager import AssetItemManager
 from .asset_item_site_connection_manager import AssetItemSiteConnectionManager
 from .asset_layout_manager import AssetLayoutManager
 from .asset_site_manager import AssetSiteManager
-from .bom_manager import BillOfMaterialManager
+from .bill_of_material_manager import BillOfMaterialManager
 from .change_request_manager import ChangeRequestManager
 from .change_request_file_manager import ChangeRequestFileManager
 from .change_request_feasibility_manager import ChangeRequestFeasibilityManager
