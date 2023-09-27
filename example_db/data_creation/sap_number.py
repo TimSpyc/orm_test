@@ -31,3 +31,25 @@ def populateSapNumber():
     )
     sap_number.save()
     deactivateLastObjectRandomly(sap_number)
+
+# from example_db.populate import GeneralPopulate
+# from backend.models import SapNumber, SapNumberGroup
+
+# def createSapNumberGroupDict(cls):
+#     return {"sap_number": cls.getUniqueNumber(
+#             SapNumberGroup,
+#             'sap_number',
+#             lambda: f'{random.randint(6000000, 7000000):07}'
+#         )}
+
+# def createSapNumberDataDict(cls):
+#     return {
+#         "alu_net_weight": random.uniform(0.5, 75.5),
+#         "description": cls.getRandomDescription(),
+#     }
+
+# class PopulateSapNumber(GeneralPopulate):
+#     group_definition = (SapNumberGroup, createSapNumberGroupDict)
+#     data_definition = (SapNumber, createSapNumberDataDict)
+
+#     max_history_points = 1

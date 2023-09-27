@@ -32,3 +32,25 @@ def populateProjectWithHistory():
         proj = Project(**modelCreationDict(proj_dict, Project, proj_group))
         proj.save()
     deactivateLastObjectRandomly(proj)
+
+# from example_db.populate import GeneralPopulate
+# from backend.models import Project, ProjectGroup
+
+# def createProjectGroupDict(cls):
+#     return {}
+
+# def createProjectDataDict(cls):
+#     return {
+#         "name": fake.bs(),
+#         "project_number": random.choice([
+#             f'AP{random.randint(10000, 99999)}',
+#             f'CST-{random.randint(100, 999)}',
+#             None
+#         ]),
+#     }
+
+# class PopulateProject(GeneralPopulate):
+#     group_definition = (ProjectGroup, createProjectGroupDict)
+#     data_definition = (Project, createProjectDataDict)
+
+#     max_history_points = 9

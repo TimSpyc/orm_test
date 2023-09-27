@@ -1194,6 +1194,13 @@ def createPatentTags():
         {'id': 4, 'name': 'crash management system', 'alternative_name1': 'cms'},
         {'id': 5, 'name': 'method'},
     ]
+    # patent_tag_dict_list = [
+    #     {'name': 'crash can', 'alternative_name1': 'crash box', 'alternative_name2': 'absorber'},
+    #     {'name': 'cross member'},
+    #     {'name': 'adapter'},
+    #     {'name': 'crash management system', 'alternative_name1': 'cms'},
+    #     {'name': 'method'},
+    # ]
 
     for patent_tag_dict in patent_tag_dict_list:
         patent_tag = PatentTag(

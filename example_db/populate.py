@@ -194,7 +194,7 @@ class GeneralPopulate:
     def __createAndSaveDataObject(
         self,
         data_data_dict: dict,
-        group_object: GroupTable
+        group_model_object: GroupTable
     ) -> DataTable:
         data_data_dict = self.__checkForPredeterminedData(data_data_dict)
         group_object, _ = self.group_definition
@@ -203,7 +203,7 @@ class GeneralPopulate:
         return self.__createAndSaveModelObject(
             data_object,
             {
-                **{self.getColumnNameForModel(group_object): group_object},
+                **{self.getColumnNameForModel(group_object): group_model_object},
                 **data_data_dict
             }
         )
@@ -213,14 +213,14 @@ class GeneralPopulate:
         self,
         data_extension_model_obj: Model,
         data_extension_dict: dict,
-        data_object: DataTable
+        data_model_object: DataTable
     ) -> Model:
         data_object, _ = self.data_definition
 
         return self.__createAndSaveModelObject(
             data_extension_model_obj,
             {
-                **{self.getColumnNameForModel(data_object): data_object},
+                **{self.getColumnNameForModel(data_object): data_model_object},
                 **data_extension_dict
             }
         )
@@ -243,27 +243,27 @@ class GeneralPopulate:
         return model_object
     
     def save(self):
-        group_object = self.__createAndSaveGroupObject()
+        group_model_object = self.__createAndSaveGroupObject()
 
         for data_data_dict in self.data_data_list:
-            data_object = self.__createAndSaveDataObject(
+            data_model_object = self.__createAndSaveDataObject(
                 data_data_dict,
-                group_object
+                group_model_object
             )
 
             for data_extension_index, data_extension_list_of_dict in enumerate(
                 self.data_extension_list
             ):
                 for data_extension_dict in data_extension_list_of_dict:
-                    data_extension_object, _ =\
+                    data_extension_model_object, _ =\
                         self.data_extension_definition_list[
                             data_extension_index
                         ]
                     
                     self.__createAndSaveDataExtensionObject(
-                        data_extension_object,
+                        data_extension_model_object,
                         data_extension_dict,
-                        data_object
+                        data_model_object
                     )
 
     # ---- Handle population ---------------------------------------------------
@@ -408,13 +408,17 @@ class GeneralPopulate:
             'active': 1
         }
     
-    def __createDataDataDict(self, data_dict: dict) -> dict:
-        data_data_dict = {
-            field_name: self.__decideBetweenPreviousOrNewData(
-                field_name,
-                data_value
-            ) for field_name, data_value in data_dict.items()
-        }
+    def __createDataDataDict(self, data_dict: dict,) -> dict:
+        if len(self.data_data_list) == 0:
+            data_data_dict = self.__createDataDataDictWithDefaultValues(data_dict)
+        else: 
+            data_data_dict = {
+                field_name: self.__decideBetweenPreviousOrNewData(
+                    field_name,
+                    data_value
+                ) for field_name, data_value in data_dict.items()
+            }
+
         base_data_dict = self.__createBaseDataDict(data_data_dict)
 
         return {**base_data_dict, **data_data_dict}
@@ -465,9 +469,6 @@ class GeneralPopulate:
         field_name: str,
         data_value: any
     ) -> any:
-        if len(self.data_data_list) == 0:
-            return self.__createDataDataDictWithDefaultValues(data_value)
-
         latest_data = self.__getLatestData(field_name)
 
         if latest_data is not None and self.randomChoice(
@@ -578,6 +579,13 @@ class GeneralPopulate:
         max_value: int = 999999
     ) -> int:
         return cls.fake.random_int(min_value, max_value)
+    
+    @staticmethod
+    def getRandomFloat(
+        min_value: float = 0, 
+        max_value: float = 999999
+    ) -> float:
+        return random.uniform(min_value, max_value)
 
     @classmethod
     def getRandomText(cls, max_nb_chars: int = 50) -> str:
@@ -586,6 +594,20 @@ class GeneralPopulate:
     @classmethod
     def getRandomDescription(cls) -> str:
         return cls.getRandomText(250)
+    
+    @classmethod
+    def getUniqueValue(
+        cls,
+        model: Model,
+        column_name: str,
+        value_function
+    ) -> any:
+        unique = False
+        while not unique:
+            value = value_function()
+            if not model.objects.filter(**{column_name: value}):
+                unique = True
+        return value
 
 
     # def randomLetters(length = 4):

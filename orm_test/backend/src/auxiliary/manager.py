@@ -1705,7 +1705,7 @@ class GeneralManager:
             **data_data_dict,
             **{
                 'date': datetime.now(),
-                'creator':User.objects.get(id=creator_id),
+                'creator':User.objects.get(id=creator_user_id),
                 group_table_name: group_obj
             }
         }

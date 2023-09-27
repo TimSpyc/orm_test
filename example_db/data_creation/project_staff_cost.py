@@ -37,3 +37,29 @@ def populateProjectStaffCost():
     project_staff_cost.save()
 
     deactivateLastObjectRandomly(project_staff_cost)
+
+
+# from example_db.populate import GeneralPopulate
+# from backend.models import ProjectStaffCost, ProjectStaffCostGroup, Project, User, ProjectStaffCostTask
+
+# def createProjectStaffCostGroupDict(cls):
+#     # TODO: check unique field combination!
+
+#     return {
+#         "project": cls.getRandomForeignKeyRelation(Project),
+#         "user": cls.getRandomForeignKeyRelation(User),
+#         "project_staff_cost_task": cls.getRandomForeignKeyRelation(ProjectStaffCostTask),
+#         "work_date": cls.getRandomDateTime()
+#     }
+
+# def createProjectStaffCostDataDict(cls):
+#     return {
+#         "hours": cls.getRandomFloat(0, 10),
+#         "creator": cls.group_data_dict["user"],
+#     }
+
+# class PopulateProjectStaffCost(GeneralPopulate):
+#     group_definition = (ProjectStaffCostGroup, createProjectStaffCostGroupDict)
+#     data_definition = (ProjectStaffCost, createProjectStaffCostDataDict)
+
+#     max_history_points = 3
