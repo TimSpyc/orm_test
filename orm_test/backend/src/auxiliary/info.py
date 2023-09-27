@@ -419,6 +419,12 @@ class GeneralInfo:
         for key, value in combined_data.items():
             if key in group_by:
                 combined_data[key] = value[0]
+            elif all(x is None for x in value):
+                combined_data[key] = None
+            elif any(x is None for x in value):
+                combined_data[key] = ", ".join([
+                    x for x in set(value) if x is not None
+                ])
             elif all(isinstance(x, int) or isinstance(x, float) for x in value):
                 combined_data[key] = sum(value)
             elif all(isinstance(x, str) for x in value):
