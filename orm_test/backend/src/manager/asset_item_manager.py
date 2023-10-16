@@ -34,7 +34,7 @@ class AssetItem(DataTable):
     max_height = models.PositiveSmallIntegerField(
         default=1, validators=min_max_asset_size
     )
-    description = models.TextField(null=True)
+    description = models.TextField(null=True, default=None)
 
     @property
     def group_object(self):
