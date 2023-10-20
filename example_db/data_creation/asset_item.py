@@ -14,7 +14,7 @@ def createAssetItemGroupDict(cls):
 
 def createAssetItemDataDict(cls):
     return {
-        "name": cls.getRandomText(),
+        "name": cls.getRandomText(25),
         "max_width": cls.getRandomInteger(1, 3),
         "max_height": cls.getRandomInteger(1, 3),
         "description": cls.getRandomDescription(),

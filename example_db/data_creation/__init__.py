@@ -19,7 +19,7 @@ from .material_alloy_treatment import populateMaterialAlloyTreatment
 from .material_alloy import populateMaterialAlloy
 from .material import populateMaterial
 from .norm import populateNorm
-from .part_recipient import populatePartRecipient
+from .part_recipient import PopulatePartRecipient
 from .part_sold_contract import populatePartSoldContract
 from .part_sold_customer_price import populatePartSoldCustomerPrice
 from .part_sold_price_upload import populatePartSoldPriceUpload
@@ -29,9 +29,9 @@ from .permission_master_manager import PopulatePermissionMaster
 from .permission_user_manager import PopulatePermissionUser
 from .project_staff_cost import populateProjectStaffCost
 from .project_user import populateProjectUser
-from .project import populateProjectWithHistory
+from .project import PopulateProject
 from .reference_models import fillReferenceTables
-from .sap_number import populateSapNumber
+from .sap_number import PopulateSapNumber
 from .stock_exchange import populateStockExchangeData
 from .time_correction import PopulateTimeCorrection
 from .user import populateUser

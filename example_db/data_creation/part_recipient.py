@@ -5,29 +5,17 @@ if __name__ == '__main__':
     import django
     django.setup()
 
-from faker import Faker
-import random
-from auxiliary import deactivateLastObjectRandomly, getRandomUser, getRandomDateTime, getUniqueNumber
+from example_db.populate import GeneralPopulate
 from backend.models import PartRecipient, PartRecipientGroup
 
-fake = Faker()
+def createPartRecipientGroupDict(cls):
+    return {"number": f'{cls.getRandomInteger(1, 1000000):07}'}
 
-def populatePartRecipient():
+def createPartRecipientDataDict(cls):
+    return {"description": cls.getRandomDescription()}
 
-    part_recipient_group = PartRecipientGroup(
-        number = getUniqueNumber(
-            PartRecipientGroup,
-            'number',
-            lambda: f'{random.randint(1, 1000000):07}'
-        ),
-    )
-    part_recipient_group.save()
-    
-    part_recipient = PartRecipient.objects.create(
-        part_recipient_group = part_recipient_group,
-        description = fake.name(),
-        creator = getRandomUser(),
-        date = getRandomDateTime()
-    )
-    part_recipient.save()
-    deactivateLastObjectRandomly(part_recipient)
+class PopulatePartRecipient(GeneralPopulate):
+    group_definition = (PartRecipientGroup, createPartRecipientGroupDict)
+    data_definition = (PartRecipient, createPartRecipientDataDict)
+
+    max_history_points = 1

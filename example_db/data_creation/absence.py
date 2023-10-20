@@ -27,9 +27,10 @@ def createAbsenceDataDict(cls):
 
     return {
         "absence_type": cls.getRandomForeignKeyRelation(AbsenceType),
-        "absence_start_date": absence_start_date,
-        "absence_end_date": absence_end_date,
+        "absence_start_date": absence_start_date.date(),
+        "absence_end_date": absence_end_date.date(),
         "description": cls.getRandomDescription(),
+        "is_accepted": cls.getRandomBoolean(can_be_none=True),
         "creator": cls.group_data_dict["user"],
     }
 
