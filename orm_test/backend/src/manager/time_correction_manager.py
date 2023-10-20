@@ -32,13 +32,18 @@ class TimeCorrection(DataTable):
         on_delete=models.DO_NOTHING, 
     )
     time_correction_date = models.DateField()
-    time_start_of_work = models.TimeField(null=True)
-    time_start_of_lunch_break = models.TimeField(null=True)
-    time_end_of_lunch_break = models.TimeField(null=True)
-    time_end_of_work = models.TimeField(null=True)
-    description = models.TextField(null=True)
-    is_accepted = models.BooleanField(null=True)
-    hash_code = models.CharField(max_length=255, null=True, unique=True)
+    time_start_of_work = models.TimeField(null=True, default=None)
+    time_start_of_lunch_break = models.TimeField(null=True, default=None)
+    time_end_of_lunch_break = models.TimeField(null=True, default=None)
+    time_end_of_work = models.TimeField(null=True, default=None)
+    description = models.TextField(null=True, default=None)
+    is_accepted = models.BooleanField(null=True, default=None)
+    hash_code = models.CharField(
+        max_length=255, 
+        null=True, 
+        unique=True, 
+        default=None
+    )
 
     @property
     def group_object(self):

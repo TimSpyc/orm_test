@@ -40,7 +40,7 @@ class PermissionUser(DataTable):
         'PermissionType', 
         on_delete=models.DO_NOTHING,
     )
-    is_accepted = models.BooleanField(null=True)
+    is_accepted = models.BooleanField(null=True, default=None)
 
     @property
     def group_object(self):

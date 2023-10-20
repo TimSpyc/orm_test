@@ -28,11 +28,11 @@ def run_db_filler(debug=False):
         (1, 1, truncate_all_tables),
         (1, 1, fillReferenceTables),
         (5, 50, populateUser),
-        (100, 500, populatePartRecipient),
-        (100, 200, populateSapNumber),
+        (100, 500, PopulatePartRecipient.populate),
+        (100, 200, PopulateSapNumber.populate),
         (5, 25, populateCustomer),
         (30, 100, populateCustomerPlant),
-        (5, 80, populateProjectWithHistory),
+        (5, 80, PopulateProject.populate),
         (30, 100, populateDerivativeLmc),
         (85, 200, populateDerivativeConstelliumWithDerivativeLmcConnection),
         (10, 100, populateFile),
@@ -52,14 +52,14 @@ def run_db_filler(debug=False):
         (10, 50, populateProjectUser),
         (1, 1, populateStockExchangeData),
         (1, 1, populateVolumeForAllDerivativeLmc),
-        # (50, 200, PopulateAbsence.populate),
-        # (5, 25, PopulateAssetSite.populate),
-        # (15, 50, PopulateAssetItem.populate),
-        # (25, 50, PopulateAssetItemSiteConnection.populate),
-        # (50, 500, PopulateAssetLayout.populate),
-        # (50, 100, PopulatePermissionMaster.populate),
-        # (50, 250, PopulatePermissionUser.populate),
-        # (50, 200, PopulateTimeCorrection.populate),
+        (50, 150, PopulateAbsence.populate),
+        (5, 25, PopulateAssetSite.populate),
+        (15, 50, PopulateAssetItem.populate),
+        (25, 50, PopulateAssetItemSiteConnection.populate),
+        (50, 250, PopulateAssetLayout.populate),
+        (50, 100, PopulatePermissionMaster.populate),
+        (50, 250, PopulatePermissionUser.populate),
+        (50, 100, PopulateTimeCorrection.populate),
     ]
 
     for min_iterations, max_iterations, function in fill_data_function_list:
@@ -78,4 +78,4 @@ def run_db_filler(debug=False):
 
 
 if __name__ == '__main__':
-    run_db_filler(debug=True)
+    run_db_filler(debug=False)
