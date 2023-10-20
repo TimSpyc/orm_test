@@ -1,5 +1,9 @@
 {
-  "cSpell.words": ["Constellium"],
+  "cSpell.words": [
+    "Constellium",
+    "Createability",
+    "Unconfigured"
+  ],
   "editor.rulers": [80],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
