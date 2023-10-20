@@ -15,6 +15,7 @@ from .customer import populateCustomer
 from .derivative_constellium import populateDerivativeConstelliumWithDerivativeLmcConnection
 from .derivative_lmc_volume import populateVolumeForAllDerivativeLmc
 from .derivative_lmc import populateDerivativeLmc
+from .file import populateFile
 from .material_alloy_treatment import populateMaterialAlloyTreatment
 from .material_alloy import populateMaterialAlloy
 from .material import populateMaterial
@@ -25,6 +26,7 @@ from .part_sold_customer_price import populatePartSoldCustomerPrice
 from .part_sold_price_upload import populatePartSoldPriceUpload
 from .part_sold import populatePartSold
 from .part import populatePart
+from .patent import populatePatent
 from .permission_master_manager import PopulatePermissionMaster
 from .permission_user_manager import PopulatePermissionUser
 from .project_staff_cost import populateProjectStaffCost

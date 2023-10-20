@@ -1208,6 +1208,18 @@ def createPatentTags():
         )
         patent_tag.save()
 
+def createPatentStatus():
+    patent_status_dict_list = [
+        {'name': 'released'},
+        {'name': 'expired'},
+    ]
+
+    for patent_status_dict in patent_status_dict_list:
+        patent_status = PatentStatus(
+            **patent_status_dict
+        )
+        patent_status.save()
+
 def createAbsenceType():
     absence_type_list = [
         'home office',
@@ -1295,6 +1307,7 @@ def fillReferenceTables():
     createTechnology()
     createSapAbbreviationDictionary()
     createPatentTags()
+    createPatentStatus()
     createAbsenceType()
     createTimeCorrectionType()
     createPermissionType()

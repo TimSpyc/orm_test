@@ -1,2 +1,3 @@
 from .derivative_constellium_info import DerivativeConstelliumInfo
 from .project_info import ProjectInfo
+from .patent_info import PatentInfo
