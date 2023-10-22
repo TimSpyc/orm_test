@@ -294,8 +294,9 @@ class GeneralManager:
                     attribute_name = f'{prefix}_{key}'
                 yield attribute_name, value
 
-        def list_creator(list_obj):
+        def list_creator(attribute_name, list_obj):
             output_list = []
+            id_output_list = []
             for instance in list_obj:
                 if isinstance(instance, dict):
                     output_dict = {}
@@ -316,8 +317,20 @@ class GeneralManager:
                             output_key = key
                             output_dict[output_key] = output_value
                     output_list.append(output_dict)
-            return output_list
-
+                elif isinstance(instance, Model):
+                    data_dict = {
+                        attr: value
+                        for attr, value in model_iterator(
+                            instance, attribute_name
+                        )
+                    }
+                    id_output_list.append(data_dict[f'{attribute_name}_id'])
+                    output_list.append(data_dict)
+                else:
+                    output_list.append(instance)
+            return output_list, id_output_list
+        
+        save_for_later = {}
         for attribute_name, value in self.__dict__.items():
             if attribute_name[0] == '_':
                 continue
@@ -328,10 +341,15 @@ class GeneralManager:
                 ):
                     yield attribute_name, value
             elif isinstance(value, list):
-                value = list_creator(value)
+                value, id_output_list = list_creator(attribute_name, value)
+                if id_output_list != []:
+                    save_for_later[f'{attribute_name}_id_list'] = id_output_list
+                    attribute_name = f'{attribute_name}__data_list'
                 yield attribute_name, value
             else:
                 yield attribute_name, value
+        for attribute_name, value in save_for_later.items():
+            yield attribute_name, value
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -462,7 +480,14 @@ class GeneralManager:
         Returns:
             None
         """
-        setattr(self, column.name, getattr(model_obj, column.name))
+        if ref_type == self.MANY_TO_MANY:
+            setattr(
+                self,
+                f'{column.name}',
+                list(getattr(model_obj, column.name).all())
+            )
+        else:
+            setattr(self, column.name, getattr(model_obj, column.name))
 
     def __assignExtensionDataDictAttribute(
             self, 
@@ -534,9 +559,12 @@ class GeneralManager:
         Returns:
             tuple: A tuple containing the data source and column base name.
         """
-        if ref_type == self.MANY_TO_ONE:
-            data_source = f'{column.name}_set'
+        if ref_type == self.MANY_TO_ONE or ref_type == self.MANY_TO_MANY:
             column_name = transferToSnakeCase(column.related_model.__name__)
+            if column_name.replace('_', '') == transferToSnakeCase(column.name):
+                data_source = f'{column.name}_set'
+            else:
+                data_source = column.name
         else:
             data_source = column.name
             column_name = column.name
@@ -566,8 +594,10 @@ class GeneralManager:
             column,
             ref_type
             )
-
-        attribute_name = column_name.replace('group', 'manager_list')
+        if "group" in column_name:
+            attribute_name = column_name.replace('group', 'manager_list')
+        else:
+            attribute_name = f'{column_name}_manager_list'
         setattr(
             self,
             f'_{attribute_name}',
@@ -604,14 +634,14 @@ class GeneralManager:
             ref_type
             )
         attribute_name = f'{column_name}_manager_list'
-
+        already_set_list = getattr(self, f'_{attribute_name}', [])
         setattr(
             self,
             f'_{attribute_name}_data_dict',
-            [{
+            [*already_set_list, *[{
                 "data":data_data,
                 "group":data_data.group_object
-            } for data_data in getattr(model_obj, data_source).all()]
+            } for data_data in getattr(model_obj, data_source).all()]]
         )
 
         def method(self):
@@ -703,7 +733,7 @@ class GeneralManager:
         Args:
             column (Field): The field object containing column details.
             model_obj (Model): The model object containing the data.
-            ref_table_type (str): The type of the reference table.
+            ref_table_type (str): The type of the referenced table.
             ref_type (str): The type of the reference.
 
         Returns:
