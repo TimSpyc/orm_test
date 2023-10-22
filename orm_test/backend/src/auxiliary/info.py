@@ -281,8 +281,13 @@ class GeneralInfo:
     def post(self) -> int:
         self.__checkConfiguration()
 
+        #manager_obj = self.manager.create(
+        #    creator_id = self.request_info_dict["request_user_id"],
+        #    **self.request_info_dict['request_data']
+        #)
+
         manager_obj = self.manager.create(
-            creator_id = self.request_info_dict["request_user_id"],
+            creator_id = 1,
             **self.request_info_dict['request_data']
         )
 
