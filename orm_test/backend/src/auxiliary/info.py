@@ -174,7 +174,7 @@ class GeneralInfo:
     detail_key_dict: dict = {'group_id': 'int'}
 
     manager: "GeneralManager" # Optional
-    datasetPermissionFunction = lambda data_set_dict: True
+    datasetPermissionFunction = lambda request_info_dict, data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
     use_cache = True
 
@@ -561,7 +561,10 @@ class GeneralInfo:
         return filtered_and_reduced_list
 
     def __couldBeSend(self, result_dict: dict) -> bool:
-        return self.__class__.datasetPermissionFunction(result_dict)
+        return self.__class__.datasetPermissionFunction(
+            self.request_info_dict,
+            result_dict
+        )
 
     @classmethod
     def __getAllowedMethodsList(cls, method_type: str) -> list:
