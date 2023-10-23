@@ -3,10 +3,10 @@ from backend.src.info.reference_model_info import createReferenceUrls
 
 info_list = [
     ProjectInfo,
+    ProjectNumberInfo,
     DerivativeConstelliumInfo,
     ProjectStaffCostInfo,
     ChangeRequestSelectionInfo,
-    ChangeRequestKeyInfoInfo,
     ChangeRequestSendKickOffEmailInfo,
     ChangeRequestCostInfo,
     ChangeRequestFeasibilityInfo,
