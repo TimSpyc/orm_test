@@ -2,16 +2,17 @@ from backend.src.info import *
 from backend.src.info.reference_model_info import createReferenceUrls
 
 info_list = [
-    ProjectInfo,
-    ProjectNumberInfo,
-    DerivativeConstelliumInfo,
-    ProjectStaffCostInfo,
     ChangeRequestSelectionInfo,
     ChangeRequestSendKickOffEmailInfo,
     ChangeRequestCostInfo,
     ChangeRequestFeasibilityInfo,
     ChangeRequestRiskInfo,
     ChangeRequestFileInfo,
+    DerivativeConstelliumInfo,  
+    PatentInfo,
+    ProjectInfo,
+    ProjectNumberInfo,
+    ProjectStaffCostInfo,
 ]
 
 def createInfoUrls():

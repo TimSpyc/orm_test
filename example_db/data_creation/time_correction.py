@@ -19,8 +19,8 @@ def createTimeCorrectionGroupDict(cls):
     return {"user": cls.getRandomForeignKeyRelation(User)}
 
 def createTimeCorrectionDataDict(cls):
-    # TODO: The time stamps must all be posted on the same day. In addition, 
-    # the hours should be realistic.
+    # TODO: The time stamps should be realistic.
+    time_correction_date = cls.getRandomDateTime()
     time_start_of_work = cls.getRandomDateTime()
     time_start_of_lunch_break = cls.getRandomDateTime()
     time_end_of_lunch_break = cls.getRandomDateTime()
@@ -28,11 +28,17 @@ def createTimeCorrectionDataDict(cls):
 
     return {
         "time_correction_type": cls.getRandomForeignKeyRelation(TimeCorrectionType),
-        "time_start_of_work": time_start_of_work,
-        "time_start_of_lunch_break": time_start_of_lunch_break,
-        "time_end_of_lunch_break": time_end_of_lunch_break,
-        "time_end_of_work": time_end_of_work,
+        "time_correction_date": time_correction_date.date(),
+        "time_start_of_work": time_start_of_work.time(),
+        "time_start_of_lunch_break": time_start_of_lunch_break.time(),
+        "time_end_of_lunch_break": time_end_of_lunch_break.time(),
+        "time_end_of_work": time_end_of_work.time(),
         "description": cls.getRandomDescription(),
+        "is_accepted": cls.getRandomBoolean(can_be_none=True),
+        "creator": cls.group_data_dict["user"],
+        # TODO: How to handle unique constraints? -> Adjust populate functions!
+        # "hash_code": cls.getRandomHashCode(),
+        "hash_code": None,
     }
 
 class PopulateTimeCorrection(GeneralPopulate):

@@ -18,6 +18,7 @@ from backend.src.manager.customer_manager import Customer, CustomerGroup, Custom
 from backend.src.manager.customer_plant_manager import CustomerPlant, CustomerPlantGroup
 from backend.src.manager.derivative_constellium_manager import DerivativeConstellium, DerivativeConstelliumGroup, DerivativeConstelliumDerivativeLmcConnection
 from backend.src.manager.derivative_lmc_manager import DerivativeLmc, DerivativeLmcGroup, DerivativeLmcVolume
+from backend.src.manager.file_manager import File, FileGroup
 from backend.src.manager.material_alloy_manager import MaterialAlloy, MaterialAlloyGroup
 from backend.src.manager.material_alloy_treatment_manager import MaterialAlloyTreatment, MaterialAlloyTreatmentGroup
 from backend.src.manager.material_manager import Material, MaterialGroup
@@ -28,6 +29,7 @@ from backend.src.manager.part_sold_contract_manager import PartSoldContract, Par
 from backend.src.manager.part_sold_customer_price_manager import PartSoldCustomerPrice, PartSoldCustomerPriceGroup, PartSoldCustomerPriceComponent
 from backend.src.manager.part_sold_manager import PartSold, PartSoldGroup, PartSoldPriceComponent, PartSoldMaterialPriceComponent, PartSoldMaterialWeight, PartSoldSaving
 from backend.src.manager.part_sold_price_upload_manager import PartSoldPriceUpload, PartSoldPriceUploadGroup
+from backend.src.manager.patent_manager import Patent, PatentGroup, PatentClaim
 from backend.src.manager.permission_master_manager import PermissionMaster, PermissionMasterGroup
 from backend.src.manager.permission_user_manager import PermissionUser, PermissionUserGroup
 from backend.src.manager.project_manager import Project, ProjectGroup

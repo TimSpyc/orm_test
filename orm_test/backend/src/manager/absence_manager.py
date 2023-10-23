@@ -30,8 +30,8 @@ class Absence(DataTable):
     )
     absence_start_date = models.DateField()
     absence_end_date = models.DateField()
-    description = models.TextField(null=True)
-    is_accepted = models.BooleanField(null=True)
+    description = models.TextField(null=True, default=None)
+    is_accepted = models.BooleanField(null=True, default=None)
 
     @property
     def group_object(self):
