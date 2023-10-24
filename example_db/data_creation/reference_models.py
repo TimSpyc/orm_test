@@ -1282,6 +1282,46 @@ def createTimeCorrectionType():
         )
         time_correction_type.save()
 
+def createProjectPhaseType():
+    project_phase_type_dict_list = [
+        {
+        'name': 'RFI',
+        'description': 'Represents the point in time, when a project was assigned to Constellium. Financial as well as technical issues are agreed on both sides.',
+        },
+        {
+        'name': 'RFQ',
+        'description': 'start of production.',
+        },
+        {
+        'name': 'Nomination',
+        'description': 'released data for tooling .',
+        },
+        {
+        'name': 'Production Line Release',
+        'description': 'released data for production lines.',
+        },
+        {
+        'name': 'Tool Release',
+        'description': None,
+        },
+        {
+        'name': 'SOP',
+        'description': None,
+        },
+        {
+        'name': 'EOP',
+        'description': None,
+        },
+        {
+        'name': 'Spare Parts',
+        'description': None,
+        },
+    ]
+    for project_phase_dict in project_phase_type_dict_list:
+        project_phase_type = ProjectPhaseType(
+            **project_phase_dict
+        )
+        project_phase_type.save()
 
 def fillReferenceTables():
     createCurrencies()
@@ -1316,4 +1356,4 @@ def fillReferenceTables():
     createAbsenceType()
     createTimeCorrectionType()
     createPermissionType()
-
+    createProjectPhaseType()

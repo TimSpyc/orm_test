@@ -269,6 +269,13 @@ class PatentTag(ReferenceTable):
     alternative_name1 = models.CharField(max_length=150, unique=True, null=True)
     alternative_name2 = models.CharField(max_length=150, unique=True, null=True)
 
+class ProjectPhaseType(ReferenceTable):
+    """
+    A Django model representing a project phase type, which includes a name.
+    """
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(default=None, null=True)
+
     def __str__(self):
         return self.name
 
@@ -282,7 +289,6 @@ class PatentStatus(ReferenceTable):
 
     def __str__(self):
         return self.name
-
 
 class TimeCorrectionType(ReferenceTable):
     """

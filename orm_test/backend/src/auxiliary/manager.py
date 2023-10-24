@@ -90,7 +90,10 @@ class ExternalDataManager:
     database_model: Model
 
     def __init__(self, search_date):
-        self.search_date = search_date
+        if search_date is None:
+            self.search_date = datetime.now()
+        else:
+            self.search_date = search_date
         self._start_date = self.__getStartDate()
         self._end_date = self.__getEndDate()
         self._identification_dict = {
@@ -98,7 +101,7 @@ class ExternalDataManager:
         }
 
     def getData(self, column_list: list, **kwargs: dict) -> QuerySet:
-        return self.database_model.objects.filter(**kwargs).values(*column_list)
+        return list(self.database_model.objects.filter(**kwargs).values(*column_list))
 
 
     def __getStartDate(self) -> datetime:
@@ -183,6 +186,7 @@ class GeneralManager:
     GROUP_TABLE = 'GroupTable'
     DATA_TABLE = 'DataTable'
     DATA_EXTENSION_TABLE = 'DataExtensionTable'
+    EXTERNAL_DATA_TABLE = 'ExternalDataTable'
     REFERENCE_TABLE = 'ReferenceTable'
 
     group_model: Model
@@ -493,11 +497,13 @@ class GeneralManager:
             self.GROUP_TABLE: self.__assignIdAttribute,
             self.DATA_TABLE: self.__assignIdAttribute,
             self.DATA_EXTENSION_TABLE: self.__assignExtensionDataDictAttribute,
+            self.EXTERNAL_DATA_TABLE: self.__assignExtensionDataDictAttribute,
             None: self.__assignAttribute
         }
         try:
             methods[ref_table_type](column, model_obj, ref_type)
         except KeyError:
+            print("ref_table_type", ref_table_type)
             raise ValueError('this is not implemented yet')
 
     def __assignIdAttribute(
@@ -819,7 +825,8 @@ class GeneralManager:
             (self.FOREIGN_KEY, self.GROUP_TABLE): self.__getManagerFromGroupModel,
             (self.FOREIGN_KEY, self.DATA_TABLE): self.__getManagerFromDataModel,
         }
-
+        if ref_table_type == "ExternalDataTable":
+            return
         try:
             method, attribute_name = (
                 methods[(ref_type, ref_table_type)](column, model_obj, ref_type)

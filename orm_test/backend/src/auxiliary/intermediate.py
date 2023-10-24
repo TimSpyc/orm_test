@@ -70,8 +70,7 @@ class GeneralIntermediate:
         """
         use_cache = settings.USE_CACHE and cls.use_cache
 
-
-        if kwargs == {} and args == []:
+        if kwargs == {} and (args == [] or args == tuple()):
             return super().__new__(cls)
 
         kwargs = cls.__makeArgsToKwargs(args, kwargs)
@@ -94,15 +93,17 @@ class GeneralIntermediate:
                 identification_dict,
                 search_date
             )
+        kwargs.pop('relevant_scenarios')
         if not instance:
             instance = super().__new__(cls)
+            instance._dependencies = []
+            instance._identification_dict = identification_dict
+            instance._initial_kwargs = initial_kwargs
             instance.__init__(**{
                 **kwargs,
                 'search_date': search_date,
                 'scenario_dict': scenario_dict
             })
-            instance._identification_dict = identification_dict
-            instance._initial_kwargs = initial_kwargs
         addDependencyToFunctionCaller(instance)
         return instance
 
@@ -128,7 +129,11 @@ class GeneralIntermediate:
         
         self.start_date = self.__getStartDate()
         self.end_date = self.__getEndDate()
-        CacheHandler.addDependentObjectToCache(self)
+        CacheHandler.addDependentObjectToCache(
+            self._dependencies,
+            self,
+            self
+        )
 
     def __eq__(self, other: object) -> bool:
         """
@@ -165,7 +170,7 @@ class GeneralIntermediate:
             datetime: The earliest start date.
         """
         start_date_list = [
-            dependency._start_date for dependency in self.dependencies
+            dependency._start_date for dependency in self._dependencies
             if dependency._start_date is not None
         ]
         if not start_date_list:
@@ -181,8 +186,8 @@ class GeneralIntermediate:
                 present.
         """
         end_date_list = [
-            dependency.end_date for dependency in self.dependencies
-            if dependency.end_date is not None
+            dependency._end_date for dependency in self._dependencies
+            if dependency._end_date is not None
         ]
         if len(end_date_list) == 0:
             return None
@@ -253,7 +258,8 @@ class GeneralIntermediate:
         """
         extended_kwargs = {**kwargs}
         # Get the names of the arguments in __init__
-        init_params = inspect.signature(cls.__init__).parameters
+        init_params = dict(inspect.signature(cls.__init__).parameters)
+        init_params.pop('self')
         
         # Map the positional arguments to their names
         extended_kwargs.update(dict(zip(init_params, args)))

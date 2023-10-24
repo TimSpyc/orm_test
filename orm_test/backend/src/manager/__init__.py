@@ -12,8 +12,9 @@ from .change_request_risk_manager import ChangeRequestRiskManager
 from .cross_section_manager import CrossSectionManager
 from .customer_manager import CustomerManager
 from .customer_plant_manager import CustomerPlantManager
+from .customer_volume_manager import CustomerVolumeManager
 from .derivative_constellium_manager import DerivativeConstelliumManager
-from .derivative_lmc_manager import DerivativeLmcManager
+from .derivative_lmc_manager import DerivativeLmcManager, DerivativeLmcVolumeManager
 from .file_manager import FileManager
 from .material_alloy_manager import MaterialAlloyManager
 from .material_alloy_treatment_manager import MaterialAlloyTreatmentManager

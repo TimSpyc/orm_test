@@ -72,9 +72,11 @@ def populateDerivativeLmc():
     all_lmc_revisions = RevisionLMC.objects.all()
     for lmc_rev_date in all_lmc_revisions:
         der_lmc = None
-        if random.choice([True]+4*[False]):
+        if random.choice([False]+19*[True]):
             lmc_data = get_lmc_data(lmc_rev_date)
             der_lmc = DerivativeLmc(**modelCreationDict(lmc_data, DerivativeLmc, der_lmc_group, chance_for_no_change=0.9)).save()
+        else:
+            break
 
     if der_lmc is None:
         lmc_data = get_lmc_data(lmc_rev_date)
