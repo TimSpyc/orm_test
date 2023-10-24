@@ -1,3 +1,10 @@
+if __name__ == '__main__':
+    import os
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
+
+    import django
+    django.setup()
+
 from backend import models
 from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
 import re
@@ -11,6 +18,7 @@ from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
 from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller, CacheRefresher
+
 
 def updateCache(func):
     """
@@ -282,74 +290,145 @@ class GeneralManager:
             {self.__class__.__name__} with group_id:{self.group_id}
             and validity from {self._start_date} to {self._end_date}
         '''
+    
+    def __iter__(self) -> GeneratorExit:
+        """
+        Iterate over the attributes of the Manager object and change attribute
+        names according to name conventions. 
 
-    def __iter__(self):
-        def model_iterator(model_obj, prefix):
-            value_dict = model_obj.__dict__
-            for key, value in value_dict.items():
+        Yields:
+            tuple[str, Any]: A tuple containing the name of the attribute and
+                its value. If the attribute is a Model object, iterates over its
+                attributes. If the attribute is a list, creates a new list with 
+                the output of the list_creator-function and yields the new list
+                and its corresponding id list.
+        """
+        def modelIterator(model_obj: Model, prefix: str) -> GeneratorExit:
+            """
+            Iterate over the attributes of a model object and yield their
+            modified names with origin values.
+
+            Args:
+                model_obj: A model object to iterate over.
+                prefix: A string prefix to add to the attribute names, where
+                    the prefix corresponds to the model name.
+
+            Yields:
+                Tuple[str, Any]: A tuple containing the attribute name (with
+                    prefix) and its value.
+            """
+            for key, value in model_obj.__dict__.items():
                 if key[0] == '_':
                     continue
-                attribute_name = f'{prefix}__{key}'
-                if key == 'id':
-                    attribute_name = f'{prefix}_{key}'
-                yield attribute_name, value
+                attr = f'{prefix}__{key}' if key != 'id' else f'{prefix}_{key}'
+                yield attr, value
+        
+        def listCreator(attribute_name: str, list_obj: any)-> tuple[list, list]:
+            """
+            Converts a list of objects to a list of dictionaries and a list of
+            ids.
 
-        def list_creator(attribute_name, list_obj):
+            Args:
+                attribute_name (str): The name of attribute to use as the id.
+                list_obj (any): The list of objects to convert.
+
+            Returns:
+                tuple[list, list]: A tuple containing the list of dictionaries
+                    and the list of ids.
+            """
             output_list = []
             id_output_list = []
             for instance in list_obj:
                 if isinstance(instance, dict):
-                    output_dict = {}
-                    for key, value in instance.items():
-                        if key == 'id':
-                            continue
-                        if isinstance(value, Model):
-                            if value == self.__group_obj or value == self.__data_obj:
-                                continue
-                            if value.table_type == 'GroupTable':
-                                output_key = f'{key}_group_id'
-                            elif value.table_type == 'DataTable':
-                                output_key = f'{key}_id'
-                            output_value = value.id
-                            output_dict[output_key] = output_value
-                        else:
-                            output_value = value
-                            output_key = key
-                            output_dict[output_key] = output_value
+                    output_dict = __createDictFromInstanceDict(instance)
                     output_list.append(output_dict)
                 elif isinstance(instance, Model):
-                    data_dict = {
-                        attr: value
-                        for attr, value in model_iterator(
-                            instance, attribute_name
-                        )
-                    }
+                    data_dict = __createDictFromModel(instance, attribute_name)
                     id_output_list.append(data_dict[f'{attribute_name}_id'])
                     output_list.append(data_dict)
                 else:
                     output_list.append(instance)
             return output_list, id_output_list
-        
-        save_for_later = {}
+
+        def __createDictFromInstanceDict(instance: dict) -> dict:
+            """
+            Create a dictionary from an instance dictionary, excluding the id 
+            key and any Model objects that are equal to the group or data
+            objects.
+
+            Args:
+                instance (dict): The instance dictionary to create a dictionary
+                    from.
+
+            Returns:
+                output_dict (dict): The created dictionary.
+            """
+            output_dict = {}
+            for key, value in instance.items():
+                if key == 'id':
+                    continue
+                if isinstance(value, Model):
+                    if value == self.__group_obj or value == self.__data_obj:
+                        continue
+                    output_key = __getOutputKeyFromModel(value, key)
+                    output_value = value.id
+                else:
+                    output_key = key
+                    output_value = value
+                output_dict[output_key] = output_value
+            return output_dict
+
+        def __createDictFromModel(model: Model, attribute_name: str) -> dict:
+            """
+            Given a model and an attribute name, returns a dictionary containing
+            the attribute names and their values. 
+
+            Args:
+                model (Model): The model to extract data from.
+                attribute_name (str): The name of the attribute to extract data
+                for.
+
+            Returns:
+                dict: A dictionary containing the attribute names and their
+                    values.
+            """
+            data_dict = {}
+            for attr, value in modelIterator(model, attribute_name):
+                data_dict[attr] = value
+            return data_dict
+
+        def __getOutputKeyFromModel(model: Model, key: str) -> str:
+            """
+            Returns the output key for a given model and key.
+
+            Args:
+                model (Model): The model to get the output key for.
+                key (str): The key to get the output key for.
+
+            Returns:
+                key (str): The output key for the given model and key.
+            """
+            if model.table_type == 'GroupTable':
+                return f'{key}_group_id'
+            elif model.table_type == 'DataTable':
+                return f'{key}_id'
+            else:
+                return key
+   
         for attribute_name, value in self.__dict__.items():
             if attribute_name[0] == '_':
                 continue
             if isinstance(value, Model):
-                for attribute_name, value in model_iterator(
-                    value,
-                    attribute_name
-                ):
-                    yield attribute_name, value
+                yield from modelIterator(value, attribute_name)
             elif isinstance(value, list):
-                value, id_output_list = list_creator(attribute_name, value)
-                if id_output_list != []:
-                    save_for_later[f'{attribute_name}_id_list'] = id_output_list
-                    attribute_name = f'{attribute_name}__data_list'
-                yield attribute_name, value
+                value, id_output_list = listCreator(attribute_name, value)
+                if id_output_list:
+                    yield f'{attribute_name}__data_list', value
+                    yield f'{attribute_name}_id_list', id_output_list
+                else:
+                    yield attribute_name, value
             else:
                 yield attribute_name, value
-        for attribute_name, value in save_for_later.items():
-            yield attribute_name, value
 
     def __eq__(self, other: object) -> bool:
         return (
