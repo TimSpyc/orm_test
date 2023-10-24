@@ -33,11 +33,12 @@ class DerivativeConstellium(DataTable):
         'DerivativeType',
         on_delete=models.DO_NOTHING
     )
-    estimated_price = models.FloatField()
-    estimated_weight = models.FloatField()
+    estimated_price = models.FloatField(null=True)
+    estimated_weight = models.FloatField(null=True)
     prediction_accuracy = models.ForeignKey(
         'PredictionAccuracy',
-        on_delete=models.DO_NOTHING
+        on_delete=models.DO_NOTHING,
+        null=True
     )
 
     def __str__(self):
@@ -58,11 +59,14 @@ class DerivativeConstelliumDerivativeLmcConnection(DataExtensionTable):
         DerivativeConstellium,
         on_delete=models.DO_NOTHING
     )
-    derivative_lmc = models.ForeignKey(
+    derivative_lmc_group = models.ForeignKey(
         'DerivativeLmcGroup',
         on_delete=models.DO_NOTHING
     )
     take_rate = models.FloatField()
+
+    class Meta:
+        unique_together = ('derivative_constellium', 'derivative_lmc_group')
 
     @property
     def data_object(self):

@@ -70,8 +70,7 @@ class GeneralIntermediate:
         """
         use_cache = settings.USE_CACHE and cls.use_cache
 
-
-        if kwargs == {} and args == []:
+        if kwargs == {} and (args == [] or args == tuple()):
             return super().__new__(cls)
 
         kwargs = cls.__makeArgsToKwargs(args, kwargs)

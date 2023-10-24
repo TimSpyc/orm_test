@@ -1,3 +1,6 @@
 from .material_price_intermediate import MaterialPriceIntermediate
 from .price_intermediate import PriceIntermediate
 from .weight_intermediate import WeightIntermediate
+from .volume_customer_derivative_constellium_intermediate import VolumeCustomerDerivativeConstelliumIntermediate
+from .volume_lmc_derivative_constellium_intermediate import VolumeLmcDerivativeConstelliumIntermediate
+from .volume_project_intermediate import VolumeProjectIntermediate

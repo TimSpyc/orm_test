@@ -15,6 +15,7 @@ from backend.src.manager.change_request_cost_manager import ChangeRequestCost, C
 from backend.src.manager.change_request_risk_manager import ChangeRequestRisk, ChangeRequestRiskGroup
 from backend.src.manager.cross_section_manager import CrossSection, CrossSectionGroup
 from backend.src.manager.customer_manager import Customer, CustomerGroup, CustomerMaterialCondition
+from backend.src.manager.customer_volume_manager import CustomerVolume, CustomerVolumeGroup, CustomerVolumeVolume
 from backend.src.manager.customer_plant_manager import CustomerPlant, CustomerPlantGroup
 from backend.src.manager.derivative_constellium_manager import DerivativeConstellium, DerivativeConstelliumGroup, DerivativeConstelliumDerivativeLmcConnection
 from backend.src.manager.derivative_lmc_manager import DerivativeLmc, DerivativeLmcGroup, DerivativeLmcVolume

@@ -12,6 +12,7 @@ from .change_request import PopulateChangeRequest
 from .cross_section import populateCrossSection
 from .customer_plant import populateCustomerPlant
 from .customer import populateCustomer
+from .customer_volume import populateCustomerVolume
 from .derivative_constellium import populateDerivativeConstelliumWithDerivativeLmcConnection
 from .derivative_lmc_volume import populateVolumeForAllDerivativeLmc
 from .derivative_lmc import populateDerivativeLmc
