@@ -483,11 +483,16 @@ def createPartReleaseStatus():
 def createProjectStatus():
     project_status_list = [
         'nomination',
-        'series',
-        'acquisition',
         'pre development',
         'internal',
         'lost',
+        'rfi',
+        'rfq',
+        'production line release',
+        'tool release',
+        'sop',
+        'eop',
+        'spare parts',
     ]
 
     for project_status in project_status_list:
