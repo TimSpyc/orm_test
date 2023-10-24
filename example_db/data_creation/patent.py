@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
 from faker import Faker
 import random
-from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime
+from auxiliary import getRandomReference, deactivateLastObjectRandomly, getRandomUser, getRandomDateTime, drawingNumberGenerator
 from backend.models import (
     Patent,
     PatentGroup,
@@ -22,7 +22,7 @@ fake = Faker()
 
 def populatePatent():
     patent_group = PatentGroup(
-        patent_number = random.randint(1, 100)
+        patent_number = random.choice([drawingNumberGenerator('E'), drawingNumberGenerator('Z')])
     )
     patent_group.save()
 
