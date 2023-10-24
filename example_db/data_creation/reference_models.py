@@ -483,11 +483,16 @@ def createPartReleaseStatus():
 def createProjectStatus():
     project_status_list = [
         'nomination',
-        'series',
-        'acquisition',
         'pre development',
         'internal',
         'lost',
+        'rfi',
+        'rfq',
+        'production line release',
+        'tool release',
+        'sop',
+        'eop',
+        'spare parts',
     ]
 
     for project_status in project_status_list:
@@ -1194,12 +1199,31 @@ def createPatentTags():
         {'id': 4, 'name': 'crash management system', 'alternative_name1': 'cms'},
         {'id': 5, 'name': 'method'},
     ]
+    # patent_tag_dict_list = [
+    #     {'name': 'crash can', 'alternative_name1': 'crash box', 'alternative_name2': 'absorber'},
+    #     {'name': 'cross member'},
+    #     {'name': 'adapter'},
+    #     {'name': 'crash management system', 'alternative_name1': 'cms'},
+    #     {'name': 'method'},
+    # ]
 
     for patent_tag_dict in patent_tag_dict_list:
         patent_tag = PatentTag(
             **patent_tag_dict
         )
         patent_tag.save()
+
+def createPatentStatus():
+    patent_status_dict_list = [
+        {'name': 'released'},
+        {'name': 'expired'},
+    ]
+
+    for patent_status_dict in patent_status_dict_list:
+        patent_status = PatentStatus(
+            **patent_status_dict
+        )
+        patent_status.save()
 
 def createAbsenceType():
     absence_type_list = [
@@ -1328,6 +1352,7 @@ def fillReferenceTables():
     createTechnology()
     createSapAbbreviationDictionary()
     createPatentTags()
+    createPatentStatus()
     createAbsenceType()
     createTimeCorrectionType()
     createPermissionType()

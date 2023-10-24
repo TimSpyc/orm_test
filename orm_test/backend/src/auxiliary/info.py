@@ -10,6 +10,7 @@ from backend.src.auxiliary.exceptions import *
 import json
 from backend.src.auxiliary.timing import timeit
 from django.conf import settings
+from datetime import datetime
 
 from backend.src.auxiliary.new_cache import CacheHandler
 
@@ -129,7 +130,7 @@ class GeneralInfo:
             page_size: int to select the page size (default: all results)
             filter: dict to filter on db level (e.g. {"key": "value"})
             group_by: list of keys to group by (e.g. ["key1", "key2"])
-        
+
         Attributes:
             base_url: str => url to be used in urls.py (e.g. 'example')
             allowed_method_list: list => list of allowed methods
@@ -173,7 +174,7 @@ class GeneralInfo:
     detail_key_dict: dict = {'group_id': 'int'}
 
     manager: "GeneralManager" # Optional
-    datasetPermissionFunction = lambda data_set_dict: True
+    datasetPermissionFunction = lambda request_info_dict, data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
     use_cache = True
 
@@ -280,8 +281,13 @@ class GeneralInfo:
     def post(self) -> int:
         self.__checkConfiguration()
 
+        #manager_obj = self.manager.create(
+        #    creator_id = self.request_info_dict["request_user_id"],
+        #    **self.request_info_dict['request_data']
+        #)
+
         manager_obj = self.manager.create(
-            creator_id = self.request_info_dict["request_user_id"],
+            creator_id = 1,
             **self.request_info_dict['request_data']
         )
 
@@ -417,9 +423,18 @@ class GeneralInfo:
     def __combineGroupedData(self, combined_data, level_1_list, level_2_dict):
         group_by = level_1_list
         for key, value in combined_data.items():
+            if "_id" in key:
+                value = [str(x) for x in set(value)]
             if key in group_by:
                 combined_data[key] = value[0]
-            elif all(isinstance(x, int) or isinstance(x, float) for x in value):
+            elif all(x is None for x in value):
+                combined_data[key] = None
+                continue
+            elif any(x is None for x in value):
+                value = [
+                    str(x) for x in set(value) if x is not None
+                ]
+            if all(isinstance(x, int) or isinstance(x, float) for x in value):
                 combined_data[key] = sum(value)
             elif all(isinstance(x, str) for x in value):
                 combined_data[key] = ", ".join(set(value))
@@ -429,6 +444,8 @@ class GeneralInfo:
                     combined_data[key] = self.__combineData(
                         self.__buildGroups(combined_data[key], level_2_dict[key]),
                     level_2_dict[key], [])
+            elif all(isinstance(x, datetime) for x in value):
+                combined_data[key] = max(value)
             else:
                 raise Exception(f"Cannot combine {key} with values {value}")
         return combined_data
@@ -544,7 +561,10 @@ class GeneralInfo:
         return filtered_and_reduced_list
 
     def __couldBeSend(self, result_dict: dict) -> bool:
-        return self.__class__.datasetPermissionFunction(result_dict)
+        return self.__class__.datasetPermissionFunction(
+            self.request_info_dict,
+            result_dict
+        )
 
     @classmethod
     def __getAllowedMethodsList(cls, method_type: str) -> list:

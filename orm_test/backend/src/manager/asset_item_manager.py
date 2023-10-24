@@ -21,7 +21,7 @@ class AssetItem(DataTable):
     A Django model representing a asset item, including its name, max width, max
     height, description and associated asset item group.
     """
-    temp_validators = [MinValueValidator(1), MaxValueValidator(3)]
+    min_max_asset_size = [MinValueValidator(1), MaxValueValidator(3)]
 
     asset_item_group = models.ForeignKey(
         AssetItemGroup, 
@@ -29,12 +29,12 @@ class AssetItem(DataTable):
     )
     name = models.CharField(max_length=150)
     max_width = models.PositiveSmallIntegerField(
-        default=1, validators=temp_validators
+        default=1, validators=min_max_asset_size
     )
     max_height = models.PositiveSmallIntegerField(
-        default=1, validators=temp_validators
+        default=1, validators=min_max_asset_size
     )
-    description = models.TextField(null=True)
+    description = models.TextField(null=True, default=None)
 
     @property
     def group_object(self):

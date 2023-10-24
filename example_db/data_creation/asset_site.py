@@ -14,7 +14,7 @@ def createAssetSiteGroupDict(cls):
 
 def createAssetSiteDataDict(cls):
     return {
-        "name": cls.getRandomText(),
+        "name": cls.getRandomText(25),
     }
 
 class PopulateAssetSite(GeneralPopulate):

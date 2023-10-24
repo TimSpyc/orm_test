@@ -5,30 +5,24 @@ if __name__ == '__main__':
     import django
     django.setup()
 
-from faker import Faker
-import random
-from auxiliary import getRandomDateTime, modelCreationDict, getRandomUser, deactivateLastObjectRandomly
-from backend.models import ProjectGroup, Project
+from example_db.populate import GeneralPopulate
+from backend.models import Project, ProjectGroup
 
-fake = Faker()
+def createProjectGroupDict(cls):
+    return {}
 
-def populateProjectWithHistory():
-    proj_group = ProjectGroup()
-    proj_group.save()
+def createProjectDataDict(cls):
+    project_number = f'AP{cls.getRandomInteger(10000, 99999)}'
+    if cls.randomChoice(0.8):
+        project_number = f'CST-{cls.getRandomInteger(100, 999)}'
 
-    for _ in range(random.randint(1, 9)):
-        proj_dict = {
-            "name": fake.bs(),
-            "project_number": random.choice([
-                f'AP{random.randint(10000, 99999)}',
-                f'CST-{random.randint(100, 999)}',
-                None
-            ]),
-            "project_group": proj_group,
-            "creator": getRandomUser(),
-            "date": getRandomDateTime()
-        }
+    return {
+        "name": cls.getRandomText(),
+        "project_number": project_number,
+    }
 
-        proj = Project(**modelCreationDict(proj_dict, Project, proj_group))
-        proj.save()
-    deactivateLastObjectRandomly(proj)
+class PopulateProject(GeneralPopulate):
+    group_definition = (ProjectGroup, createProjectGroupDict)
+    data_definition = (Project, createProjectDataDict)
+
+    max_history_points = 9
