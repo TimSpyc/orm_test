@@ -1,10 +1,3 @@
-if __name__ == '__main__':
-    import os
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orm_test.settings')
-
-    import django
-    django.setup()
-
 from backend import models
 from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
 import re
