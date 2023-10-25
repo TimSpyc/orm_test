@@ -9,3 +9,15 @@ class NotValidIdError(Exception):
 
 class MissingAttributeError(Exception):
     pass
+
+################################################################################
+##### populate exceptions ######################################################
+################################################################################
+class IncompatibleValidatorList(Exception):
+    pass
+
+class NotImplementedYet(Exception):
+    pass
+
+class ResultContradictsConfiguration(Exception):
+    pass
