@@ -51,11 +51,11 @@ class DerivativeLmc(DataTable):
     design_lead_country = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.derivative_group_lmc} - {self.local_make} {self.local_model_line}"
+        return f"{self.derivative_lmc_group} - {self.local_make} {self.local_model_line}"
     
     @property
     def group_object(self):
-        return self.derivative_group_lmc
+        return self.derivative_lmc_group
     
 
 class DerivativeLmcManager(GeneralManager):
@@ -68,7 +68,7 @@ class DerivativeLmcManager(GeneralManager):
 class DerivativeLmcVolume(ExternalDataTable):
     derivative_lmc_group = models.ForeignKey(DerivativeLmcGroup, on_delete=models.DO_NOTHING)
     volume = models.PositiveIntegerField()
-    date = models.DateField()
+    volume_date = models.DateField()
     lmc_revision = models.ForeignKey("RevisionLMC", on_delete=models.DO_NOTHING)
 
     class Meta:
@@ -89,6 +89,7 @@ class DerivativeLmcVolumeManager(ExternalDataManager):
         group_id:int,
         search_date: datetime | None = None,
     ):
+
         super().__init__(
             search_date=search_date,
         )
@@ -97,8 +98,12 @@ class DerivativeLmcVolumeManager(ExternalDataManager):
 
     @property
     def current_volume(self) -> list[dict]:
-        max_lmc_revision = RevisionLMC.objects.latest()
-        return self.getVolumeForLmcRev(max_lmc_revision.revision_date)
+
+        max_lmc_revision_for_date = RevisionLMC.objects.filter(
+            revision_date__lte=self.search_date
+        ).latest()
+
+        return self.getVolumeForLmcRev(max_lmc_revision_for_date.revision_date)
     
     def getVolumeForLmcRev(self, lmc_revision: date) -> list[dict]:
         """
@@ -118,5 +123,5 @@ class DerivativeLmcVolumeManager(ExternalDataManager):
                 'date__lte': self.search_date,
                 'lmc_revision': lmc_revision,
             },
-            column_list=['volume', 'date']
+            column_list=['volume', 'volume_date']
         )

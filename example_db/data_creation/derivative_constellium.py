@@ -59,11 +59,14 @@ def populateDerivativeConstelliumWithDerivativeLmcConnection():
         derivative_constellium.save()
 
         for _ in range(random.randint(0, 15)):
-            derivative_lmc_connection = DerivativeConstelliumDerivativeLmcConnection(**{
-                "derivative_constellium": derivative_constellium,
-                "derivative_lmc": getRandomReference(DerivativeLmcGroup),
-                "take_rate": random.uniform(0, 1),
-            })
-            derivative_lmc_connection.save()
+            try:
+                derivative_lmc_connection = DerivativeConstelliumDerivativeLmcConnection(**{
+                    "derivative_constellium": derivative_constellium,
+                    "derivative_lmc_group": getRandomReference(DerivativeLmcGroup),
+                    "take_rate": random.uniform(0, 1),
+                })
+                derivative_lmc_connection.save()
+            except:
+                pass
 
     deactivateLastObjectRandomly(derivative_constellium)
