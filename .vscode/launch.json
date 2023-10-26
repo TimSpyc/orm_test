@@ -22,7 +22,7 @@
             "program": "${workspaceFolder}/orm_test/manage.py",
             "args": [
                 "test",
-                "backend.test.test_volume_lmc_derivative_constellium_intermediate",
+                "backend.test.test_volume_customer_derivative_constellium_intermediate",
                 "--noinput",
                 "--verbosity=2"
             ],

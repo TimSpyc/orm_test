@@ -28,17 +28,38 @@ class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
         )
 
     def getVolume(self) -> list:
-        '''
-        Get the current volume for the derivative_constellium_group_id.
-        
+        """
+        Description:
+        --------
+        Get the total volume of all derivative LMC groups based on the
+        derivative_constellium_derivative_lmc_connection_dict_list.
+
+        Declare:
+        --------
+        total_volume : list of dictionaries
+            The total volume of all derivative LMC groups.
+        extension_data : dictionary
+            The extension data of the derivative constellium derivative LMC connection dictionary list.
+        derivative_lmc_group_id : int
+            The ID of the derivative LMC group.
+        der_lmc_volume : DerivativeLmcVolumeManager object
+            The derivative LMC volume manager.
+        current_lmc_volume : list of dictionaries
+            The current LMC volume of the derivative LMC volume manager.
+        volume_data : dictionary
+            The volume data of the current LMC volume.
+        datum : datetime object
+            The date of the volume data.
+        volume : float
+            The volume of the volume data.
+        existing_volume : dictionary
+            The existing volume data with the same date as the current volume data.
+
         Returns:
         --------
-         total_volume : list
-                A list of dictionaries containing the volume_date and volume.
-                Each dictionary has the following keys:
-                    - 'volume_date': the date of the volume data (datetime.date object)
-                    - 'volume': the volume for the date (float)
-        '''
+        total_volume : list of dictionaries
+            The total volume of all derivative LMC groups.
+        """
         total_volume = []
         for extension_data in self.derivative_constellium_manager.\
             derivative_constellium_derivative_lmc_connection_dict_list:

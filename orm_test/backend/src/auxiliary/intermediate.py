@@ -55,6 +55,7 @@ class GeneralIntermediate:
     """
     relevant_scenario_keys: list
     use_cache: bool = True
+    cacheExpirationCheck: callable = lambda self, dependency, date: True
     
     def __new__(cls, *args: list, **kwargs: dict) -> object:
         """
@@ -291,24 +292,6 @@ class GeneralIntermediate:
             getRelevantScenarioDict(cls.relevant_scenario_keys)
 
         return relevant_scenarios, scenario_handler
-
-    def checkIfCacheNeedsToExpire(
-        self,
-        dependency: object,
-        date: datetime
-    ) -> bool:
-        """
-        Checks if the cache needs to expire based on the given dependency and
-        date. Replace this function for custom cache expiration logic.
-
-        Args:
-            dependency (object): The dependency to check.
-            date (datetime): The date to check.
-
-        Returns:
-            bool: True if the cache needs to expire, False otherwise.
-        """
-        return True
 
     def expireCache(self, dependency: object, date: datetime) -> None:
         """
