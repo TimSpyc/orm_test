@@ -2,7 +2,6 @@
 from django.db import models
 from backend.models import GroupTable, DataTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
-from datetime import datetime
 
 class CustomerVolumeGroup(GroupTable):
     """
@@ -40,7 +39,7 @@ class CustomerVolume(DataTable):
     sop = models.DateField()
     eop = models.DateField()
     description = models.CharField(max_length=255)
-    used_volume = models.BooleanField(default=False) #kann hier nur eins used_volume habe? welches volumen gebe ich bei der group id (1) 
+    used_volume = models.BooleanField(default=False)
 
     @property
     def group_object(self):
@@ -56,6 +55,10 @@ class CustomerVolumeVolume(DataExtensionTable):
     customer_volume = models.ForeignKey(CustomerVolume, on_delete=models.DO_NOTHING)
     volume = models.PositiveIntegerField()
     volume_date = models.DateField()
+
+    @property
+    def data_object(self):
+        return self.customer_volume
 
     def __str__(self):
         return f"""

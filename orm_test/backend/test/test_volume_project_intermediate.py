@@ -1,7 +1,10 @@
 import unittest
 from unittest.mock import MagicMock
-from backend.src.intermediate.volume_project_intermediate import VolumeProjectIntermediate
-from backend.src.intermediate import VolumeLmcDerivativeConstelliumIntermediate, VolumeCustomerDerivativeConstelliumIntermediate
+from backend.src.intermediate import (
+    VolumeProjectIntermediate,
+    VolumeLmcDerivativeConstelliumIntermediate,
+    VolumeCustomerDerivativeConstelliumIntermediate
+)
 import datetime
 
 class TestVolumeLmcProjectIntermediate(VolumeProjectIntermediate):

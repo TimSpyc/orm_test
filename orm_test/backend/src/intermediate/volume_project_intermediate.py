@@ -18,6 +18,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         search_date: datetime | None = None,
         scenario_dict: dict = {},
     ):
+
         self.__checkValidityOfVolumeDerivativeIntermediateClass(
             VolumeDerivativeIntermediateClass
         )
@@ -50,6 +51,36 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             )
 
     def getVolume(self) -> list:
+        """
+        Description:
+        --------
+        Get the total volume of all derivative constellium groups
+        based on the derivative_constellium_group_dict_list.
+
+        Declare:
+        --------
+        total_volume : list of dictionaries
+            The total volume of all derivative constellium groups.
+        data : dictionary
+            The data of the derivative constellium group dictionary list.
+        derivative_constellium_group_id : int
+            The ID of the derivative constellium group.
+        inter_obj : VolumeDerivativeIntermediateClass object
+            The volume derivative intermediate class object.
+        volume_data : dictionary
+            The volume data of the volume derivative intermediate class object.
+        datum : datetime object
+            The date of the volume data.
+        volume : float
+            The volume of the volume data.
+        existing_volume : dictionary
+            The existing volume data with the same date as the current volume data.
+
+        Returns:
+        --------
+        total_volume : list of dictionaries
+            The total volume of all derivative constellium groups.
+        """
         total_volume = []
         for data in self.derivative_constellium_group_dict_list:
             derivative_constellium_group_id = data['id']
