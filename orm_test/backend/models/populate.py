@@ -1,12 +1,12 @@
 # Responsible Maximilian Kelm
-from typing import Callable, List, Any
+from typing import Callable, Dict, List, Any
 from faker import Faker
 import random
 import json
 from datetime import datetime, timedelta, date, time
 from decimal import Decimal
 
-from django.db.models import Model
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.db.models.fields import NOT_PROVIDED
 from django.core.exceptions import ValidationError
@@ -42,9 +42,10 @@ from django.db.models.fields.related import (
     # ForeignObjectRel,
     ManyToOneRel,
     ManyToManyRel,
-    # OneToOneRel,
+    OneToOneRel,
 )
 
+from backend.models.validators.validator import BaseCustomValidator
 from backend.src.auxiliary.exceptions import (
     IncompatibleValidatorList,
     NotImplementedYet,
@@ -122,8 +123,24 @@ class BasePopulate:
         return cls.FAKE.date_time()
 
     @classmethod
+    def createRandomDatetimeBetween(
+        cls,
+        start_date:datetime = datetime(1970, 1, 1),
+        end_date:datetime = datetime.now()
+    ) -> datetime:
+        return cls.FAKE.date_time_between(start_date, end_date)
+
+    @classmethod
     def createRandomDate(cls) -> date:
         return cls.FAKE.date_object()
+
+    @classmethod
+    def createRandomDateBetween(
+        cls,
+        start_date:datetime = datetime(1970, 1, 1),
+        end_date:datetime = datetime.now()
+    ) -> datetime:
+        return cls.FAKE.date_between(start_date, end_date)
 
     @classmethod
     def createRandomTime(cls) -> time:
@@ -267,6 +284,21 @@ class BasePopulate:
                 {allowed_validator_list}
             ''')
 
+    # ---- select populate function --------------------------------------------
+    @staticmethod
+    def callDefaultPopulateFunction(custom_function_name: str, **kwargs):
+        try:
+            return getattr(BasePopulate, f"createRandom{custom_function_name}")(
+                **kwargs
+            )
+        except AttributeError:
+            # TODO: Adjust error msg!
+            raise NotImplementedYet(f'''
+                There is no populate function for these field type!
+            ''')
+        except Exception as e:
+            raise e
+
 
 ################################################################################
 ##### class to populate fields #################################################
@@ -368,7 +400,8 @@ class PopulateField(BasePopulate):
     def populateFieldWithDefaultFunction(self) -> Any:
         try:
             return getattr(self, f"_populate{self.field.__class__.__name__}")()
-        except AttributeError:
+        except AttributeError as e:
+            print("ERROR",e)
             raise NotImplementedYet(f'''
                 The field "{self.field.name}" with type {type(self.field)} is 
                 supported, but no corresponding populate function for 
@@ -516,14 +549,14 @@ class PopulateField(BasePopulate):
     # TODO: Adjust logic for reference and group tables on PopulateModel!
     def __populateRelationshipFields(
         self,
-        relationship_model_list: list[Model]
-    ) -> Model:
+        relationship_model_list: list[models.Model]
+    ) -> models.Model:
         if len(relationship_model_list) != 0 and self.randomTrue(0.75):
             return self.randomChoice(relationship_model_list)
 
         return PopulateModel(self.field.related_model).populate()
 
-    def _populateForeignKey(self) -> Model:
+    def _populateForeignKey(self) -> models.Model:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         if self.field.unique:
@@ -533,7 +566,7 @@ class PopulateField(BasePopulate):
             self.field.related_model.objects.all()
         )
 
-    def _populateOneToOneField(self) -> Model:
+    def _populateOneToOneField(self) -> models.Model:
         # self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         # -> return self.__populateRelationshipFields(
@@ -546,7 +579,7 @@ class PopulateField(BasePopulate):
             this method must be implemented.
         """)
 
-    def _populateManyToManyField(self) -> list[Model]:
+    def _populateManyToManyField(self) -> list[models.Model]:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         many_to_many_list = []
@@ -569,24 +602,137 @@ class PopulateField(BasePopulate):
 ################################################################################
 
 class PopulateModel(BasePopulate):
-    # TODO: Check all defined attributes!
-    # -> model: check all field types are supported!
+    max_data_creation_attempts: int = 10
 
-    # TODO: wie händle ich die clean methoden?
+    def __init__(self, model: models.Model, **populate_definition_dict) -> None:
+        if not isinstance(model, models.base.ModelBase):
+            raise TypeError(
+                "The model must be defined and of type ModelBase!"
+            )
 
-    def __init__(self, model, **kwargs):
         self.model = model
+        self.model_obj = model()
+        self.validator_definition_dict = BaseCustomValidator.getValidatorDict(
+            self.model.validator_list
+        )
+        self.__checkAdditionalDefinitionsCoverModel(populate_definition_dict)
+        self.populate_definition_dict = populate_definition_dict
 
-    def populate(self):
-        temp_model = self.model(**{
-            field.name: PopulateField(field).populate()
-            for field in self.model._meta.get_fields()
-            if type(field) in PopulateField.SUPPORTED_FIELD_LIST
-        })
+    def __checkAdditionalDefinitionsCoverModel(
+        self,
+        populate_definition_dict: Dict[str, Any]
+    ) -> None:
+        # TODO: Catch all errors before raise it?
+        for field_name in populate_definition_dict.keys():
+            if not hasattr(self.model, field_name):
+                raise ValueError(f"""
+                    The model has no attribute with the given field_name!
+                    -> model: "{self.model}"
+                    -> field_name: "{self.field_name}"
+                """)
+
+            if type(self.model._meta.get_field(field_name))\
+            not in PopulateField.SUPPORTED_FIELD_LIST:
+                raise TypeError(f'''
+                    The attr for the given field_name appears not to be type field!
+                    -> model: "{self.model}"
+                    -> field_name: "{field_name}"
+                ''')
+
+    def __getCustomPopulateFromDefinitionDict(
+        self,
+        field_name:str,
+        definition_dict_name:str
+    ) -> Any | None:
+        if hasattr(self, definition_dict_name):
+            definition_dict = getattr(self, definition_dict_name)
+
+            if field_name in definition_dict.keys():
+                return definition_dict[field_name]
+
+        return None
+
+    def __createCustomDefinitionDict(self, field_name:str) -> Dict[str, Any]:
+        custom_populate = self.__getCustomPopulateFromDefinitionDict(
+            field_name,
+            'populate_definition_dict'
+        )
+
+        if custom_populate is None:
+            custom_populate = self.__getCustomPopulateFromDefinitionDict(
+                field_name,
+                'validator_definition_dict'
+            )
+
+            if custom_populate is None:
+                return {}
+            
+            custom_populate = custom_populate(self.model_obj).populate
+
+        return {"custom_populate": custom_populate}
+
+    def __populateDataForField(self, field) -> Any:
+        # TODO: Kann ich auch weitere definitionen außerhalb definieren?
+        custom_definitions = self.__createCustomDefinitionDict(field.name)
+
+        return PopulateField(field, **custom_definitions).populate()
+    
+    def __populateModelWithFieldNameList(self, field_name_list:List[str]):
+        print("field name list: ", field_name_list)
+        for field_name in field_name_list:
+            field = self.model._meta.get_field(field_name)
+
+            # TODO: dismiss rel types and many to many
+            if type(field) in [ManyToOneRel, ManyToManyRel, OneToOneRel]\
+            or field.primary_key:
+                continue
+
+            field_data = self.__populateDataForField(
+                self.model._meta.get_field(field_name)
+            )
+
+            # TODO: Check if self.model_obj is overwritten
+            setattr(self.model_obj, field_name, field_data)
+
+    def __checkValidationForModel(self):
+        try:
+            self.model_obj.full_clean()
+            return []
+        except ValidationError as e:
+            # TODO: Dismiss blank field errors?
+            print("Hier sind die errors: ", e.error_dict)
+            return e.error_dict.keys()
+        except Exception as e:
+            raise e
+
+    def __populateModel(self):
+        error_field_name_list = []
+
+        for _ in range(0, self.max_data_creation_attempts):
+            if error_field_name_list:
+                self.__populateModelWithFieldNameList(error_field_name_list)
+            else:
+                self.__populateModelWithFieldNameList(
+                    [field.name for field in self.model._meta.get_fields()]
+                )
+
+            error_field_name_list = self.__checkValidationForModel()
+
+            if not error_field_name_list:
+                return
+
+        raise ValueError(f'''
+            No data can be created for the {self.model}
+            Check model and populate definitions are correct!
+        ''')
+
+    def populate(self) -> models.Model:
+        self.__populateModel()
+        # TODO: set many to many relationships
+        # self.__populateRelationships()
+        self.model_obj.save()
         
-        temp_model.save()
-        
-        return temp_model
+        return self.model_obj
 
 
 ################################################################################
