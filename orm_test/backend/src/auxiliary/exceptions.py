@@ -19,5 +19,8 @@ class IncompatibleValidatorList(Exception):
 class NotImplementedYet(Exception):
     pass
 
+class NotConfigured(Exception):
+    pass
+
 class ResultContradictsConfiguration(Exception):
     pass
