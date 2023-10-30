@@ -32,7 +32,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         
         self.search_date = search_date
 
-        self.volume = self.getVolume()
+        self.volume, self.volume_derivative = self.getVolume()
 
         super().__init__(
             search_date,
@@ -82,12 +82,20 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             The total volume of all derivative constellium groups.
         """
         total_volume = []
+        total_volume_derivative = []
+
         for data in self.derivative_constellium_group_dict_list:
             derivative_constellium_group_id = data['id']
             inter_obj = self.VolumeDerivativeIntermediateClass(
                 derivative_constellium_group_id=derivative_constellium_group_id,
                 search_date=self.search_date,
             )
+
+            total_volume_derivative.append({
+                'derivative_constellium_group_id': derivative_constellium_group_id,
+                'volume_derivative': inter_obj.volume
+                })
+
             for volume_data in inter_obj.volume:
                 datum = volume_data['volume_date']
                 volume = volume_data['volume']
@@ -103,4 +111,4 @@ class VolumeProjectIntermediate(GeneralIntermediate):
                     })
                 else:
                     existing_volume['volume'] += volume
-        return total_volume
+        return total_volume, total_volume_derivative
