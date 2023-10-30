@@ -1,3 +1,4 @@
+from .billOfMaterial_part_intermediate import BillOfMaterialPartIntermediate
 from .materialPrice_customer_intermediate import MaterialPriceIntermediate
 from .price_partSold_intermediate import PriceIntermediate
 from .weight_part_intermediate import WeightIntermediate

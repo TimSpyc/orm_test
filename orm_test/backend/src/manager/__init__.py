@@ -16,6 +16,7 @@ from .customer_volume_manager import CustomerVolumeManager
 from .derivative_constellium_manager import DerivativeConstelliumManager
 from .derivative_lmc_manager import DerivativeLmcManager, DerivativeLmcVolumeManager
 from .file_manager import FileManager
+from .hash_filter_manager import HashFilterManager
 from .material_alloy_manager import MaterialAlloyManager
 from .material_alloy_treatment_manager import MaterialAlloyTreatmentManager
 from .material_manager import MaterialManager
