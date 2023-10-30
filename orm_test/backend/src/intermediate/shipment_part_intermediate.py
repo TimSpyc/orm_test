@@ -2,8 +2,7 @@
 
 from backend.src.intermediate import (
     WeightIntermediate,
-    VolumeLmcDerivativeConstelliumIntermediate,
-    VolumeCustomerDerivativeConstelliumIntermediate
+    VolumePartIntermediate
 )
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
@@ -14,24 +13,19 @@ class ShipmentPartIntermediate(GeneralIntermediate):
     def __init__(
         self,
         part_group_id: int,
-        VolumeDerivativeIntermediateClass: GeneralIntermediate,
         search_date: datetime | None = None,
         scenario_dict: dict = {},
     ):  
-        self.__checkValidityOfVolumeDerivativeIntermediateClass(
-            VolumeDerivativeIntermediateClass
-        )
         
-        self.volume = VolumeDerivativeIntermediateClass(
+        self.volume = VolumePartIntermediate(
             part_group_id=part_group_id,
-            VolumeDerivativeIntermediateClass=VolumeDerivativeIntermediateClass,
             search_date=search_date,
         ).volume
         
         self.current_weight = WeightIntermediate(
             part_group_id=part_group_id,
             search_date=search_date,
-        ).currentWeight
+        ).current_weight
 
         self.shipment = self.getShipment()
 
@@ -39,17 +33,6 @@ class ShipmentPartIntermediate(GeneralIntermediate):
             search_date,
             scenario_dict,
         )
-
-    def __checkValidityOfVolumeDerivativeIntermediateClass(
-        VolumeDerivativeIntermediateClass: GeneralIntermediate
-    ):
-        if VolumeDerivativeIntermediateClass not in [
-            VolumeLmcDerivativeConstelliumIntermediate,
-            VolumeCustomerDerivativeConstelliumIntermediate
-        ]:
-            raise ValueError(
-                f"{VolumeDerivativeIntermediateClass} is not supported"
-            )
     
     def getShipment(self):
         total_shipment = []
@@ -57,8 +40,8 @@ class ShipmentPartIntermediate(GeneralIntermediate):
         for data in self.volume:
             date_item = {}
             date_item['shipment_data'] = data['volume_date']
-            for weight_category in self.current_weight:
-                date_item[weight_category.key] = weight_category.value * data['volume']
+            for category, value in self.current_weight.items():
+                date_item[category] = value * data['volume']
             total_shipment.append(date_item)
 
         return total_shipment

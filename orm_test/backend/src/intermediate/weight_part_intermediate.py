@@ -88,7 +88,7 @@ class WeightIntermediate(GeneralIntermediate):
         )
 
     @property
-    def currentWeight(self) -> dict:
+    def current_weight(self) -> dict:
         """
         Returns a dictionary containing the current weight values of the object.
 

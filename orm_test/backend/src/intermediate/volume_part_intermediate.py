@@ -18,9 +18,9 @@ class VolumePartIntermediate(GeneralIntermediate):
         search_date: datetime | None = None,
         scenario_dict: dict = {},
     ):
-        self.__checkValidityOfVolumeDerivativeIntermediateClass(
-            VolumeDerivativeIntermediateClass
-        )
+        
+        self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
+        self.__checkValidityOfVolumeDerivativeIntermediateClass()
         
         self.search_date = search_date
 
@@ -30,37 +30,36 @@ class VolumePartIntermediate(GeneralIntermediate):
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
 
-        self.volume, self.volume_derivative = self.getVolume(VolumeDerivativeIntermediateClass)
+        self.volume, self.volume_derivative = self.getVolume()
 
         super().__init__(
             search_date,
             scenario_dict,
         )
 
-    def __checkValidityOfVolumeDerivativeIntermediateClass(
-        VolumeDerivativeIntermediateClass: GeneralIntermediate
-    ):
-        if VolumeDerivativeIntermediateClass not in [
+    def __checkValidityOfVolumeDerivativeIntermediateClass(self):
+        if self.VolumeDerivativeIntermediateClass not in [
             VolumeLmcDerivativeConstelliumIntermediate,
             VolumeCustomerDerivativeConstelliumIntermediate
         ]:
             raise ValueError(
-                f"{VolumeDerivativeIntermediateClass} is not supported"
+                f"{self.VolumeDerivativeIntermediateClass} is not supported"
             )
     
-    def getVolume(self, VolumeDerivativeIntermediateClass: GeneralIntermediate):
+    def getVolume(self) -> tuple[list, list]:
         total_volume = []
         total_volume_derivative = []
         
         for bom_manager in self.bom_manager_list:
-            bom_data_dict = bom_manager.getBillOfMaterialDetails(
-                'product_development',
-                head_part_group_id=self.part_manager.group_id
-            )
-            relative_quantity = bom_data_dict['head_node']['relative_quantity']
+            
+            cumulated_quantity = 0
+            for data in bom_manager.bill_of_material_structure_dict_list:
+                if data['part_group_id'] == self.part_manager.group_id:
+                    cumulated_quantity += data['cumulated_quantity']
+
             der_group_id = bom_manager.derivative_constellium_group_id
             
-            inter_obj = VolumeDerivativeIntermediateClass(
+            inter_obj = self.VolumeDerivativeIntermediateClass(
                 derivative_constellium_group_id = der_group_id,
                 search_date=self.search_date)
             
@@ -68,7 +67,7 @@ class VolumePartIntermediate(GeneralIntermediate):
                 {
                     'derivative_constellium_group_id': der_group_id,
                     'volume_derivative': inter_obj.volume,
-                    'takerate': relative_quantity
+                    'cumulated_quantity': cumulated_quantity
                 }
             )
             
@@ -83,10 +82,10 @@ class VolumePartIntermediate(GeneralIntermediate):
                 if existing_volume is None:
                     total_volume.append({
                         'volume_date': datum,
-                        'volume': volume * relative_quantity,
+                        'volume': volume * cumulated_quantity,
                     })
                 else:
-                    existing_volume['volume'] += volume * relative_quantity
+                    existing_volume['volume'] += volume * cumulated_quantity
             
         return total_volume, total_volume_derivative
             
