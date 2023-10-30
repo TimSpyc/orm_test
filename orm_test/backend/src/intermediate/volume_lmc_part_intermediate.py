@@ -18,7 +18,6 @@ class VolumePartIntermediate(GeneralIntermediate):
         search_date: datetime | None = None,
         scenario_dict: dict = {},
     ):
-
         self.__checkValidityOfVolumeDerivativeIntermediateClass(
             VolumeDerivativeIntermediateClass
         )
@@ -29,6 +28,7 @@ class VolumePartIntermediate(GeneralIntermediate):
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
 
+        self.volume, self.volume_derivative = self.getVolume(VolumeDerivativeIntermediateClass)
     def __checkValidityOfVolumeDerivativeIntermediateClass(
         VolumeDerivativeIntermediateClass: GeneralIntermediate
     ):
@@ -39,3 +39,42 @@ class VolumePartIntermediate(GeneralIntermediate):
             raise ValueError(
                 f"{VolumeDerivativeIntermediateClass} is not supported"
             )
+    
+    def getVolume(self, VolumeDerivativeIntermediateClass: GeneralIntermediate):
+        total_volume = []
+        total_volume_derivative = []
+        
+        for bom_manager in self.bom_manager_list:
+            bom_data_dict = bom_manager.getBillOfMaterialDetails(
+                'product_development',
+                head_part_group_id=self.part_manager.group_id
+            )
+            relative_quantity = bom_data_dict['head_node']['relative_quantity']
+            inter_obj = VolumeDerivativeIntermediateClass(bom_manager.derivative_constellium_group_id)
+            
+            total_volume_derivative.append(
+                {
+                    'derivative_constellium_group_id': bom_manager.derivative_constellium_group_id,
+                    'volume_derivative': inter_obj.volume,
+                    'takerate': relative_quantity
+                }
+            )
+            
+            for volume_data in inter_obj.volume:
+                datum = volume_data['volume_date']
+                volume = volume_data['volume']
+
+                existing_volume = next(
+                    (x for x in total_volume if x['volume_date'] == datum),
+                    None
+                )
+                if existing_volume is None:
+                    total_volume.append({
+                        'volume_date': datum,
+                        'volume': volume * relative_quantity,
+                    })
+                else:
+                    existing_volume['volume'] += volume * relative_quantity
+            
+        return total_volume, total_volume_derivative
+            
