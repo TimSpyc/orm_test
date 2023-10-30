@@ -21,14 +21,22 @@ class VolumePartIntermediate(GeneralIntermediate):
         self.__checkValidityOfVolumeDerivativeIntermediateClass(
             VolumeDerivativeIntermediateClass
         )
+        
+        self.search_date = search_date
 
         self.part_manager = PartManager(
             group_id=part_group_id,
-            search_date=search_date,
+            search_date=self.search_date,
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
 
         self.volume, self.volume_derivative = self.getVolume(VolumeDerivativeIntermediateClass)
+
+        super().__init__(
+            search_date,
+            scenario_dict,
+        )
+
     def __checkValidityOfVolumeDerivativeIntermediateClass(
         VolumeDerivativeIntermediateClass: GeneralIntermediate
     ):
@@ -50,11 +58,15 @@ class VolumePartIntermediate(GeneralIntermediate):
                 head_part_group_id=self.part_manager.group_id
             )
             relative_quantity = bom_data_dict['head_node']['relative_quantity']
-            inter_obj = VolumeDerivativeIntermediateClass(bom_manager.derivative_constellium_group_id)
+            der_group_id = bom_manager.derivative_constellium_group_id
+            
+            inter_obj = VolumeDerivativeIntermediateClass(
+                derivative_constellium_group_id = der_group_id,
+                search_date=self.search_date)
             
             total_volume_derivative.append(
                 {
-                    'derivative_constellium_group_id': bom_manager.derivative_constellium_group_id,
+                    'derivative_constellium_group_id': der_group_id,
                     'volume_derivative': inter_obj.volume,
                     'takerate': relative_quantity
                 }
