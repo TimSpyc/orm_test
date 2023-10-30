@@ -71,21 +71,51 @@ class VolumePartIntermediate(GeneralIntermediate):
                 }
             )
             
-            for volume_data in inter_obj.volume:
-                datum = volume_data['volume_date']
-                volume = volume_data['volume']
+            total_volume = self.__updateTotalVolume(total_volume, cumulated_quantity, inter_obj)
+            
+        return total_volume, total_volume_derivative
 
-                existing_volume = next(
+    def __updateTotalVolume(
+        self,
+        total_volume: list,
+        cumulated_quantity: float,
+        inter_obj: GeneralIntermediate
+    ) -> list:
+        """
+        Description:
+        ------------
+        Updates the total volume of a given intermediate object
+        by multiplying the volume of each date by the cumulated quantity.
+
+        Inputs/Parameters:
+        -------------------
+        total_volume : list
+            A list of dictionaries containing the volume data for each date.
+        cumulated_quantity : float
+            The cumulated quantity of the intermediate object.
+        inter_obj : GeneralIntermediate
+            The intermediate object containing the volume data.
+
+        Returns:
+        --------
+        total_volume : list
+            A list of dictionaries containing the
+            updated volume data for each date.
+        """
+        for volume_data in inter_obj.volume:
+            datum = volume_data['volume_date']
+            volume = volume_data['volume']
+
+            existing_volume = next(
                     (x for x in total_volume if x['volume_date'] == datum),
                     None
                 )
-                if existing_volume is None:
-                    total_volume.append({
+            if existing_volume is None:
+                total_volume.append({
                         'volume_date': datum,
                         'volume': volume * cumulated_quantity,
                     })
-                else:
-                    existing_volume['volume'] += volume * cumulated_quantity
-            
-        return total_volume, total_volume_derivative
+            else:
+                existing_volume['volume'] += volume * cumulated_quantity
+        return total_volume
             
