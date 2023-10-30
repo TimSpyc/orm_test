@@ -45,7 +45,7 @@ def checkIfCacheNeedsToExpire(
         return True
 
 
-class WeightIntermediate(GeneralIntermediate):
+class WeightPartIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
     cacheExpirationCheck = lambda self, dependency, date:(
         checkIfCacheNeedsToExpire(dependency, date)
