@@ -40,7 +40,7 @@ info_list = [
     ProjectUserInfo,
     SapNumberInfo,
     ScenarioInfo,
-    StockExchangeInfo,
+    StockExchangeDataInfo,
     TestValidatorsInfo,
     TimeCorrectionInfo,
   
