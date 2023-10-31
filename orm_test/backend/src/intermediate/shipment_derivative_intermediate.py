@@ -1,10 +1,7 @@
 # Responsible Elias Bauer
-
-from backend.src.intermediate import (
-    WeightPartIntermediate,
-    VolumeLmcDerivativeConstelliumIntermediate,
-    VolumeCustomerDerivativeConstelliumIntermediate
-)
+from backend.src.intermediate import auxiliary
+from backend.src.intermediate.volumeLmc_derivativeConstellium_intermediate import VolumeLmcDerivativeConstelliumIntermediate
+from backend.src.intermediate.volumeCustomer_derivativeConstellium_intermediate import VolumeCustomerDerivativeConstelliumIntermediate
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
@@ -20,20 +17,41 @@ class ShipmentDerivativeIntermediate(GeneralIntermediate):
     ):
         
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
-        self.__checkValidityOfVolumeDerivativeIntermediateClass()
+        auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
+            attribute_name = self.VolumeDerivativeIntermediateClass,
+            valid_classes = [
+                VolumeLmcDerivativeConstelliumIntermediate,
+                VolumeCustomerDerivativeConstelliumIntermediate
+            ]
+        )
 
-        self.search_date = search_date
+        
+        self.volume = self.VolumeDerivativeIntermediateClass(
+            derivative_constellium_group_id=derivative_constellium_group_id,
+            search_date=search_date,
+        ).volume
+        
+        self.current_weight_list = self.getCurrentWeightList()
+        # Only the first one
+        # self.current_weight = WeightPartIntermediate(
+        #     part_group_id=part_group_id,
+        #     search_date=search_date,
+        # ).current_weight
+
+        #loop through this
+        self.shipment = self.getShipment()
 
         super().__init__(
             search_date,
             scenario_dict,
         )
 
-    def __checkValidityOfVolumeDerivativeIntermediateClass(self):
-        if self.VolumeDerivativeIntermediateClass not in [
-            VolumeLmcDerivativeConstelliumIntermediate,
-            VolumeCustomerDerivativeConstelliumIntermediate
-        ]:
-            raise ValueError(
-                f"{self.VolumeDerivativeIntermediateClass} is not supported"
-            )
+    def getCurrentWeightList(self):
+        pass
+    
+# auxiliary.calculateShipment(
+#             volume_dict=self.volume,
+#             current_weight_dict=self.current_weight)
+    def getShipment(self):
+        total_shipment = []
+        return total_shipment

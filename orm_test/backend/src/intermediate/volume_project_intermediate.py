@@ -2,6 +2,7 @@
 
 from backend.models import DerivativeConstelliumGroup
 from backend.src.intermediate import (
+    auxiliary,
     VolumeLmcDerivativeConstelliumIntermediate,
     VolumeCustomerDerivativeConstelliumIntermediate
 )
@@ -20,7 +21,13 @@ class VolumeProjectIntermediate(GeneralIntermediate):
     ):
 
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
-        self.__checkValidityOfVolumeDerivativeIntermediateClass()
+        auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
+            attribute_name = self.VolumeDerivativeIntermediateClass,
+            valid_classes = [
+                VolumeLmcDerivativeConstelliumIntermediate,
+                VolumeCustomerDerivativeConstelliumIntermediate
+            ]
+        )
         
         self.derivative_constellium_group_dict_list = \
             list(DerivativeConstelliumGroup.objects.filter(
@@ -35,15 +42,6 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             search_date,
             scenario_dict,
         )
-
-    def __checkValidityOfVolumeDerivativeIntermediateClass(self):
-        if self.VolumeDerivativeIntermediateClass not in [
-            VolumeLmcDerivativeConstelliumIntermediate,
-            VolumeCustomerDerivativeConstelliumIntermediate
-        ]:
-            raise ValueError(
-                f"{self.VolumeDerivativeIntermediateClass} is not supported"
-            )
 
     def getVolume(self) -> list:
         """

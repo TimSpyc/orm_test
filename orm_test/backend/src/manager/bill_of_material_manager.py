@@ -47,7 +47,7 @@ class BillOfMaterialStructure(DataExtensionTable):
 class BillOfMaterialManager(GeneralManager):
     group_model = BillOfMaterialGroup
     data_model = BillOfMaterial
-    data_extension_model_list = []
+    data_extension_model_list = [BillOfMaterialStructure]
 
     def __init__(
         self,
