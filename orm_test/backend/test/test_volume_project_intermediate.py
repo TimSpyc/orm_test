@@ -19,9 +19,9 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
         # Create a mock VolumeDerivativeConstelliumIntermediate object
         inter_obj = MagicMock()
         inter_obj.volume = [
-            {'volume_date': datetime.date(2022, 1, 1), 'volume': 100},
-            {'volume_date': datetime.date(2021, 1, 1), 'volume': 200},
-            {'volume_date': datetime.date(2020, 1, 1), 'volume': 300}
+            {'date': datetime.date(2022, 1, 1), 'volume': 100},
+            {'date': datetime.date(2021, 1, 1), 'volume': 200},
+            {'date': datetime.date(2020, 1, 1), 'volume': 300}
         ]
 
         VolumeLmcDerivativeConstelliumIntermediate.__new__ = MagicMock(return_value=inter_obj)
@@ -41,11 +41,11 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
 
         # Check that the result is a list of dictionaries with the expected keys and values
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0]['volume_date'], datetime.date(2022, 1, 1))
+        self.assertEqual(result[0]['date'], datetime.date(2022, 1, 1))
         self.assertEqual(result[0]['volume'], 300)
-        self.assertEqual(result[1]['volume_date'], datetime.date(2021, 1, 1))
+        self.assertEqual(result[1]['date'], datetime.date(2021, 1, 1))
         self.assertEqual(result[1]['volume'], 600)
-        self.assertEqual(result[2]['volume_date'], datetime.date(2020, 1, 1))
+        self.assertEqual(result[2]['date'], datetime.date(2020, 1, 1))
         self.assertEqual(result[2]['volume'], 900)
         
     def test_emptyVolumeList(self):
@@ -68,16 +68,16 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
 
         self.assertEqual(len(result), 0)
         with self.assertRaises(IndexError):
-            result[0]['volume_date']
+            result[0]['date']
         with self.assertRaises(IndexError):
             result[0]['volume']
 
     def test_partlyEmptyVolumeList(self):
         inter_obj = MagicMock()
         inter_obj.volume = [
-            {'volume_date': datetime.date(2022, 1, 1), 'volume': 100},
-            {'volume_date': datetime.date(2021, 1, 1), 'volume': 0},
-            {'volume_date': datetime.date(2020, 1, 1), 'volume': 0.25}
+            {'date': datetime.date(2022, 1, 1), 'volume': 100},
+            {'date': datetime.date(2021, 1, 1), 'volume': 0},
+            {'date': datetime.date(2020, 1, 1), 'volume': 0.25}
         ]
 
         VolumeLmcDerivativeConstelliumIntermediate.__new__ = MagicMock(return_value=inter_obj)
@@ -93,11 +93,11 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
         result = intermediate.getVolume()
 
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0]['volume_date'], datetime.date(2022, 1, 1))
+        self.assertEqual(result[0]['date'], datetime.date(2022, 1, 1))
         self.assertEqual(result[0]['volume'], 200)
-        self.assertEqual(result[1]['volume_date'], datetime.date(2021, 1, 1))
+        self.assertEqual(result[1]['date'], datetime.date(2021, 1, 1))
         self.assertEqual(result[1]['volume'], 0)
-        self.assertEqual(result[2]['volume_date'], datetime.date(2020, 1, 1))
+        self.assertEqual(result[2]['date'], datetime.date(2020, 1, 1))
         self.assertEqual(result[2]['volume'], 0.5)
 
 class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.TestCase):
@@ -105,9 +105,9 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
         # Create a mock VolumeDerivativeConstelliumIntermediate object
         inter_obj = MagicMock()
         inter_obj.volume = [
-            {'volume_date': datetime.date(2022, 1, 1), 'volume': 100},
-            {'volume_date': datetime.date(2021, 1, 1), 'volume': 200},
-            {'volume_date': datetime.date(2020, 1, 1), 'volume': 300}
+            {'date': datetime.date(2022, 1, 1), 'volume': 100},
+            {'date': datetime.date(2021, 1, 1), 'volume': 200},
+            {'date': datetime.date(2020, 1, 1), 'volume': 300}
         ]
 
         VolumeCustomerDerivativeConstelliumIntermediate.__new__ = MagicMock(return_value=inter_obj)
@@ -127,11 +127,11 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
 
         # Check that the result is a list of dictionaries with the expected keys and values
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0]['volume_date'], datetime.date(2022, 1, 1))
+        self.assertEqual(result[0]['date'], datetime.date(2022, 1, 1))
         self.assertEqual(result[0]['volume'], 300)
-        self.assertEqual(result[1]['volume_date'], datetime.date(2021, 1, 1))
+        self.assertEqual(result[1]['date'], datetime.date(2021, 1, 1))
         self.assertEqual(result[1]['volume'], 600)
-        self.assertEqual(result[2]['volume_date'], datetime.date(2020, 1, 1))
+        self.assertEqual(result[2]['date'], datetime.date(2020, 1, 1))
         self.assertEqual(result[2]['volume'], 900)
         
     def test_emptyVolumeList(self):
@@ -154,16 +154,16 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
 
         self.assertEqual(len(result), 0)
         with self.assertRaises(IndexError):
-            result[0]['volume_date']
+            result[0]['date']
         with self.assertRaises(IndexError):
             result[0]['volume']
 
     def test_partlyEmptyVolumeList(self):
         inter_obj = MagicMock()
         inter_obj.volume = [
-            {'volume_date': datetime.date(2022, 1, 1), 'volume': 100},
-            {'volume_date': datetime.date(2021, 1, 1), 'volume': 0},
-            {'volume_date': datetime.date(2020, 1, 1), 'volume': 0.25}
+            {'date': datetime.date(2022, 1, 1), 'volume': 100},
+            {'date': datetime.date(2021, 1, 1), 'volume': 0},
+            {'date': datetime.date(2020, 1, 1), 'volume': 0.25}
         ]
 
         VolumeCustomerDerivativeConstelliumIntermediate.__new__ = MagicMock(return_value=inter_obj)
@@ -179,9 +179,9 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
         result = intermediate.getVolume()
 
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0]['volume_date'], datetime.date(2022, 1, 1))
+        self.assertEqual(result[0]['date'], datetime.date(2022, 1, 1))
         self.assertEqual(result[0]['volume'], 200)
-        self.assertEqual(result[1]['volume_date'], datetime.date(2021, 1, 1))
+        self.assertEqual(result[1]['date'], datetime.date(2021, 1, 1))
         self.assertEqual(result[1]['volume'], 0)
-        self.assertEqual(result[2]['volume_date'], datetime.date(2020, 1, 1))
+        self.assertEqual(result[2]['date'], datetime.date(2020, 1, 1))
         self.assertEqual(result[2]['volume'], 0.5)

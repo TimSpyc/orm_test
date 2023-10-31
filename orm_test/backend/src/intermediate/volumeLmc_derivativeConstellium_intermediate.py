@@ -75,14 +75,14 @@ class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
                 volume = volume_data['volume']
 
                 existing_volume = next(
-                    (v for v in total_volume if v['volume_date'] == datum), None
+                    (v for v in total_volume if v['date'] == datum), None
                 )
                 if existing_volume:
                     existing_volume['volume'] += \
                         volume * extension_data['take_rate']
                 else:
                     total_volume.append({
-                        'volume_date': datum,
+                        'date': datum,
                         'volume': volume * extension_data['take_rate']
                     })
         return total_volume

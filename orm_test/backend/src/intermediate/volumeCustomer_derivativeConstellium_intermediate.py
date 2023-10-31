@@ -53,6 +53,7 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
         if len(self.volume_manager_list) != 1:
             raise ValueError(f'Expected exactly one customer volume manager, but got {len(self.volume_manager_list)}')
         self.volume_manager = self.volume_manager_list[0]
+        # ich will hier noch die liste mit dict ändern das ich nur date und volume als key habe! (siehe lmc)
         return self.volume_manager.current_volume
     
 # 1. wir finden genau einen Manager! -> alles gut

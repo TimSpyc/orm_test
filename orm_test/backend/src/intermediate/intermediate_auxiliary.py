@@ -28,33 +28,59 @@ def calculateShipment(volume_dict, current_weight_dict):
     
     for data in volume_dict:
         date_item = {}
-        date_item['shipment_data'] = data['volume_date']
+        date_item['date'] = data['date']
         for category, value in current_weight_dict.items():
             date_item[category] = value * data['volume']
         total_shipment.append(date_item)
 
     return total_shipment
 
-def AddListOfDictionaries(*lists):
-    # Combine all the lists
-    combined = [item for sublist in lists for item in sublist]
+# def GroupByListsOfDictionaries(*lists):
+#     '''
+#     Description:
+#     --------
+#     This function takes any number of lists of dictionaries as arguments.
+#     It then combines these dictionaries based on the 'date' key,
+#     summing the values of any other matching keys.
 
-    # Create a defaultdict to store the summed weights
-    result = defaultdict(lambda: defaultdict(int))
+#     Inputs/Parameters:
+#     --------
+#     *lists : list of dictionaries
+#     Description: Each dictionary in the list should have a 'date' key
+#     and any number of additional keys with numeric values.
 
-    # Iterate over the dictionaries in the combined list
-    for dict_ in combined:
-        # Iterate over the dates and weights in each dictionary
-        for date, weights in dict_.items():
-            # Iterate over the weight categories and values
-            for weight_category, value in weights.items():
-                # Add the value to the corresponding entry in the result
-                result[date][weight_category] += value
+#     Raises:
+#     --------
+#     TypeError
+#     Description: If the input is not a list of dictionaries or
+#     if the dictionaries do not contain the 'date' key.
 
-    # Convert the defaultdict back into a regular dict
-    result = {date: dict(weights) for date, weights in result.items()}
+#     Returns:
+#     --------
+#     result : list of dictionaries
+#     Description: A list of dictionaries, each containing a 'date' key and
+#     the summed values of any other matching keys from the input dictionaries.
 
-    # Convert the result into a list of dictionaries
-    result = [result]
+#     Example:
+#     --------
+#     >>> AddListOfDictionaries(
+#         [
+#             {'date': '2022-01-01', 'value': 100, 'name': 'test2', sub_dict: [{'sub_value': 10}]},
+#             {'date': '2022-01-02', 'value': 200, 'name': 'test1'}
+#         ],
+#         [
+#             {'date': '2022-01-01', 'value': 300, 'name': 'test'},
+#         ]
+#     )
+#     [{'date': '2022-01-01', 'value': 400}, {'date': '2022-01-02', 'value': 200}]
+#     '''
+#     result = defaultdict(lambda: defaultdict(int))
+#     for list in lists:
+#         for dict in list:
+#             date = dict.pop('date')
+#             for key, value in dict.items():
+#                 result[date][key] += value
+#     return [{'date': k, **dict(v)} for k, v in result.items()]
 
-    return result
+
+# group_by = ["date", "name", "sub_dict.sub_value"]

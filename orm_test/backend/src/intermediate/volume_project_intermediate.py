@@ -99,16 +99,16 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             A list of dictionaries containing the updated total volume data.
         '''
         for volume_data in inter_obj.volume:
-            datum = volume_data['volume_date']
+            datum = volume_data['date']
             volume = volume_data['volume']
 
             existing_volume = next(
-                (x for x in total_volume if x['volume_date'] == datum),
+                (x for x in total_volume if x['date'] == datum),
                 None
             )
             if existing_volume is None:
                 total_volume.append({
-                    'volume_date': datum,
+                    'date': datum,
                     'volume': volume,
                 })
             else:
