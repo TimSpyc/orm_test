@@ -21,10 +21,7 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
             scenario_dict,
         )
 
-    def getVolume(self, derivative_constellium_group_id):
-        # There is no test needed for this function,
-        # because it is only a wrapper for the
-        # CustomerVolumeManager.filter function.        
+    def getVolume(self, derivative_constellium_group_id):    
         """
         Description:
         --------
@@ -41,13 +38,6 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
         -------
         ValueError
             If the length of the filtered customer volume manager list is not exactly 1.
-
-        Declare:
-        --------
-        self.volume_manager_list : list of CustomerVolumeManager objects
-            The filtered list of customer volume managers.
-        self.volume_manager : CustomerVolumeManager object
-            The customer volume manager with the current volume.
 
         Returns:
         --------

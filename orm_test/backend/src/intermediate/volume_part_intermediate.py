@@ -2,6 +2,7 @@
 
 from backend.src.manager import PartManager, BillOfMaterialManager
 from backend.src.intermediate import (
+    auxiliary,
     VolumeLmcDerivativeConstelliumIntermediate,
     VolumeCustomerDerivativeConstelliumIntermediate
 )
@@ -20,7 +21,13 @@ class VolumePartIntermediate(GeneralIntermediate):
     ):
         
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
-        self.__checkValidityOfVolumeDerivativeIntermediateClass()
+        auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
+            attribute_name = self.VolumeDerivativeIntermediateClass,
+            valid_classes = [
+                VolumeLmcDerivativeConstelliumIntermediate,
+                VolumeCustomerDerivativeConstelliumIntermediate
+            ]
+        )
         
         self.search_date = search_date
 
@@ -36,15 +43,6 @@ class VolumePartIntermediate(GeneralIntermediate):
             search_date,
             scenario_dict,
         )
-
-    def __checkValidityOfVolumeDerivativeIntermediateClass(self):
-        if self.VolumeDerivativeIntermediateClass not in [
-            VolumeLmcDerivativeConstelliumIntermediate,
-            VolumeCustomerDerivativeConstelliumIntermediate
-        ]:
-            raise ValueError(
-                f"{self.VolumeDerivativeIntermediateClass} is not supported"
-            )
     
     def getVolume(self) -> tuple[list, list]:
         total_volume = []
