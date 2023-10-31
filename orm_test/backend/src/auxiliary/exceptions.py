@@ -7,6 +7,9 @@ class NotUpdatableError(Exception):
 class NotValidIdError(Exception):
     pass
 
+class NotValidConfigurationError(Exception):
+    pass
+
 class MissingAttributeError(Exception):
     pass
 

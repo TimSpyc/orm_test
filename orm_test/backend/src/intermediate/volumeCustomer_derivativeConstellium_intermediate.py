@@ -39,13 +39,6 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
         ValueError
             If the length of the filtered customer volume manager list is not exactly 1.
 
-        Declare:
-        --------
-        self.volume_manager_list : list of CustomerVolumeManager objects
-            The filtered list of customer volume managers.
-        self.volume_manager : CustomerVolumeManager object
-            The customer volume manager with the current volume.
-
         Returns:
         --------
         current_volume : float
