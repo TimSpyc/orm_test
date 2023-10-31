@@ -1,7 +1,7 @@
 # Responsible Elias Bauer
 
 from backend.src.intermediate import (
-    WeightIntermediate,
+    WeightPartIntermediate,
     VolumePartIntermediate
 )
 from backend.src.auxiliary.intermediate import GeneralIntermediate
@@ -22,7 +22,7 @@ class ShipmentPartIntermediate(GeneralIntermediate):
             search_date=search_date,
         ).volume
         
-        self.current_weight = WeightIntermediate(
+        self.current_weight = WeightPartIntermediate(
             part_group_id=part_group_id,
             search_date=search_date,
         ).current_weight
@@ -35,6 +35,16 @@ class ShipmentPartIntermediate(GeneralIntermediate):
         )
     
     def getShipment(self):
+        '''
+        Description:
+        ------------
+        Calculates the shipment data based on the volume and current weight data.
+
+        Returns:
+        --------
+        total_shipment : list
+            A list of dictionaries containing the shipment data for each date.
+        '''
         total_shipment = []
         
         for data in self.volume:

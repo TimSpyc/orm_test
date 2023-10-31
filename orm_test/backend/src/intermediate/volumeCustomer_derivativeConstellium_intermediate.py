@@ -21,10 +21,7 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
             scenario_dict,
         )
 
-    def getVolume(self, derivative_constellium_group_id):
-        # There is no test needed for this function,
-        # because it is only a wrapper for the
-        # CustomerVolumeManager.filter function.        
+    def getVolume(self, derivative_constellium_group_id):    
         """
         Description:
         --------

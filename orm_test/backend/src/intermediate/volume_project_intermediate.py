@@ -19,11 +19,8 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         scenario_dict: dict = {},
     ):
 
-        self.__checkValidityOfVolumeDerivativeIntermediateClass(
-            VolumeDerivativeIntermediateClass
-        )
-        
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
+        self.__checkValidityOfVolumeDerivativeIntermediateClass()
         
         self.derivative_constellium_group_dict_list = \
             list(DerivativeConstelliumGroup.objects.filter(
@@ -39,15 +36,13 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             scenario_dict,
         )
 
-    def __checkValidityOfVolumeDerivativeIntermediateClass(
-        VolumeDerivativeIntermediateClass: GeneralIntermediate
-    ):
-        if VolumeDerivativeIntermediateClass not in [
+    def __checkValidityOfVolumeDerivativeIntermediateClass(self):
+        if self.VolumeDerivativeIntermediateClass not in [
             VolumeLmcDerivativeConstelliumIntermediate,
             VolumeCustomerDerivativeConstelliumIntermediate
         ]:
             raise ValueError(
-                f"{VolumeDerivativeIntermediateClass} is not supported"
+                f"{self.VolumeDerivativeIntermediateClass} is not supported"
             )
 
     def getVolume(self) -> list:
@@ -56,25 +51,6 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         --------
         Get the total volume of all derivative constellium groups
         based on the derivative_constellium_group_dict_list.
-
-        Declare:
-        --------
-        total_volume : list of dictionaries
-            The total volume of all derivative constellium groups.
-        data : dictionary
-            The data of the derivative constellium group dictionary list.
-        derivative_constellium_group_id : int
-            The ID of the derivative constellium group.
-        inter_obj : VolumeDerivativeIntermediateClass object
-            The volume derivative intermediate class object.
-        volume_data : dictionary
-            The volume data of the volume derivative intermediate class object.
-        datum : datetime object
-            The date of the volume data.
-        volume : float
-            The volume of the volume data.
-        existing_volume : dictionary
-            The existing volume data with the same date as the current volume data.
 
         Returns:
         --------
