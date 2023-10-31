@@ -1,32 +1,33 @@
-from backend.src.auxiliary.info import GeneralInfo
+from backend.src.auxiliary.info import GeneralInfo, addPrefix
 from backend.src.manager import BillOfMaterialManager
-from backend.src.intermediate import BillOfMaterialPartIntermediate
+from backend.src.manager.bill_of_material_manager import BillOfMaterialManager
+from backend.src.manager.part_manager import PartManager
+from backend.src.intermediate import WeightPartIntermediate
+
+
+def __createFilledBillOfMaterial(manager_object):
+    bill_of_material_detail_dict_list = []
+    for bom_position in manager_object.product_development_bom:
+        part_manager = PartManager(bom_position["group_id"])
+        part_weight_intermediate = WeightPartIntermediate(part_manager.group_id)
+        bill_of_material_detail_dict_list.append({
+            **bom_position,
+            **addPrefix("part", dict(part_manager)),
+            "weight_part__alu_gross_weight": part_weight_intermediate.alu_gross_weight,
+            "weight_part__alu_net_weight": part_weight_intermediate.alu_net_weight,
+            "weight_part__steel_gross_weight": part_weight_intermediate.steel_gross_weight,
+            "weight_part__steel_net_weight": part_weight_intermediate.steel_net_weight,
+            "weight_part__other_gross_weight": part_weight_intermediate.other_gross_weight,
+            "weight_part__other_net_weight": part_weight_intermediate.other_net_weight,
+        })
+    return bill_of_material_detail_dict_list
 
 class BillOfMaterialInfo(GeneralInfo):
     base_url = 'bill_of_material'
     allowed_method_list = ['GET_detail', 'GET_list', 'DELETE']
     required_permission_list = []
     manager = BillOfMaterialManager
-    serializerFunction = lambda intermediate_object: (
-        intermediate_object.bill_of_material_detail_dict_list
+    serializerFunction = lambda manager_object: (
+        __createFilledBillOfMaterial(manager_object)
     )
 
-    def getDetail(self) -> BillOfMaterialPartIntermediate:
-        bill_of_material_group_id = self.identifier.get("group_id")
-        search_date = self.request_info_dict["query_params"].get(
-            "search_date", None
-        )
-
-        return BillOfMaterialPartIntermediate(**{
-            "bill_of_material_group_id": bill_of_material_group_id,
-            "search_date": search_date,
-        })
-    
-    def getList(self) -> list[BillOfMaterialPartIntermediate]:
-        search_date = self.request_info_dict["query_params"].get(
-            "search_date", None
-        )
-        return [
-            BillOfMaterialPartIntermediate(manager_object.group_id)
-            for manager_object in BillOfMaterialManager.all(search_date)
-        ]
