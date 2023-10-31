@@ -16,6 +16,7 @@ from .customer_volume_manager import CustomerVolumeManager
 from .derivative_constellium_manager import DerivativeConstelliumManager
 from .derivative_lmc_manager import DerivativeLmcManager, DerivativeLmcVolumeManager
 from .file_manager import FileManager
+from .hash_filter_manager import HashFilterManager
 from .material_alloy_manager import MaterialAlloyManager
 from .material_alloy_treatment_manager import MaterialAlloyTreatmentManager
 from .material_manager import MaterialManager
@@ -34,7 +35,7 @@ from .project_staff_cost_manager import ProjectStaffCostManager
 from .project_user_manager import ProjectUserManager
 from .sap_number_manager import SapNumberManager
 from .scenario_manager import ScenarioManager
-from .stock_exchange_manager import StockExchangeDataManager
+from .stock_exchange_data_manager import StockExchangeDataManager
 from .time_correction_manager import TimeCorrectionManager
 from .project_number_manager import ProjectNumberManager
 from .test_validators_manager import TestManagerManager

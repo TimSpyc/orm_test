@@ -1,9 +1,8 @@
 from backend.src.auxiliary.info import GeneralInfo
-from backend.src.manager import ProjectNumberManager
+from backend.src.manager import ScenarioManager
 
-
-class ProjectNumberInfo(GeneralInfo):
-    base_url = 'project_number'
+class ScenarioInfo(GeneralInfo):
+    base_url = 'scenario'
     allowed_method_list = ['GET_detail', 'GET_list', 'POST', 'PUT', 'DELETE']
     required_permission_list = []
-    manager = ProjectNumberManager
+    manager = ScenarioManager

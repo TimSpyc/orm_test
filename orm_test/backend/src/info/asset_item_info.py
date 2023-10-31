@@ -1,9 +1,8 @@
 from backend.src.auxiliary.info import GeneralInfo
-from backend.src.manager import ProjectNumberManager
+from backend.src.manager import AssetItemManager
 
-
-class ProjectNumberInfo(GeneralInfo):
-    base_url = 'project_number'
+class AssetItemInfo(GeneralInfo):
+    base_url = 'asset_item'
     allowed_method_list = ['GET_detail', 'GET_list', 'POST', 'PUT', 'DELETE']
     required_permission_list = []
-    manager = ProjectNumberManager
+    manager = AssetItemManager

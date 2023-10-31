@@ -38,6 +38,6 @@ from backend.src.manager.project_staff_cost_manager import ProjectStaffCost, Pro
 from backend.src.manager.project_user_manager import ProjectUser, ProjectUserGroup
 from backend.src.manager.sap_number_manager import SapNumber, SapNumberGroup
 from backend.src.manager.scenario_manager import Scenario, ScenarioGroup
-from backend.src.manager.stock_exchange_manager import StockExchangeData
+from backend.src.manager.stock_exchange_data_manager import StockExchangeData
 from backend.src.manager.time_correction_manager import TimeCorrection, TimeCorrectionGroup
 from backend.src.manager.test_validators_manager import TestManager, TestManagerGroup

@@ -1,9 +1,8 @@
 from backend.src.auxiliary.info import GeneralInfo
-from backend.src.manager import ProjectNumberManager
+from backend.src.manager import PermissionUserManager
 
-
-class ProjectNumberInfo(GeneralInfo):
-    base_url = 'project_number'
+class PermissionUserInfo(GeneralInfo):
+    base_url = 'permission_user'
     allowed_method_list = ['GET_detail', 'GET_list', 'POST', 'PUT', 'DELETE']
     required_permission_list = []
-    manager = ProjectNumberManager
+    manager = PermissionUserManager
