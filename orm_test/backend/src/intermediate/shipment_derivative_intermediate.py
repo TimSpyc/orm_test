@@ -1,12 +1,7 @@
 # Responsible Elias Bauer
-
-from backend.src.manager import BillOfMaterialManager
-from backend.src.intermediate import (
-    auxiliary,
-    WeightPartIntermediate,
-    VolumeLmcDerivativeConstelliumIntermediate,
-    VolumeCustomerDerivativeConstelliumIntermediate
-)
+from backend.src.intermediate import auxiliary
+from backend.src.intermediate.volumeLmc_derivativeConstellium_intermediate import VolumeLmcDerivativeConstelliumIntermediate
+from backend.src.intermediate.volumeCustomer_derivativeConstellium_intermediate import VolumeCustomerDerivativeConstelliumIntermediate
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 

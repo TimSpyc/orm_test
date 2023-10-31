@@ -1,10 +1,8 @@
 # Responsible Elias Bauer
 
-from backend.src.intermediate import (
-    auxiliary,
-    WeightPartIntermediate,
-    VolumePartIntermediate
-)
+from backend.src.intermediate import auxiliary
+from backend.src.intermediate.volume_part_intermediate import VolumePartIntermediate
+from backend.src.intermediate.weight_part_intermediate import WeightPartIntermediate
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
