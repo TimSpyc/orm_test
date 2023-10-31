@@ -2,9 +2,9 @@
 
 from backend.models import DerivativeConstelliumGroup
 from backend.src.intermediate import (
-    auxiliary,
     VolumeLmcDerivativeConstelliumIntermediate,
-    VolumeCustomerDerivativeConstelliumIntermediate
+    VolumeCustomerDerivativeConstelliumIntermediate,
+    intermediate_auxiliary
 )
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
@@ -21,7 +21,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
     ):
 
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
-        auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
+        intermediate_auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
             attribute_name = self.VolumeDerivativeIntermediateClass,
             valid_classes = [
                 VolumeLmcDerivativeConstelliumIntermediate,

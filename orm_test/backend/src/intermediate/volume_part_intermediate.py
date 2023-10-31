@@ -1,7 +1,7 @@
 # Responsible Elias Bauer
 
-from backend.src.manager import PartManager, BillOfMaterialManager
-from backend.src.intermediate import auxiliary
+from backend.src.manager import PartManager
+from backend.src.intermediate import intermediate_auxiliary
 from backend.src.intermediate.volumeLmc_derivativeConstellium_intermediate import VolumeLmcDerivativeConstelliumIntermediate
 from backend.src.intermediate.volumeCustomer_derivativeConstellium_intermediate import VolumeCustomerDerivativeConstelliumIntermediate
 from backend.src.auxiliary.intermediate import GeneralIntermediate
@@ -19,7 +19,7 @@ class VolumePartIntermediate(GeneralIntermediate):
     ):
         
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
-        auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
+        intermediate_auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
             attribute_name = self.VolumeDerivativeIntermediateClass,
             valid_classes = [
                 VolumeLmcDerivativeConstelliumIntermediate,

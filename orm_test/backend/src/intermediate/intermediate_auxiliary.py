@@ -1,4 +1,5 @@
 from backend.src.auxiliary.exceptions import NotValidConfigurationError
+from collections import defaultdict
 
 def checkValidityOfVolumeDerivativeIntermediateClass(
     self,
@@ -33,3 +34,27 @@ def calculateShipment(volume_dict, current_weight_dict):
         total_shipment.append(date_item)
 
     return total_shipment
+
+def AddListOfDictionaries(*lists):
+    # Combine all the lists
+    combined = [item for sublist in lists for item in sublist]
+
+    # Create a defaultdict to store the summed weights
+    result = defaultdict(lambda: defaultdict(int))
+
+    # Iterate over the dictionaries in the combined list
+    for dict_ in combined:
+        # Iterate over the dates and weights in each dictionary
+        for date, weights in dict_.items():
+            # Iterate over the weight categories and values
+            for weight_category, value in weights.items():
+                # Add the value to the corresponding entry in the result
+                result[date][weight_category] += value
+
+    # Convert the defaultdict back into a regular dict
+    result = {date: dict(weights) for date, weights in result.items()}
+
+    # Convert the result into a list of dictionaries
+    result = [result]
+
+    return result

@@ -1,6 +1,6 @@
 # Responsible Elias Bauer
 
-from backend.src.intermediate import auxiliary
+from backend.src.intermediate import intermediate_auxiliary
 from backend.src.intermediate.volume_part_intermediate import VolumePartIntermediate
 from backend.src.intermediate.weight_part_intermediate import WeightPartIntermediate
 from backend.src.auxiliary.intermediate import GeneralIntermediate
@@ -26,7 +26,7 @@ class ShipmentPartIntermediate(GeneralIntermediate):
             search_date=search_date,
         ).current_weight
 
-        self.shipment = auxiliary.calculateShipment(
+        self.shipment = intermediate_auxiliary.calculateShipment(
             volume_dict=self.volume,
             current_weight_dict=self.current_weight)
 
