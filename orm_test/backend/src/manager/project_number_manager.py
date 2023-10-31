@@ -1,12 +1,12 @@
 from django.db import models
-from backend.models import GroupTable, DataTable
-from backend.src.auxiliary.manager import GeneralManager
+from backend.models import GroupTable, DataTable, ExternalDataTable
+from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
 
 class ProjectNumberGroup(GroupTable):
     """
     A Django model representing a project number group.
     """
-    project_number = models.CharField(max_length=255, unique=False, null=True)
+    project_number = models.CharField(max_length=255, unique=True, null=True)
 
     def __str__(self):
         return f'Project_number_group {self.id}'
@@ -43,3 +43,30 @@ class ProjectNumberManager(GeneralManager):
     group_model = ProjectNumberGroup
     data_model = ProjectNumber
     data_extension_models = []
+
+
+class ProjectNumberFinancialOverview(ExternalDataTable):
+    project_number_group = models.ForeignKey(ProjectNumberGroup, on_delete=models.DO_NOTHING)
+    psp_cat_1 = models.CharField(max_length=2, null=False)
+    psp_cat_2 = models.CharField(max_length=2, null=False)
+    costs = models.DecimalField(decimal_places = 2, null=False)
+    booking_date = models.DateField(null=False)
+
+
+class ProjectNumberFinancialOverviewManager(ExternalDataManager):
+    database_model = ProjectNumberFinancialOverview
+
+    def __init__(self, project_number_group_id):
+        self.project_number_group_id = project_number_group_id
+        self.project_number_financial_overview_list_of_dict = \
+            self.getProjectNumberFinancialOverviewListOfDict()
+
+
+    def getProjectNumberFinancialOverviewListOfDict(self):
+        result = self.getData(
+            column_list = ['psp_cat_1', 'psp_cat_2', 'costs', 'booking_date'],
+            project_number_group_id = self.project_number_group_id
+        )
+
+        return result
+
