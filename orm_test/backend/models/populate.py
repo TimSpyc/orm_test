@@ -45,12 +45,34 @@ from django.db.models.fields.related import (
     OneToOneRel,
 )
 
-from backend.models.validators.validator import BaseCustomValidator
+from backend.models.validators.validator import BaseCustomValidator, NOT_CONFIGURED
+from backend.src.auxiliary.manager import transferToSnakeCase, GeneralManager
 from backend.src.auxiliary.exceptions import (
     IncompatibleValidatorList,
     NotImplementedYet,
     ResultContradictsConfiguration
 )
+
+################################################################################
+##### decorators for populate classes ##########################################
+################################################################################
+
+def createTempAttrs(*attribute_name_list: list[str]) -> Any:
+    def outerWrapper(func):
+        def innerWrapper(self, *args, **kwargs) -> Any:
+            for attribute_name in attribute_name_list:
+                # TODO: check attribute name
+                setattr(self, attribute_name, NOT_CONFIGURED)
+
+            result = func(self, *args, **kwargs)
+            
+            for attribute_name in attribute_name_list:
+                delattr(self, attribute_name)
+                
+            return result
+        return innerWrapper
+    return outerWrapper
+
 
 ################################################################################
 ##### base populate class ######################################################
@@ -299,6 +321,135 @@ class BasePopulate:
         except Exception as e:
             raise e
 
+    # ---- handle meta attributes ----------------------------------------------
+    @staticmethod
+    def _createMetaAttributeName(custom_meta_name: str) -> str:
+        return f"__meta__{custom_meta_name}"
+
+    @classmethod
+    def _createMetaAttributeNameWithClass(cls, class_instance) -> str:
+        return cls._createMetaAttributeName(class_instance.__name__)
+    
+    def _checkCustomAttrs(
+        self,
+        allowed_attr_name_list: list[str],
+        **kwargs
+    ) -> None:
+        allowed_meta_attr_name_list = [
+            self._createMetaAttributeName(attr_name)
+            for attr_name in allowed_attr_name_list
+        ]
+
+        for attr_name, attr in kwargs.items():
+            if attr_name not in allowed_attr_name_list\
+            and attr_name not in allowed_meta_attr_name_list:
+                # TODO: adjust error and msg
+                raise ValueError("Attribute is not allowed")
+
+            # NOTE: If attr_name exists as an attribute will be checked when 
+            # creating the custom attribute
+
+            # NOTE: If attr_name in allowed_attr_name_list the type will be 
+            # checked when calling the corresponding class
+
+            if attr_name in allowed_meta_attr_name_list\
+            and not isinstance(attr, dict):
+                # TODO: adjust error msg
+                raise TypeError("Meta attribute must be of type dict")
+
+    def __createCustomAttr(
+        self,
+        attr_name: str,
+        **kwargs
+    ) -> None:
+        if hasattr(self, attr_name):
+            # TODO: adjust error and msg
+            raise ValueError("Attribute existing")
+
+        setattr(self, attr_name, kwargs.get(attr_name, NOT_PROVIDED))
+
+    def __createCustomMetaAttr(
+        self,
+        attr_name: str,
+        **kwargs
+    ):
+        meta_attr_name = self._createMetaAttributeName(attr_name)
+        self.__createCustomAttr(meta_attr_name, **kwargs)
+
+    def _createCustomAttrs(
+        self,
+        allowed_attr_name_list: list[str],
+        **kwargs
+    ) -> None:
+        self._checkCustomAttrs(allowed_attr_name_list, **kwargs)
+
+        for attr_name in allowed_attr_name_list:
+            self.__createCustomAttr(attr_name, **kwargs)
+            self.__createCustomMetaAttr(attr_name, **kwargs)
+
+    def _getAttr(self, attr_name: str) -> Any:
+        if not hasattr(self, attr_name):
+            # TODO: adjust error and msg
+            raise ValueError("Attribute existing")
+        
+        return getattr(self, attr_name)
+
+    def _getMetaAttributeForClassInstance(self, class_instance) -> dict | None:
+        if hasattr(
+            self,
+            self._createMetaAttributeNameWithClass(class_instance)
+        ):
+            return getattr(
+                self,
+                self._createMetaAttributeNameWithClass(class_instance)
+            )
+        
+        return {}
+    
+    # TODO: Is there the possibility to specify type hints?
+    @classmethod
+    def _populateDataWithMetaAttribute(
+        cls,
+        PopulateClass,
+        DataClass,
+        custom_kwargs: dict = {}
+    ):
+        return PopulateClass(
+            DataClass,
+            **{
+                **cls._getMetaAttributeForClassInstance(DataClass),
+                **custom_kwargs
+            }
+        ).populate()
+
+    # ---- handle multiple data population -------------------------------------
+    def populateMany(
+        self,
+        min_data: int = 1,
+        max_data: int = 10
+    ) -> list:
+        # TODO: check attributes!
+        created_obj_list = []
+
+        for _ in range(1, self.createRandomInteger(min_data, max_data)):
+            created_obj_list.append(self.populate())
+
+        return created_obj_list
+
+    @classmethod
+    def populateWithData(
+        cls,
+        obj_to_populate,
+        data_list: list[dict]
+    ) -> list:
+        # TODO: check attributes!
+        created_obj_list = []
+
+        for data in data_list:
+            created_obj_list.append(cls(obj_to_populate, **data).populate())
+
+        return created_obj_list
+
 
 ################################################################################
 ##### class to populate fields #################################################
@@ -327,16 +478,34 @@ class PopulateField(BasePopulate):
         ManyToManyField
     ]
 
-    def __init__(self, field, **kwargs):
-        self.field              = field
-        self.custom_populate    = kwargs.get("custom_populate", NOT_PROVIDED)
-        self.chance_for_default = kwargs.get("chance_for_default", 0.25)
+    def __init__(
+        self,
+        field: models.Field,
+        __meta__custom_populate: Any | Callable = NOT_PROVIDED,
+        __meta__chance_for_default: float = 0.25,
+        **kwargs
+    ) -> None:
+        self.__field                = field
+        self.__custom_populate      = __meta__custom_populate
+        self.__chance_for_default   = __meta__chance_for_default
         self.min_relations      = kwargs.get("min_relations", 1)
         self.max_relations      = kwargs.get("max_relations", 10)
 
         # TODO: Should there be the possibility to adjust the base type functions?
 
         self.__checkPopulateFieldDefinitions()
+
+    @property
+    def field(self) -> models.Field:
+        return self.__field
+
+    @property
+    def custom_populate(self) -> Any | Callable:
+        return self.__custom_populate
+
+    @property
+    def chance_for_default(self) -> float:
+        return self.__chance_for_default
 
     def __checkPopulateFieldDefinitions(self):
         if type(self.field) not in self.SUPPORTED_FIELD_LIST:
@@ -584,15 +753,19 @@ class PopulateField(BasePopulate):
 
         many_to_many_list = []
         related_model_list = self.field.related_model.objects.all()
+        used_model_id_list = []
 
         for _ in range(
             self.createRandomInteger(self.min_relations, self.max_relations)
         ):
-            random_model = self.__populateRelationshipFields(related_model_list)
+            random_model = self.__populateRelationshipFields([
+                related_model for related_model in related_model_list
+                if related_model.id not in used_model_id_list
+            ])
             many_to_many_list.append(random_model)
 
             if random_model in related_model_list:
-                related_model_list.remove(random_model)
+                used_model_id_list.append(random_model.id)
 
         return many_to_many_list
 
@@ -602,110 +775,118 @@ class PopulateField(BasePopulate):
 ################################################################################
 
 class PopulateModel(BasePopulate):
-    max_data_creation_attempts: int = 10
-
-    def __init__(self, model: models.Model, **populate_definition_dict) -> None:
+    def __init__(
+        self,
+        model: models.Model,
+        __meta__chance_for_default: float = 0.25,
+        __meta__max_data_creation_attempts: int = 10,
+        **kwargs
+    ) -> None:
+        # TODO: check attributes
+        # TODO: adjust error msg!
         if not isinstance(model, models.base.ModelBase):
             raise TypeError(
                 "The model must be defined and of type ModelBase!"
             )
 
-        self.model = model
-        self.model_obj = model()
-        self.validator_definition_dict = BaseCustomValidator.getValidatorDict(
-            self.model.validator_list
-        )
-        self.__checkAdditionalDefinitionsCoverModel(populate_definition_dict)
-        self.populate_definition_dict = populate_definition_dict
+        self.__model                        = model
+        self.__chance_for_default           = __meta__chance_for_default
+        self.__max_data_creation_attempts   = __meta__max_data_creation_attempts
 
-    def __checkAdditionalDefinitionsCoverModel(
-        self,
-        populate_definition_dict: Dict[str, Any]
-    ) -> None:
-        # TODO: Catch all errors before raise it?
-        for field_name in populate_definition_dict.keys():
-            if not hasattr(self.model, field_name):
-                raise ValueError(f"""
-                    The model has no attribute with the given field_name!
-                    -> model: "{self.model}"
-                    -> field_name: "{self.field_name}"
-                """)
+        # NOTE: The meta attribute for the primary key field has no effect
+        self._createCustomAttrs(self.__getFieldNameList(), **kwargs)
 
-            if type(self.model._meta.get_field(field_name))\
-            not in PopulateField.SUPPORTED_FIELD_LIST:
-                raise TypeError(f'''
-                    The attr for the given field_name appears not to be type field!
-                    -> model: "{self.model}"
-                    -> field_name: "{field_name}"
-                ''')
+    @property
+    def model(self) -> models.Model:
+        return self.__model
 
-    def __getCustomPopulateFromDefinitionDict(
-        self,
-        field_name:str,
-        definition_dict_name:str
-    ) -> Any | None:
-        if hasattr(self, definition_dict_name):
-            definition_dict = getattr(self, definition_dict_name)
+    @property
+    def chance_for_default(self) -> float:
+        return self.__chance_for_default
 
-            if field_name in definition_dict.keys():
-                return definition_dict[field_name]
+    @property
+    def max_data_creation_attempts(self) -> int:
+        return self.__max_data_creation_attempts
 
-        return None
+    def __getCustomPopulateForFieldName(self, field_name:str) -> Any:
+        custom_populate = self._getAttr(field_name)
 
-    def __createCustomDefinitionDict(self, field_name:str) -> Dict[str, Any]:
-        custom_populate = self.__getCustomPopulateFromDefinitionDict(
-            field_name,
-            'populate_definition_dict'
+        if custom_populate == NOT_PROVIDED:
+            return\
+                BaseCustomValidator.getValidatorFromValidatorListWithFieldName(
+                    field_name,
+                    self.model.validator_list
+                )
+
+        return custom_populate
+
+    def __createFieldDefinitionDict(self, field_name:str) -> Dict[str, Any]:
+        custom_populate = self.__getCustomPopulateForFieldName(field_name)
+        custom_definition_dict = self._getAttr(
+            self._createMetaAttributeName(field_name)
         )
 
-        if custom_populate is None:
-            custom_populate = self.__getCustomPopulateFromDefinitionDict(
-                field_name,
-                'validator_definition_dict'
-            )
+        field_definition_dict = {}
+        if custom_definition_dict != NOT_PROVIDED:
+            field_definition_dict = custom_definition_dict
+        if custom_populate != NOT_PROVIDED:
+            field_definition_dict["__meta__custom_populate"] = custom_populate
 
-            if custom_populate is None:
-                return {}
-            
-            custom_populate = custom_populate(self.model_obj).populate
-
-        return {"custom_populate": custom_populate}
+        return field_definition_dict
 
     def __populateDataForField(self, field) -> Any:
-        # TODO: Kann ich auch weitere definitionen außerhalb definieren?
-        custom_definitions = self.__createCustomDefinitionDict(field.name)
+        field_definition_dict = self.__createFieldDefinitionDict(field.name)
 
-        return PopulateField(field, **custom_definitions).populate()
-    
-    def __populateModelWithFieldNameList(self, field_name_list:List[str]):
-        print("field name list: ", field_name_list)
+        return PopulateField(field, **field_definition_dict).populate()
+
+    def __populateModelWithFieldNameList(
+        self,
+        field_name_list: list[str]
+    ) -> None:
         for field_name in field_name_list:
             field = self.model._meta.get_field(field_name)
 
-            # TODO: dismiss rel types and many to many
-            if type(field) in [ManyToOneRel, ManyToManyRel, OneToOneRel]\
-            or field.primary_key:
+            if type(field) in [ManyToOneRel, ManyToManyRel, OneToOneRel]:
                 continue
+            
+            field_data = None
+            if field.primary_key:
+                primary_key_data = self._getAttr(field.name)
+                if primary_key_data != NOT_PROVIDED:
+                    field_data = primary_key_data
+            else:
+                field_data = self.__populateDataForField(
+                    self.model._meta.get_field(field_name)
+                )
 
-            field_data = self.__populateDataForField(
-                self.model._meta.get_field(field_name)
-            )
+            if type(field) == ManyToManyField:
+                if self.relationship_dict == NOT_CONFIGURED:
+                    self.relationship_dict = {field.name: field_data}
+                else:
+                    self.relationship_dict[field.name] = field_data
+            else:
+                setattr(self.model_obj, field_name, field_data)
 
-            # TODO: Check if self.model_obj is overwritten
-            setattr(self.model_obj, field_name, field_data)
+    def __getFieldNameList(self) -> list[str]:
+        return [
+            field.name for field in self.model._meta.get_fields()
+            if field.type not in [ManyToOneRel, ManyToManyRel, OneToOneRel]
+        ]
 
     def __checkValidationForModel(self):
         try:
             self.model_obj.full_clean()
             return []
         except ValidationError as e:
-            # TODO: Dismiss blank field errors?
-            print("Hier sind die errors: ", e.error_dict)
-            return e.error_dict.keys()
+            return [
+                key for key, value in e.error_dict.items()
+                if len(value) != 1
+                or value[0].message != 'This field cannot be blank.'
+            ]
         except Exception as e:
             raise e
 
-    def __populateModel(self):
+    def __populateModel(self) -> None:
         error_field_name_list = []
 
         for _ in range(0, self.max_data_creation_attempts):
@@ -713,7 +894,7 @@ class PopulateModel(BasePopulate):
                 self.__populateModelWithFieldNameList(error_field_name_list)
             else:
                 self.__populateModelWithFieldNameList(
-                    [field.name for field in self.model._meta.get_fields()]
+                    self.__getFieldNameList()
                 )
 
             error_field_name_list = self.__checkValidationForModel()
@@ -726,12 +907,20 @@ class PopulateModel(BasePopulate):
             Check model and populate definitions are correct!
         ''')
 
-    def populate(self) -> models.Model:
+    @createTempAttrs("model_obj", "relationship_dict")
+    def populate(self):
+        self.model_obj = self.model()
         self.__populateModel()
-        # TODO: set many to many relationships
-        # self.__populateRelationships()
         self.model_obj.save()
-        
+
+        if self.relationship_dict != NOT_CONFIGURED:
+            # TODO: Can there be validation errors for many to many rel?
+            for field_name, rel_model_list in self.relationship_dict.items():
+                field_attr = getattr(self.model_obj, field_name)
+                field_attr.set(rel_model_list)
+
+            self.model_obj.save()
+
         return self.model_obj
 
 
@@ -740,7 +929,111 @@ class PopulateModel(BasePopulate):
 ################################################################################
 
 class PopulateManager(BasePopulate):
-    pass
+    def __init__(
+        self,
+        manager: GeneralManager,
+        __meta__chance_for_default: float = 0.25,
+        __meta__max_data_creation_attempts: int = 10,
+        __meta__max_history_points: int = 3,
+        __meta__chance_for_deactivation: float = 0.5,
+        __meta__max_data_extension_points:int = 10,
+        **kwargs
+    ) -> None:
+        # TODO: check attributes
+        self.manager = manager
+
+        self.chance_for_default         = __meta__chance_for_default
+        self.max_data_creation_attempts = __meta__max_data_creation_attempts
+        self.max_history_points         = __meta__max_history_points
+        self.chance_for_deactivation    = __meta__chance_for_deactivation
+        # NOTE: If it is necessary to specifically control the maximum data 
+        # extension entries per table, an implementation must be found for this.
+        self.max_data_extension_points  = __meta__max_data_extension_points
+
+        self._createCustomAttrs(
+            self.__createAllowedMetaAttributeList(),
+            **kwargs
+        )
+
+    def __createAllowedMetaAttributeList(self) -> list[str]:
+        return [
+            self._createMetaAttributeName(model_obj.__name__) for model_obj in
+            [
+                self.manager.group_model,
+                self.manager.data_model,
+                *self.manager.data_extension_list
+            ]
+        ]
+
+    @classmethod
+    def _populateModelDataWithMetaAttribute(
+        cls,
+        model: models.Model,
+        custom_kwargs: dict = {}
+    ) -> models.Model:
+        return cls._populateDataWithMetaAttribute(
+            PopulateModel,
+            model,
+            custom_kwargs
+        )
+    
+    @staticmethod
+    def _createCustomKwargsWithForeignKeyRelation(
+        rel_model: models.Model,
+        rel_model_obj: models.Model
+    ) -> Dict[str, models.Model]:
+        return {
+            f"{transferToSnakeCase(rel_model.__name__)}": rel_model_obj
+        }
+
+    def populate(self) -> None:
+        group_obj = self._populateModelDataWithMetaAttribute(
+            self.manager.group_model
+        )
+        random_history_point_count = BasePopulate.createRandomInteger(
+            1,
+            self.max_history_points
+        )
+
+        for i in range(1, random_history_point_count+1):
+            model_kwargs = self._createCustomKwargsWithForeignKeyRelation(
+                self.manager.group_model,
+                group_obj
+            )
+            # TODO: Rework logic for deactivation
+            if i == random_history_point_count and i != 1\
+            and self.randomTrue(self.chance_for_deactivation):
+                model_kwargs["active"] = False
+            else:
+                model_kwargs["active"] = True
+
+            data_obj = self._populateModelDataWithMetaAttribute(
+                self.manager.data_model,
+                model_kwargs
+            )
+
+            data_extension_kwargs =\
+                self._createCustomKwargsWithForeignKeyRelation(
+                    self.manager.data_model,
+                    data_obj
+                )
+
+            for data_extension_model in self.manager.data_extension_model_list:
+                random_data_extension_count = BasePopulate.createRandomInteger(
+                    1,
+                    self.max_data_extension_points
+                )
+                for _ in range(1, random_data_extension_count):
+                    self._populateModelDataWithMetaAttribute(
+                        data_extension_model,
+                        data_extension_kwargs
+                    )
+
+        # TODO: return manager obj!
+
+
+    # def populateData(self, min_data: int, max_data: int):
+    #     pass
 
 
 ################################################################################
