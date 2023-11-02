@@ -28,11 +28,9 @@ class TestManager(DataTable):
     start_date = models.DateTimeField(null=True, default=None)
     end_date = models.DateTimeField(null=True, default=None)
 
-    @property
-    def custom_validator_list(self):
-        return [
-            CompareDateTimeValidator(self, "start_date", "end_date", "<")
-        ]
+    validator_list = [
+        CompareDateTimeValidator("end_date", ">", "start_date")
+    ]
 
     @property
     def group_object(self):

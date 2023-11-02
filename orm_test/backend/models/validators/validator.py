@@ -106,7 +106,11 @@ class BaseCustomValidator:
         field_name: str,
         validator_list: List['BaseCustomValidator']
     ) -> 'BaseCustomValidator':
-        # TODO: Check if validator list is configured
+        if validator_list == NOT_PROVIDED:
+            return NOT_PROVIDED
+
         for validator in validator_list:
             if validator.field_name == field_name:
                 return validator
+            
+        return NOT_PROVIDED
