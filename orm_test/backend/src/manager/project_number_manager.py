@@ -42,14 +42,14 @@ class ProjectNumberManager(GeneralManager):
     """
     group_model = ProjectNumberGroup
     data_model = ProjectNumber
-    data_extension_models = []
+    data_extension_model_list = []
 
 
 class ProjectNumberFinancialOverview(ExternalDataTable):
     project_number_group = models.ForeignKey(ProjectNumberGroup, on_delete=models.DO_NOTHING)
     psp_cat_1 = models.CharField(max_length=2, null=False)
     psp_cat_2 = models.CharField(max_length=2, null=False)
-    costs = models.DecimalField(decimal_places = 2, null=False)
+    costs = models.DecimalField(decimal_places=2, max_digits=20, null=False)
     booking_date = models.DateField(null=False)
 
 

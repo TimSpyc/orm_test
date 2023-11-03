@@ -21,7 +21,7 @@ info_list = [
     DerivativeLmcInfo,
     FileInfo,
     HashFilterInfo,
-    LogTableInfo,
+    LogAutomatedScriptInfo,
     MaterialAlloyInfo,
     MaterialAlloyTreatmentInfo,
     MaterialInfo,

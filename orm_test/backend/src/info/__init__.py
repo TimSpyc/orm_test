@@ -17,7 +17,7 @@ from .derivative_constellium_info import DerivativeConstelliumInfo
 from .derivative_lmc_info import DerivativeLmcInfo
 from .file_info import FileInfo
 from .hash_filter_info import HashFilterInfo
-from .log_table_info import LogTableInfo
+from .log_automated_script_info import LogAutomatedScriptInfo
 from .material_alloy_info import MaterialAlloyInfo
 from .material_alloy_treatment_info import MaterialAlloyTreatmentInfo
 from .material_info import MaterialInfo

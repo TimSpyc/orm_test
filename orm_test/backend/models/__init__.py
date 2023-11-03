@@ -34,6 +34,7 @@ from backend.src.manager.patent_manager import Patent, PatentGroup, PatentClaim
 from backend.src.manager.permission_master_manager import PermissionMaster, PermissionMasterGroup
 from backend.src.manager.permission_user_manager import PermissionUser, PermissionUserGroup
 from backend.src.manager.project_manager import Project, ProjectGroup
+from backend.src.manager.project_number_manager import ProjectNumber, ProjectNumberGroup, ProjectNumberFinancialOverview
 from backend.src.manager.project_staff_cost_manager import ProjectStaffCost, ProjectStaffCostGroup
 from backend.src.manager.project_user_manager import ProjectUser, ProjectUserGroup
 from backend.src.manager.sap_number_manager import SapNumber, SapNumberGroup
