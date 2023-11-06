@@ -6,6 +6,7 @@ from backend.src.intermediate.volumeCustomer_derivativeConstellium_intermediate 
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
+
 class ShipmentDerivativeIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
     

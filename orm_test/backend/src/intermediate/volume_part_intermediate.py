@@ -7,9 +7,10 @@ from backend.src.intermediate.volumeCustomer_derivativeConstellium_intermediate 
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
+
 class VolumePartIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
-    
+
     def __init__(
         self,
         part_group_id: int,
@@ -17,16 +18,16 @@ class VolumePartIntermediate(GeneralIntermediate):
         search_date: datetime | None = None,
         scenario_dict: dict = {},
     ):
-        
+
         self.VolumeDerivativeIntermediateClass = VolumeDerivativeIntermediateClass
         intermediate_auxiliary.checkValidityOfVolumeDerivativeIntermediateClass(
-            attribute_name = self.VolumeDerivativeIntermediateClass,
-            valid_classes = [
+            attribute_name=self.VolumeDerivativeIntermediateClass,
+            valid_classes=[
                 VolumeLmcDerivativeConstelliumIntermediate,
                 VolumeCustomerDerivativeConstelliumIntermediate
             ]
         )
-        
+
         self.search_date = search_date
 
         self.part_manager = PartManager(
@@ -41,24 +42,24 @@ class VolumePartIntermediate(GeneralIntermediate):
             search_date,
             scenario_dict,
         )
-    
+
     def getVolume(self) -> tuple[list, list]:
         total_volume = []
         total_volume_derivative = []
-        
+
         for bom_manager in self.bom_manager_list:
-            
+
             cumulated_quantity = 0
             for data in bom_manager.bill_of_material_structure_dict_list:
                 if data['part_group_id'] == self.part_manager.group_id:
                     cumulated_quantity += data['cumulated_quantity']
 
             der_group_id = bom_manager.derivative_constellium_group_id
-            
+
             inter_obj = self.VolumeDerivativeIntermediateClass(
-                derivative_constellium_group_id = der_group_id,
+                derivative_constellium_group_id=der_group_id,
                 search_date=self.search_date)
-            
+
             total_volume_derivative.append(
                 {
                     'derivative_constellium_group_id': der_group_id,
@@ -66,9 +67,9 @@ class VolumePartIntermediate(GeneralIntermediate):
                     'cumulated_quantity': cumulated_quantity
                 }
             )
-            
+
             total_volume = self.__updateTotalVolume(total_volume, cumulated_quantity, inter_obj)
-            
+
         return total_volume, total_volume_derivative
 
     def __updateTotalVolume(
@@ -114,4 +115,3 @@ class VolumePartIntermediate(GeneralIntermediate):
             else:
                 existing_volume['volume'] += volume * cumulated_quantity
         return total_volume
-            

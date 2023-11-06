@@ -4,6 +4,7 @@ from backend.src.manager import CustomerVolumeManager
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
+
 class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
     relevant_scenario_keys = [] #customer revision, customer volume increase, customer car volume increase
 

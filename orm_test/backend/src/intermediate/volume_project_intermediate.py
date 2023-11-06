@@ -9,6 +9,7 @@ from backend.src.intermediate import (
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
+
 class VolumeProjectIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
     

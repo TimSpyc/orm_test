@@ -6,6 +6,7 @@ from backend.src.intermediate.weight_part_intermediate import WeightPartIntermed
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
+
 class ShipmentPartIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
 

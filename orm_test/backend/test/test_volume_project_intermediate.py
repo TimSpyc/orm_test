@@ -7,12 +7,14 @@ from backend.src.intermediate import (
 )
 import datetime
 
+
 class TestVolumeLmcProjectIntermediate(VolumeProjectIntermediate):
 
     def __new__(cls) -> object:
         return super().__new__(cls)
     def __init__(self):
         pass
+
 
 class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestCase):
     def test_validVolumeWithSameDates(self):

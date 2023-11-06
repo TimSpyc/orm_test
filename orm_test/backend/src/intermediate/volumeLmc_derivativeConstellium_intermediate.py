@@ -4,6 +4,7 @@ from backend.src.manager import DerivativeConstelliumManager, DerivativeLmcVolum
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
+
 class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
 

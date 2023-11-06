@@ -4,8 +4,11 @@ from backend.models import DerivativeLmcVolume, DerivativeLmcGroup, RevisionLMC
 import datetime
 from backend.src.intermediate import VolumeLmcDerivativeConstelliumIntermediate
 
+
 class Nothing:
     pass
+
+
 class TestVolumeLmcDerivativeConstelliumIntermediate(VolumeLmcDerivativeConstelliumIntermediate):
 
     def __new__(cls) -> object:
