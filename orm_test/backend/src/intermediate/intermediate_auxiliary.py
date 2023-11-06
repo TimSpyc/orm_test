@@ -13,27 +13,39 @@ def checkValidityOfVolumeDerivativeIntermediateClass(
             f"{attribute} is not supported"
         )
 
-def calculateShipment(volume_dict, current_weight_dict):
+def calculateResultBasedOnVolume(volume_dict, category_value_dict) -> list:
     '''
     Description:
-    ------------
-    Calculates the shipment data based on the volume and current weight data.
+    --------
+    This function takes a volume dictionary and a category-value dictionary
+    as input. It calculates the product of the volume and the category value 
+    for each category and returns a list of dictionaries.
+
+    Inputs/Parameters:
+    --------
+    volume_dict : list of dictionaries
+        A list of dictionaries, each with a 'date' and a 'volume' key.
+
+    category_value_dict : dictionary
+        A dictionary containing category names as keys and associated values as values.
 
     Returns:
     --------
-    total_shipment : list
-        A list of dictionaries containing the shipment data for each date.
+    total_result : list of dictionaries
+        A list of dictionaries, each with a 'date' key and
+        additional keys for each category, where the value is the product of
+        the volume and the category value.
     '''
-    total_shipment = []
+    total_result = []
     
     for data in volume_dict:
         date_item = {}
         date_item['date'] = data['date']
-        for category, value in current_weight_dict.items():
+        for category, value in category_value_dict.items():
             date_item[category] = value * data['volume']
-        total_shipment.append(date_item)
+        total_result.append(date_item)
 
-    return total_shipment
+    return total_result
 
 # def GroupByListsOfDictionaries(*lists):
 #     '''

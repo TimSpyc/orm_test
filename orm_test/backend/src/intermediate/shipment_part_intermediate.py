@@ -26,9 +26,9 @@ class ShipmentPartIntermediate(GeneralIntermediate):
             search_date=search_date,
         ).current_weight
 
-        self.shipment = intermediate_auxiliary.calculateShipment(
+        self.shipment = intermediate_auxiliary.calculateResultBasedOnVolume(
             volume_dict=self.volume,
-            current_weight_dict=self.current_weight)
+            category_value_dict=self.current_weight)
 
         super().__init__(
             search_date,
