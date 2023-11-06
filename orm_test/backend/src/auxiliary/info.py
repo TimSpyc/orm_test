@@ -351,6 +351,7 @@ class GeneralInfo:
 
         if group_by is None:
             return result_list_dict
+        #TODO auxiliary funktion hier einsetzen
         self.__checkGroupByFormat(group_by, result_list_dict)
         
         level_1_list, level_2_dict = self.__getGroupLevelDict(group_by)

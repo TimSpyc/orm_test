@@ -1,7 +1,6 @@
 # Responsible Elias Bauer
 
-from backend.models import CustomerVolumeGroup
-from backend.src.manager import DerivativeConstelliumManager, CustomerVolumeManager
+from backend.src.manager import CustomerVolumeManager
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime
 
@@ -22,7 +21,29 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
             scenario_dict,
         )
 
-    def getVolume(self, derivative_constellium_group_id):
+    def getVolume(self, derivative_constellium_group_id):    
+        """
+        Description:
+        --------
+        Get the current volume of a customer volume manager based on the
+        derivative_constellium_group_id, search_date,
+        active, and used_volume attributes.
+
+        Inputs/Parameters:
+        ------------------
+        derivative_constellium_group_id : int
+            The ID of the derivative constellium group.
+
+        Raises:
+        -------
+        ValueError
+            If the length of the filtered customer volume manager list is not exactly 1.
+
+        Returns:
+        --------
+        current_volume : float
+            The current volume of the customer volume manager.
+        """
         self.volume_manager_list = CustomerVolumeManager.filter(
             derivative_constellium_group_id=derivative_constellium_group_id,
             search_date=self.search_date,
@@ -32,4 +53,9 @@ class VolumeCustomerDerivativeConstelliumIntermediate(GeneralIntermediate):
         if len(self.volume_manager_list) != 1:
             raise ValueError(f'Expected exactly one customer volume manager, but got {len(self.volume_manager_list)}')
         self.volume_manager = self.volume_manager_list[0]
-        self.current_volume = self.volume_manager.current_volume
+        # ich will hier noch die liste mit dict ändern das ich nur date und volume als key habe! (siehe lmc)
+        return self.volume_manager.current_volume
+    
+# 1. wir finden genau einen Manager! -> alles gut
+# 2. wir finden keinen Manager -> leere Liste
+# 3. wir finden mehr als einen Manager -> Fehler

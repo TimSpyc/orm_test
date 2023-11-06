@@ -156,7 +156,7 @@ class ProjectStaffCostTask(ReferenceTable):
         return self.name
 
 
-class log_AutomatedExecutionInterval(ReferenceTable):
+class LogAutomatedScriptExecutionInterval(ReferenceTable):
     name = models.CharField(max_length=255)
     interval_seconds = models.IntegerField()
     description = models.TextField()
