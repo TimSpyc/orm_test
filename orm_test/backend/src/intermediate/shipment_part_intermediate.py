@@ -41,7 +41,7 @@ class ShipmentPartIntermediate(GeneralIntermediate):
             search_date=search_date,
         ).current_weight
 
-        self.shipment = intermediate_auxiliary.calculateResultBasedOnVolume(
+        self.shipment = intermediate_auxiliary.calculateCategoryDictBasedOnVolume(
             volume_dict=self.volume,
             category_value_dict=self.current_weight)
 
@@ -74,6 +74,6 @@ class ShipmentPartIntermediate(GeneralIntermediate):
             search_date=self.search_date,
         ).volume
 
-        return intermediate_auxiliary.calculateResultBasedOnVolume(
+        return intermediate_auxiliary.calculateCategoryDictBasedOnVolume(
             volume_dict=der_volume,
             category_value_dict=self.current_weight)

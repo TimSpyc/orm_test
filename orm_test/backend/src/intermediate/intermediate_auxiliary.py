@@ -13,7 +13,7 @@ def checkValidityOfVolumeDerivativeIntermediateClass(
             f"{attribute} is not supported"
         )
 
-def calculateResultBasedOnVolume(volume_dict, category_value_dict) -> list:
+def calculateCategoryDictBasedOnVolume(volume_dict, category_value_dict) -> list:
     '''
     Description:
     --------

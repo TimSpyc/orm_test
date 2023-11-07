@@ -7,6 +7,7 @@ from backend.src.intermediate import (
     intermediate_auxiliary
 )
 from backend.src.auxiliary.intermediate import GeneralIntermediate
+import backend.src.auxiliary.list_of_dicts  as inter_lod
 from datetime import datetime
 
 
@@ -68,52 +69,10 @@ class VolumeProjectIntermediate(GeneralIntermediate):
                 'derivative_constellium_group_id': derivative_constellium_group_id,
                 'volume_derivative': inter_obj.volume
                 })
-            
-            total_volume = self.__updateTotalVolume(total_volume, inter_obj)
-            # Geht doch jetzt auch anders? total_volume += inter_obj.volume
-            # return inter_lod.groupListOfDictsByListOfStrings(
-            # result_list_dict=total_volume,
-            # group_by_key_list=['date'])
 
-
-        return total_volume, total_volume_derivative
-
-    def __updateTotalVolume(
-        self,
-        total_volume: list,
-        inter_obj: GeneralIntermediate
-    ) -> list:
-        '''
-        Description:
-        ------------
-        Updates the total volume by adding the volume data from
-        the intermediate object to the existing total volume.
-
-        Inputs/Parameters:
-        ------------------
-        total_volume : list
-            A list of dictionaries containing the total volume data.
-        inter_obj : GeneralIntermediate
-            An object containing the intermediate volume data.
-
-        Returns:
-        --------
-        total_volume : list
-            A list of dictionaries containing the updated total volume data.
-        '''
-        for volume_data in inter_obj.volume:
-            datum = volume_data['date']
-            volume = volume_data['volume']
-
-            existing_volume = next(
-                (x for x in total_volume if x['date'] == datum),
-                None
-            )
-            if existing_volume is None:
-                total_volume.append({
-                    'date': datum,
-                    'volume': volume,
-                })
-            else:
-                existing_volume['volume'] += volume
-        return total_volume
+            total_volume += inter_obj.volume
+        
+        return inter_lod.groupListOfDictsByListOfStrings(
+            result_list_dict=total_volume,
+            group_by_key_list=['date']
+        )

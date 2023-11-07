@@ -65,12 +65,17 @@ class BillOfMaterialManager(GeneralManager):
 
         self.updateCache()
 
+    @property
+    def head_node_list(self):
+        key_tuple = self.__selectBomType('pd')
+        return self.__getHeadNodeList(key_tuple)
+        
     def getBillOfMaterialStructure(
         self,
         bom_type: str,
     ):
-        head_node = self.__getHeadNodeList()
         key_tuple = self.__selectBomType(bom_type)
+        head_node = self.__getHeadNodeList(key_tuple = key_tuple)
         bill_of_material_structure = self.__getBillOfMaterialStructure(
             head_node,
             key_tuple

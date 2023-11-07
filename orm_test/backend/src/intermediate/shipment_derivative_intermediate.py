@@ -37,7 +37,7 @@ class ShipmentDerivativeIntermediate(GeneralIntermediate):
             search_date=search_date,
         ).volume
         
-        self.head_node_list = BillOfMaterialManager.product_development_bom.head_node_list
+        self.head_node_list = BillOfMaterialManager.head_node_list
         self.shipment, self.shipment_head_parts = self.getShipment()
 
         super().__init__(

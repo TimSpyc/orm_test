@@ -27,7 +27,6 @@ class VolumePartIntermediate(GeneralIntermediate):
                 VolumeCustomerDerivativeConstelliumIntermediate
             ]
         )
-
         self.search_date = search_date
 
         self.part_manager = PartManager(

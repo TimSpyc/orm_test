@@ -55,7 +55,7 @@ def _buildGroups(data, group_by_list):
         groups[key].append(item)
     return groups
 
-def _combineData(self, data, level_1_list, level_2_dict):
+def _combineData(data, level_1_list, level_2_dict):
     output_data = []
     for group_data_list in data.values():    
         list_for_combined_data = _buildListForToCombineData(group_data_list)
@@ -72,7 +72,8 @@ def _buildListForToCombineData(group_data_list):
             combined_data[key].append(value)
     return combined_data
 
-def _combineGroupedData(self, combined_data, level_1_list, level_2_dict):
+def _combineGroupedData(combined_data, level_1_list, level_2_dict):
+    # Die set funktion ist untestbar, da sie die Datenstruktur verändert
     group_by_list = level_1_list
     for key, value in combined_data.items():
         if "_id" in key:
@@ -86,6 +87,7 @@ def _combineGroupedData(self, combined_data, level_1_list, level_2_dict):
             value = [
                 str(x) for x in set(value) if x is not None
             ]
+        #TODO: eigene Funktion (zusammenfassen)
         if all(isinstance(x, int) or isinstance(x, float) for x in value):
             combined_data[key] = sum(value)
         elif all(isinstance(x, str) for x in value):
@@ -93,11 +95,29 @@ def _combineGroupedData(self, combined_data, level_1_list, level_2_dict):
         elif all(isinstance(x, list) for x in value):
             combined_data[key] = [item for sublist in value for item in sublist]
             if key in level_2_dict.keys():
-                combined_data[key] = self._combineData(
-                    self._buildGroups(combined_data[key], level_2_dict[key]),
+                combined_data[key] = _combineData(
+                    _buildGroups(combined_data[key], level_2_dict[key]),
                 level_2_dict[key], [])
         elif all(isinstance(x, datetime) for x in value):
             combined_data[key] = max(value)
         else:
             raise Exception(f"Cannot combine {key} with values {value}")
     return combined_data
+
+
+def _makeUniqueStringEntries(data_list: list) -> list[str]:
+    '''
+    This function create a list of unique string entries from a list of mixed
+    (unique and non unique) entries.
+    '''
+    return [set([str(x) for x in data_list])]
+
+
+
+def test_123():
+    set_of_unique_data = {"1","2","3","4"}
+    list_of_non_unique_data = ["1", 1,2,3,4,1,2,3,4]
+    return_value = _makeUniqueStringEntries(list_of_non_unique_data)
+    for value in set_of_unique_data:
+        if value not in return_value:
+            raise Exception('test_123 failed')
