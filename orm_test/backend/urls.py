@@ -40,9 +40,7 @@ info_list = [
     ProjectUserInfo,
     SapNumberInfo,
     StockExchangeDataInfo,
-    TestValidatorsInfo,
     TimeCorrectionInfo,
-  
 ]
 
 def createInfoUrls():

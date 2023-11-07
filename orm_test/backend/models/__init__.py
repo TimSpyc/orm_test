@@ -40,4 +40,3 @@ from backend.src.manager.project_user_manager import ProjectUser, ProjectUserGro
 from backend.src.manager.sap_number_manager import SapNumber, SapNumberGroup
 from backend.src.manager.stock_exchange_data_manager import StockExchangeData
 from backend.src.manager.time_correction_manager import TimeCorrection, TimeCorrectionGroup
-from backend.src.manager.test_validators_manager import TestManager, TestManagerGroup

@@ -39,5 +39,3 @@ from .project_user_manager import ProjectUserManager
 from .sap_number_manager import SapNumberManager
 from .stock_exchange_data_manager import StockExchangeDataManager
 from .time_correction_manager import TimeCorrectionManager
-
-from .test_validators_manager import TestManagerManager
