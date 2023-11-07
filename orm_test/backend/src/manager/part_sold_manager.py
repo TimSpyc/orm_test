@@ -11,7 +11,12 @@ class PartSoldGroup(GroupTable):
     customer_part_number_sap = models.CharField(max_length=255)
 
     class Meta:
-        unique_together = ('part_recipient', 'customer_part_number_sap')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['part_recipient', 'customer_part_number_sap'],
+                name='unique_part_sold_group'
+            )
+        ]
 
     @property
     def manager(self):
@@ -75,7 +80,13 @@ class PartSoldMaterialWeight(DataExtensionTable):
     net_weight = models.FloatField()
 
     class Meta:
-        unique_together = ('part_sold_material_type', 'part_sold')
+        # TODO: Adjust the unique constraint name?
+        constraints = [
+            models.UniqueConstraint(
+                fields=['part_sold_material_type', 'part_sold'],
+                name='unique_part_sold_material_weight'
+            )
+        ]
 
     @property
     def data_object(self):

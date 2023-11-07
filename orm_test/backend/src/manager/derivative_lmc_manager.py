@@ -8,7 +8,12 @@ class DerivativeLmcGroup(GroupTable):
     lmc_model_code = models.CharField(max_length=255)
 
     class Meta:
-        unique_together = ('lmc_full_code', 'lmc_model_code')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['lmc_full_code', 'lmc_model_code'],
+                name='unique_derivative_lmc_group'
+            )
+        ]
 
     def __str__(self):
         return f"{self.lmc_full_code} - {self.lmc_model_code}"
@@ -72,7 +77,12 @@ class DerivativeLmcVolume(ExternalDataTable):
     lmc_revision = models.ForeignKey("RevisionLMC", on_delete=models.DO_NOTHING)
 
     class Meta:
-        unique_together = ('derivative_lmc_group', 'date', 'lmc_revision')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['derivative_lmc_group', 'volume_date', 'lmc_revision'],
+                name='unique_derivative_lmc_volume'
+            )
+        ]
 
     def __str__(self):
         return f"""

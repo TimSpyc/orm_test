@@ -22,7 +22,12 @@ class AssetItemSiteConnectionGroup(GroupTable):
         return AssetItemSiteConnectionManager
 
     class Meta:
-        unique_together = ('asset_site_group', 'asset_item_group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['asset_site_group', 'asset_item_group'],
+                name='unique_asset_item_site_connection_group'
+            )
+        ]
 
     def __str__(self):
         return f'Asset Item Site Connection Group with id {self.id}'

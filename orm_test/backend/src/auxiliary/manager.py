@@ -2001,8 +2001,9 @@ class GeneralManager:
                 unique constraints in the model.
         """
         unique_fields = []
-        for unique_field_tuple in model._meta.unique_together:
-            unique_fields = [*unique_field_tuple, *unique_fields]
+        for constraint in model._meta.constraints:
+            if isinstance(constraint, models.UniqueConstraint):
+                unique_fields += constraint.fields
         return unique_fields
 
     @classmethod
@@ -2245,7 +2246,7 @@ class GeneralManager:
             GroupModel: 
                 The group model instance that was either retrieved or created.
         """
-        unique_fields = cls.group_model._meta.unique_together
+        unique_fields = cls.__getUniqueFields(cls.group_model)
 
         if len(unique_fields) == 0:
             group_obj = cls.group_model.objects.create(

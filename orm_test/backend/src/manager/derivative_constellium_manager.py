@@ -66,7 +66,12 @@ class DerivativeConstelliumDerivativeLmcConnection(DataExtensionTable):
     take_rate = models.FloatField()
 
     class Meta:
-        unique_together = ('derivative_constellium', 'derivative_lmc_group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['derivative_constellium', 'derivative_lmc_group'],
+                name='unique_derivative_constellium_derivative_lmc_connection'
+            )
+        ]
 
     @property
     def data_object(self):

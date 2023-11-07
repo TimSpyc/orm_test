@@ -21,9 +21,12 @@ class ChangeRequestFileGroup(GroupTable):
         return ChangeRequestFileManager
     
     class Meta:
-        unique_together = (
-            'change_request_group', 'file_group'
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=['change_request_group', 'file_group'],
+                name='unique_change_request_file_group'
+            )
+        ]
 
     def __str__(self):
         return f'ChangeRequestFile Group with id {self.id}'

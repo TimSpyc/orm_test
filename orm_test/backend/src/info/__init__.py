@@ -36,9 +36,7 @@ from .project_number_info import ProjectNumberInfo
 from .project_staff_cost_info import ProjectStaffCostInfo
 from .project_user_info import ProjectUserInfo
 from .sap_number_info import SapNumberInfo
-from .scenario_info import ScenarioInfo
 from .stock_exchange_data_info import StockExchangeDataInfo
-from .test_validators_info import TestValidatorsInfo
 from .time_correction_info import TimeCorrectionInfo
 
 

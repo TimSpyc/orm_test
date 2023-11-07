@@ -8,7 +8,12 @@ class PartSoldPriceUploadGroup(GroupTable):
     valid_from = models.DateTimeField()
 
     class _Meta:
-        unique_together = ('part_sold_group', 'valid_from')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['part_sold_group', 'valid_from'],
+                name='unique_part_sold_price_upload_group'
+            )
+        ]
 
     @property
     def manager(self):
@@ -36,7 +41,7 @@ class PartSoldPriceUpload(DataTable):
 class PartSoldPriceUploadManager(GeneralManager):
     group_model = PartSoldPriceUploadGroup
     data_model = PartSoldPriceUpload
-    data_extension_models = []
+    data_extension_model_list = []
 
     def uploadPriceToSap(self):
         pass
