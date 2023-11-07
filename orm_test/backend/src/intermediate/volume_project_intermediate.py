@@ -29,13 +29,11 @@ class VolumeProjectIntermediate(GeneralIntermediate):
                 VolumeCustomerDerivativeConstelliumIntermediate
             ]
         )
-        
+        self.search_date = search_date
         self.derivative_constellium_group_dict_list = \
             list(DerivativeConstelliumGroup.objects.filter(
                 project_group_id=project_group_id
             ).values())
-        
-        self.search_date = search_date
 
         self.volume, self.volume_derivative = self.getVolume()
 
@@ -72,6 +70,10 @@ class VolumeProjectIntermediate(GeneralIntermediate):
                 })
             
             total_volume = self.__updateTotalVolume(total_volume, inter_obj)
+            # Geht doch jetzt auch anders? total_volume += inter_obj.volume
+            # return inter_lod.groupListOfDictsByListOfStrings(
+            # result_list_dict=total_volume,
+            # group_by_key_list=['date'])
 
 
         return total_volume, total_volume_derivative
