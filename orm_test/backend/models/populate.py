@@ -1,5 +1,6 @@
 # Responsible Maximilian Kelm
 from typing import Callable, Dict, List, Any
+import inspect
 from faker import Faker
 import random
 import json
@@ -57,17 +58,17 @@ from backend.src.auxiliary.exceptions import (
 ##### decorators for populate classes ##########################################
 ################################################################################
 
-def createTempAttrs(*attribute_name_list: list[str]) -> Any:
+def createTempAttrs(*attr_name_list: list[str]) -> Any:
     def outerWrapper(func):
         def innerWrapper(self, *args, **kwargs) -> Any:
-            for attribute_name in attribute_name_list:
-                # TODO: check attribute name
-                setattr(self, attribute_name, NOT_CONFIGURED)
+            for attr_name in attr_name_list:
+                # TODO: check attr_name name
+                setattr(self, attr_name, NOT_CONFIGURED)
 
             result = func(self, *args, **kwargs)
             
-            for attribute_name in attribute_name_list:
-                delattr(self, attribute_name)
+            for attr_name in attr_name_list:
+                delattr(self, attr_name)
                 
             return result
         return innerWrapper
@@ -81,23 +82,88 @@ def createTempAttrs(*attribute_name_list: list[str]) -> Any:
 class BasePopulate:
     FAKE = Faker()
 
-    def __init__(self) -> None:
-        self.possible_populate_methods = [
-            (int, self.createRandomInteger),
-            (float, self.createRandomFloat),
-            (Decimal, self.createRandomDecimal),
-            (str, self.createRandomText),
-            (bool, self.createRandomBoolean),
-            (datetime, self.createRandomDatetime),
-            (date, self.createRandomDate),
-            (time, self.createRandomTime)
-        ]
+    # TODO: Implement following types dict, list, json, ...
+    SUPPORTED_TYPE_LIST = [
+        int,
+        float,
+        Decimal,
+        str,
+        bool,
+        datetime,
+        date,
+        time,
+    ]
 
-        # TODO: There are more methods like dict, list, json, ...
+    def __init__(self, type_to_populate: type, **kwargs) -> None:
+        self._checkType(type_to_populate, type, "type_to_populate")
+        if type_to_populate not in self.SUPPORTED_TYPE_LIST:
+            # TODO: adjust error msg
+            raise NotImplementedYet(f'''
+                The type to populate "{type_to_populate}" is not supported yet!
+                To show all supported types call:
+                -> BasePopulate.SUPPORTED_TYPE_LIST
+            ''')
+
+        self.__type_to_populate = type_to_populate
+        self.__populateData = self._getPopulateFuncWithTypeName(
+            self.__type_to_populate.__name__
+        )
+
+        self._checkAndCreateMetaAttrs(self.__populateData, **kwargs)
+
+    @property
+    def type_to_populate(self) -> type:
+        return self.__type_to_populate
+
+    # ---- Handle type checks --------------------------------------------------
+    @staticmethod
+    def _checkType(attr: Any, attr_type: type, attr_name: str) -> None:
+        if not isinstance(attr, attr_type):
+            raise TypeError(f'''
+                The attr "{attr_name}" must be of type "{attr_type}"!
+                -> not "{type(attr)}"
+            ''')
+
+    @classmethod
+    def _checkPercentageDefinition(cls, attr: float, attr_name: str) -> None:
+        cls._checkType(attr, float, attr_name)
+
+        if attr < 0 or attr > 1:
+            raise ValueError(f'''
+                Definition for "{attr_name}" data 
+                is not a percentage!
+            ''')
+
+    # ---- ? -------------------------------------------------------------------
+    @staticmethod
+    def randomTrue(chance_for_true: float) -> bool:
+        return chance_for_true > BasePopulate.createRandomFloat(0.0, 1.0)
+    
+    @staticmethod
+    def randomChoice(list_to_select_from: list) -> Any:
+        return random.choice(list_to_select_from)
+
+    # ---- Select data creation methods ----------------------------------------
+    def _getPopulateFuncWithTypeName(self, type_name: str) -> Any:
+        function_name =\
+            f"createRandom{type_name[:1].capitalize() + type_name[1:]}"
+
+        try:
+            return getattr(self, function_name)
+        except AttributeError as e:
+            raise NotImplementedYet(f'''
+                Can't found a corresponding populate function with the name:
+                -> {function_name}
+
+                Please check the class configuration for:
+                -> {self.__class__.__name__}
+            ''')
+        except Exception as e:
+            raise e
 
     # ---- Handle data creation methods ----------------------------------------
     @classmethod
-    def createRandomInteger(
+    def createRandomInt(
         cls,
         min_value: int = 0,
         max_value: int = 999999
@@ -114,7 +180,7 @@ class BasePopulate:
     
     @staticmethod
     def _createUpperBorderForMaximalDigits(max_digits: int) -> int:
-        if max_digits >= 1:
+        if max_digits < 0:
             raise ValueError('must be positive')
         test: int = (10 ** max_digits) - 1
         return test
@@ -124,13 +190,13 @@ class BasePopulate:
         max_digits: int = 9,
         decimal_places: int = 5
     ) -> Decimal:
-        whole_digit = BasePopulate.createRandomInteger(
+        whole_digit = BasePopulate.createRandomInt(
             0,
             BasePopulate._createUpperBorderForMaximalDigits(
                 (max_digits - decimal_places)
             )
         )
-        decimal_digit: int | str = BasePopulate.createRandomInteger(
+        decimal_digit: int | str = BasePopulate.createRandomInt(
             0,
             BasePopulate._createUpperBorderForMaximalDigits(decimal_places)
         )
@@ -169,12 +235,24 @@ class BasePopulate:
         return cls.FAKE.time_object()
 
     @classmethod
-    def createRandomText(cls, min_length: int = 0, max_length: int = 50) -> str:
-        # TODO: Check min_chars < max_chars and max_chars-min_chars > 5!
-        random_text: str = cls.FAKE.text(max_length)
+    def createRandomStr(cls, min_length: int = 0, max_length: int = 50) -> str:
+        if min_length > max_length:
+            # TODO adjust error msg
+            raise ValueError(f'''
+                The min_length "{min_length}" is greater than the max_length
+            ''')
+
+        temp_max_length = max_length
+        if max_length < 5:
+            # TODO: Adjust logic (max_length-min_length)
+            temp_max_length = 5
+        random_text: str = cls.FAKE.text(temp_max_length)
 
         while len(random_text) < min_length:
             random_text += cls.FAKE.text(max_length-len(random_text))
+
+        if len(random_text) > max_length:
+            random_text = random_text[:-(len(random_text)-max_length)]
 
         return random_text
 
@@ -184,7 +262,7 @@ class BasePopulate:
         return fake_email
 
     @classmethod
-    def createRandomBoolean(
+    def createRandomBool(
         cls,
         can_be_none: bool = False,
         chance_for_none: float = 0.33
@@ -207,7 +285,7 @@ class BasePopulate:
         # TODO: Do we need the possibility to define a custom structure?
         random_data_dict = {}
 
-        for i in range(cls.createRandomInteger(max_elements, min_elements)):
+        for i in range(cls.createRandomInt(max_elements, min_elements)):
             _, populateValue = cls.randomChoice(cls.possible_populate_methods)
             random_data_dict[f'key_{i}'] = populateValue()
 
@@ -225,118 +303,47 @@ class BasePopulate:
 
         return json.dumps(cls.createRandomDict(), cls=MyEncoder)
 
-    # ---- ? -------------------------------------------------------------------
-    @staticmethod
-    def randomTrue(chance_for_true: float) -> bool:
-        return chance_for_true > BasePopulate.createRandomFloat(0.0, 1.0)
-    
-    @staticmethod
-    def randomChoice(list_to_select_from: list) -> Any:
-        return random.choice(list_to_select_from)
-
-    # ---- Handle custom values ------------------------------------------------
-    @staticmethod
-    def executeAndReturnValueIfCallable(custom_value: Any) -> bool:
-        if isinstance(custom_value, Callable):
-            return custom_value()
-
-        return custom_value
-
-    # ---- Handle validator errors ---------------------------------------------
-    @staticmethod
-    def _checkIntegerDefinition(
-        integer: int,
-        integer_description: str
-    ):
-        if not isinstance(integer, int):
-            raise ValueError(f'''
-                Definition for "{integer_description}" is not an integer!
-            ''')
-
-    @staticmethod
-    def _checkPercentageDefinition(
-        percentage: float,
-        percentage_description: str
-    ):
-        if not isinstance(percentage, float):
-            raise ValueError(f'''
-                Definition for "{percentage_description}" data is not a float!
-            ''')
-
-        if percentage < 0 or percentage > 1:
-            raise ValueError(f'''
-                Definition for "{percentage_description}" data 
-                is not a percentage!
-            ''')
-
-    @staticmethod
-    def checkOnlyAllowedValidatorsInList(
-        validator_list: list,
-        allowed_validator_list: list
-    ) -> bool:
-        return all(
-            type(validator) in allowed_validator_list
-            for validator in validator_list
-        )
-
-    @staticmethod
-    def raiseErrorIfValidatorListIsIncompatibleForField(
-        field: Any,
-        allowed_validator_list: list
-    ):
-        if not BasePopulate.checkOnlyAllowedValidatorsInList(
-            field.validators,
-            allowed_validator_list
-        ):
-            not_supported_validators = [
-                type(validator) for validator in field.validators 
-                if type(validator) not in allowed_validator_list
-            ]
-
-            raise IncompatibleValidatorList(f'''
-                The field with the name "{field.name}" contains the following
-                validators that are not supported:
-                
-                {not_supported_validators}
-
-                NOTE: If you want to define more specific validators, please
-                customize the clean function of the model!
-
-                Supported validators for this field:
-                {allowed_validator_list}
-            ''')
-
-    # ---- select populate function --------------------------------------------
-    @staticmethod
-    def callDefaultPopulateFunction(custom_function_name: str, **kwargs):
-        try:
-            return getattr(BasePopulate, f"createRandom{custom_function_name}")(
-                **kwargs
-            )
-        except AttributeError:
-            # TODO: Adjust error msg!
-            raise NotImplementedYet(f'''
-                There is no populate function for these field type!
-            ''')
-        except Exception as e:
-            raise e
-
     # ---- handle meta attributes ----------------------------------------------
     @staticmethod
-    def _createMetaAttributeName(custom_meta_name: str) -> str:
-        return f"__meta__{custom_meta_name}"
+    def _createMetaAttrName(custom_attr_name: str) -> str:
+        return f"meta__{custom_attr_name}"
 
     @classmethod
-    def _createMetaAttributeNameWithClass(cls, class_instance) -> str:
-        return cls._createMetaAttributeName(class_instance.__name__)
+    def _createMetaAttrListForFunc(cls, func: callable) -> list:
+        return [
+            cls._createMetaAttrName(attr_name) 
+            for attr_name in inspect.signature(func).parameters.keys()
+        ]
+
+    def _checkAndCreateMetaAttrs(self, func: callable, **kwargs) -> None:
+        possible_meta_attr_list = self._createMetaAttrListForFunc(func)
+
+        for meta_attr, custom_attr in kwargs.items():
+            if meta_attr not in possible_meta_attr_list:
+                # TODO: adjust error msg
+                raise ValueError(f'''
+                    The meta attribute with the name "{meta_attr}" is not 
+                    allowed!
+                ''')
+            
+            setattr(self, meta_attr, custom_attr)
+            
+    def _createCustomAttrDict(self, func: callable) -> dict:
+        possible_meta_attr_list = self._createMetaAttrListForFunc(func)
+
+        return {
+            meta_attr_name[6:]: getattr(self, meta_attr_name)
+            for meta_attr_name in possible_meta_attr_list
+            if hasattr(self, meta_attr_name)
+        }
     
-    def _checkCustomAttrs(
+    def _checkCustomAndMetaAttrs(
         self,
         allowed_attr_name_list: list[str],
         **kwargs
     ) -> None:
         allowed_meta_attr_name_list = [
-            self._createMetaAttributeName(attr_name)
+            self._createMetaAttrName(attr_name)
             for attr_name in allowed_attr_name_list
         ]
 
@@ -344,6 +351,7 @@ class BasePopulate:
             if attr_name not in allowed_attr_name_list\
             and attr_name not in allowed_meta_attr_name_list:
                 # TODO: adjust error and msg
+                print("attr_name", attr_name)
                 raise ValueError("Attribute is not allowed")
 
             # NOTE: If attr_name exists as an attribute will be checked when 
@@ -357,72 +365,37 @@ class BasePopulate:
                 # TODO: adjust error msg
                 raise TypeError("Meta attribute must be of type dict")
 
-    def __createCustomAttr(
-        self,
-        attr_name: str,
-        **kwargs
-    ) -> None:
-        if hasattr(self, attr_name):
-            # TODO: adjust error and msg
-            raise ValueError("Attribute existing")
-
-        setattr(self, attr_name, kwargs.get(attr_name, NOT_PROVIDED))
-
-    def __createCustomMetaAttr(
-        self,
-        attr_name: str,
-        **kwargs
-    ):
-        meta_attr_name = self._createMetaAttributeName(attr_name)
-        self.__createCustomAttr(meta_attr_name, **kwargs)
-
-    def _createCustomAttrs(
+    def _createCustomAndMetaAttrs(
         self,
         allowed_attr_name_list: list[str],
         **kwargs
     ) -> None:
-        self._checkCustomAttrs(allowed_attr_name_list, **kwargs)
+        self._checkCustomAndMetaAttrs(allowed_attr_name_list, **kwargs)
+
+        def createAttr(attr_name: str, **kwargs) -> None:
+            if hasattr(self, attr_name):
+                # TODO: adjust error and msg
+                raise ValueError("Attribute existing")
+
+            setattr(self, attr_name, kwargs.get(attr_name, NOT_PROVIDED))
 
         for attr_name in allowed_attr_name_list:
-            self.__createCustomAttr(attr_name, **kwargs)
-            self.__createCustomMetaAttr(attr_name, **kwargs)
+            createAttr(attr_name, **kwargs)
+            createAttr(self._createMetaAttrName(attr_name), **kwargs)
 
-    def _getAttr(self, attr_name: str) -> Any:
-        if not hasattr(self, attr_name):
-            # TODO: adjust error and msg
-            raise ValueError("Attribute existing")
+    # def _getMetaAttrDictForClassInstance(self, class_instance) -> dict | None:
+    #     meta_attr_name = self._createMetaAttrName(class_instance.__name__)
+    #     if hasattr(self, meta_attr_name):
+    #         return getattr(self, meta_attr_name)
         
-        return getattr(self, attr_name)
+    #     return {}
 
-    def _getMetaAttributeForClassInstance(self, class_instance) -> dict | None:
-        if hasattr(
-            self,
-            self._createMetaAttributeNameWithClass(class_instance)
-        ):
-            return getattr(
-                self,
-                self._createMetaAttributeNameWithClass(class_instance)
-            )
-        
-        return {}
-    
-    # TODO: Is there the possibility to specify type hints?
-    @classmethod
-    def _populateDataWithMetaAttribute(
-        cls,
-        PopulateClass,
-        DataClass,
-        custom_kwargs: dict = {}
-    ):
-        return PopulateClass(
-            DataClass,
-            **{
-                **cls._getMetaAttributeForClassInstance(DataClass),
-                **custom_kwargs
-            }
-        ).populate()
+    # ---- handle populate methods ---------------------------------------------
+    def populate(self) -> Any:
+        return self.__populateData(
+            **self._createCustomAttrDict(self.__populateData)
+        )
 
-    # ---- handle multiple data population -------------------------------------
     def populateMany(
         self,
         min_data: int = 1,
@@ -431,7 +404,7 @@ class BasePopulate:
         # TODO: check attributes!
         created_obj_list = []
 
-        for _ in range(1, self.createRandomInteger(min_data, max_data)):
+        for _ in range(0, self.createRandomInt(min_data, max_data)):
             created_obj_list.append(self.populate())
 
         return created_obj_list
@@ -456,7 +429,7 @@ class BasePopulate:
 ################################################################################
 
 class PopulateField(BasePopulate):
-    SUPPORTED_FIELD_LIST = [
+    SUPPORTED_TYPE_LIST = [
         IntegerField,
         PositiveIntegerField,
         SmallIntegerField,
@@ -472,7 +445,7 @@ class PopulateField(BasePopulate):
         TextField,
         EmailField,
         BooleanField,
-        JSONField,
+        # JSONField,
         ForeignKey,
         # OneToOneField,
         ManyToManyField
@@ -481,19 +454,20 @@ class PopulateField(BasePopulate):
     def __init__(
         self,
         field: models.Field,
-        __meta__custom_populate: Any | Callable = NOT_PROVIDED,
-        __meta__chance_for_default: float = 0.25,
+        meta__custom_populate: Any | Callable = NOT_PROVIDED,
+        meta__chance_for_default: float = 0.25,
         **kwargs
     ) -> None:
+        self._checkPercentageDefinition(
+            meta__chance_for_default,
+            "meta__chance_for_default"
+        )
+
         self.__field                = field
-        self.__custom_populate      = __meta__custom_populate
-        self.__chance_for_default   = __meta__chance_for_default
-        self.min_relations      = kwargs.get("min_relations", 1)
-        self.max_relations      = kwargs.get("max_relations", 10)
+        self.__custom_populate      = meta__custom_populate
+        self.__chance_for_default   = meta__chance_for_default
 
-        # TODO: Should there be the possibility to adjust the base type functions?
-
-        self.__checkPopulateFieldDefinitions()
+        super().__init__(self.__field.__class__, **kwargs)
 
     @property
     def field(self) -> models.Field:
@@ -507,49 +481,24 @@ class PopulateField(BasePopulate):
     def chance_for_default(self) -> float:
         return self.__chance_for_default
 
-    def __checkPopulateFieldDefinitions(self):
-        if type(self.field) not in self.SUPPORTED_FIELD_LIST:
-            raise NotImplementedYet(f'''
-                The field with the name "{self.field.name}" is not supported yet!
-                To show all supported fields call:
-                -> PopulateField.SUPPORTED_FIELD_LIST
-            ''')
-
-        # TODO: Check custom_populate!
-        # -> Therefor the corresponding type of the field is needed...
-        # -> Is it enough to test the value before returning it?
-
-        self._checkPercentageDefinition(
-            self.chance_for_default,
-            "chance_for_default"
-        )
-
-        self._checkIntegerDefinition(
-            self.min_relations,
-            "min_relations"
-        )
-
-        self._checkIntegerDefinition(
-            self.max_relations,
-            "max_relations"
-        )
-
     # ---- Handle data population ----------------------------------------------
     def populate(self) -> Any:
         # TODO: Check if default=null and null=False is possible at model!
 
         # NOTE: chance_for_default must be set manually to 0.0 if the default
         # is not wanted!
-        populated_value = self.__getDefaultValueForFieldRandomly()
+        if self.field.default != NOT_PROVIDED\
+        and self.randomTrue(self.chance_for_default):
+            return self.field.default
 
-        if populated_value == NOT_PROVIDED:
-            # TODO: check type of populated value correspond to field type?
-            if self.custom_populate != NOT_PROVIDED:
-                populated_value = self.executeAndReturnValueIfCallable(
-                    self.custom_populate
-                )
+        # TODO: check type of populated value correspond to field type?
+        if self.custom_populate != NOT_PROVIDED:
+            if isinstance(self.custom_populate, Callable):
+                populated_value = self.custom_populate()
             else:
-                populated_value = self.populateFieldWithDefaultFunction()
+                populated_value = self.custom_populate
+        else:
+            populated_value = super().populate()
 
         if not self.field.null and populated_value is None:
             raise ValueError(f'''
@@ -560,25 +509,34 @@ class PopulateField(BasePopulate):
 
         return populated_value
 
-    def __getDefaultValueForFieldRandomly(self) -> Any:
-        if self.randomTrue(self.chance_for_default):
-            return self.field.default
+    # ---- Handle validator logic ----------------------------------------------
+    @staticmethod
+    def raiseErrorIfValidatorListIsIncompatibleForField(
+        field: Any,
+        allowed_validator_list: list
+    ):
+        if not all(
+            type(validator) in allowed_validator_list
+            for validator in field.validators
+        ):
+            not_supported_validators = [
+                type(validator) for validator in field.validators 
+                if type(validator) not in allowed_validator_list
+            ]
 
-        return NOT_PROVIDED
+            raise IncompatibleValidatorList(f'''
+                The field with the name "{field.name}" contains the following
+                validators that are not supported:
+                
+                {not_supported_validators}
 
-    def populateFieldWithDefaultFunction(self) -> Any:
-        try:
-            return getattr(self, f"_populate{self.field.__class__.__name__}")()
-        except AttributeError as e:
-            print("ERROR",e)
-            raise NotImplementedYet(f'''
-                The field "{self.field.name}" with type {type(self.field)} is 
-                supported, but no corresponding populate function for 
-                "_populate{self.field.__class__.__name__}" can be found! 
-                Please check the configuration of the PopulateField class.
+                NOTE: If you want to define more specific validators, please
+                customize the clean function of the model!
+
+                Supported validators for this field:
+                {allowed_validator_list}
             ''')
 
-    # ---- Handle validator logic ----------------------------------------------
     def __getMinMaxValidatorsInfoDict(self, attribute_info_dict: dict) -> dict:
         self.raiseErrorIfValidatorListIsIncompatibleForField(
             self.field,
@@ -601,7 +559,7 @@ class PopulateField(BasePopulate):
         if not only_positive_integer:
             negative_border_value = (positive_border_value + 1) * -1
 
-        return self.createRandomInteger(
+        return self.createRandomInt(
             **{
                 "min_value": negative_border_value,
                 "max_value": positive_border_value,
@@ -612,32 +570,32 @@ class PopulateField(BasePopulate):
             }
         )
 
-    def _populateIntegerField(self) -> int:
+    def createRandomIntegerField(self) -> int:
         return self.__populateIntegerFields(2147483647)
 
-    def _populatePositiveIntegerField(self) -> int:
+    def createRandomPositiveIntegerField(self) -> int:
         return self.__populateIntegerFields(2147483647, True)
 
-    def _populateSmallIntegerField(self) -> int:
+    def createRandomSmallIntegerField(self) -> int:
         return self.__populateIntegerFields(32767)
 
-    def _populatePositiveSmallIntegerField(self) -> int:
+    def createRandomPositiveSmallIntegerField(self) -> int:
         return self.__populateIntegerFields(32767, True)
 
-    def _populateBigIntegerField(self) -> int:
+    def createRandomBigIntegerField(self) -> int:
         return self.__populateIntegerFields(9223372036854775807)
 
-    def _populateBigSmallIntegerField(self) -> int:
+    def createRandomBigSmallIntegerField(self) -> int:
         return self.__populateIntegerFields(9223372036854775807, True)
 
     # ---- Handle float field methods ------------------------------------------
-    def _populateFloatField(self) -> float:
+    def createRandomFloatField(self) -> float:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         return self.createRandomFloat()
 
     # ---- Handle decimal field methods ----------------------------------------
-    def _populateDecimalField(self) -> Decimal:
+    def createRandomDecimalField(self) -> Decimal:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         selectDefaultForDecimalIfNone: Callable[[int | None], int] =\
@@ -662,18 +620,18 @@ class PopulateField(BasePopulate):
 
         return random_datetime
 
-    def _populateDateTimeField(self) -> datetime | None:
+    def createRandomDateTimeField(self) -> datetime | None:
         return self.__populateDateTimeFields(self.createRandomDatetime())
 
-    def _populateDateField(self) -> date | None:
+    def createRandomDateField(self) -> date | None:
         return self.__populateDateTimeFields(self.createRandomDate())
 
-    def _populateTimeField(self) -> time | None:
+    def createRandomTimeField(self) -> time | None:
         return self.__populateDateTimeFields(self.createRandomTime())
 
     # ---- Handle text field methods -------------------------------------------
     def __populateTextFields(self) -> str:
-        return self.createRandomText(
+        return self.createRandomStr(
             **{
                 "min_length": 0,
                 "max_length": 1000,
@@ -684,14 +642,14 @@ class PopulateField(BasePopulate):
             }
         )
 
-    def _populateCharField(self) -> str:
+    def createRandomCharField(self) -> str:
         return self.__populateTextFields()
 
-    def _populateTextField(self) -> str:
+    def createRandomTextField(self) -> str:
         return self.__populateTextFields()
 
     # ---- Handle email field methods ------------------------------------------
-    def _populateEmailField(self) -> str:
+    def createRandomEmailField(self) -> str:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
         if self.field.max_length != 254:
             raise NotImplementedYet(f'''
@@ -703,19 +661,18 @@ class PopulateField(BasePopulate):
         return self.createRandomEmail()
 
     # ---- Handle boolean field methods ----------------------------------------
-    def _populateBooleanField(self) -> bool | None:
+    def createRandomBooleanField(self) -> bool | None:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
-        return self.createRandomBoolean(can_be_none=self.field.null)
+        return self.createRandomBool(can_be_none=self.field.null)
 
     # ---- Handle json field methods -------------------------------------------
-    def _populateJSONField(self) -> str:
+    def createRandomJSONField(self) -> str:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         return self.createRandomJSON()
 
     # ---- Handle relationship field methods -----------------------------------
-    # TODO: Adjust logic for reference and group tables on PopulateModel!
     def __populateRelationshipFields(
         self,
         relationship_model_list: list[models.Model]
@@ -725,17 +682,17 @@ class PopulateField(BasePopulate):
 
         return PopulateModel(self.field.related_model).populate()
 
-    def _populateForeignKey(self) -> models.Model:
+    def createRandomForeignKey(self) -> models.Model:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         if self.field.unique:
-            return self._populateOneToOneField()
+            return self._createRandomOneToOneField()
 
         return self.__populateRelationshipFields(
             self.field.related_model.objects.all()
         )
 
-    def _populateOneToOneField(self) -> models.Model:
+    def createRandomOneToOneField(self) -> models.Model:
         # self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         # -> return self.__populateRelationshipFields(
@@ -748,7 +705,11 @@ class PopulateField(BasePopulate):
             this method must be implemented.
         """)
 
-    def _populateManyToManyField(self) -> list[models.Model]:
+    def createRandomManyToManyField(
+        self,
+        min_relations: int = 1,
+        max_relations: int = 10
+    ) -> list[models.Model]:
         self.raiseErrorIfValidatorListIsIncompatibleForField(self.field, [])
 
         many_to_many_list = []
@@ -756,7 +717,7 @@ class PopulateField(BasePopulate):
         used_model_id_list = []
 
         for _ in range(
-            self.createRandomInteger(self.min_relations, self.max_relations)
+            self.createRandomInt(min_relations, max_relations)
         ):
             random_model = self.__populateRelationshipFields([
                 related_model for related_model in related_model_list
@@ -778,23 +739,27 @@ class PopulateModel(BasePopulate):
     def __init__(
         self,
         model: models.Model,
-        __meta__chance_for_default: float = 0.25,
-        __meta__max_data_creation_attempts: int = 10,
+        meta__chance_for_default: float = 0.25,
+        meta__max_data_creation_attempts: int = 10,
         **kwargs
     ) -> None:
-        # TODO: check attributes
-        # TODO: adjust error msg!
-        if not isinstance(model, models.base.ModelBase):
-            raise TypeError(
-                "The model must be defined and of type ModelBase!"
-            )
+        self._checkType(
+            model,
+            models.base.ModelBase,
+            "model"
+        )
+        self._checkType(
+            meta__max_data_creation_attempts,
+            int,
+            "meta__max_data_creation_attempts"
+        )
 
         self.__model                        = model
-        self.__chance_for_default           = __meta__chance_for_default
-        self.__max_data_creation_attempts   = __meta__max_data_creation_attempts
+        self.__chance_for_default           = meta__chance_for_default
+        self.__max_data_creation_attempts   = meta__max_data_creation_attempts
 
         # NOTE: The meta attribute for the primary key field has no effect
-        self._createCustomAttrs(self.__getFieldNameList(), **kwargs)
+        self._createCustomAndMetaAttrs(self.__getFieldNameList(), **kwargs)
 
     @property
     def model(self) -> models.Model:
@@ -807,6 +772,13 @@ class PopulateModel(BasePopulate):
     @property
     def max_data_creation_attempts(self) -> int:
         return self.__max_data_creation_attempts
+
+    def _getAttr(self, attr_name: str) -> Any:
+        if not hasattr(self, attr_name):
+            # TODO: adjust error and msg
+            raise ValueError("Attribute existing")
+        
+        return getattr(self, attr_name)
 
     def __getCustomPopulateForFieldName(self, field_name:str) -> Any:
         custom_populate = self._getAttr(field_name)
@@ -823,14 +795,19 @@ class PopulateModel(BasePopulate):
     def __createFieldDefinitionDict(self, field_name:str) -> Dict[str, Any]:
         custom_populate = self.__getCustomPopulateForFieldName(field_name)
         custom_definition_dict = self._getAttr(
-            self._createMetaAttributeName(field_name)
+            self._createMetaAttrName(field_name)
         )
 
-        field_definition_dict = {}
+        field_definition_dict = {
+            "meta__chance_for_default": self.chance_for_default,
+        }
         if custom_definition_dict != NOT_PROVIDED:
-            field_definition_dict = custom_definition_dict
+            field_definition_dict = {
+                **field_definition_dict,
+                **custom_definition_dict
+            }
         if custom_populate != NOT_PROVIDED:
-            field_definition_dict["__meta__custom_populate"] = custom_populate
+            field_definition_dict["meta__custom_populate"] = custom_populate
 
         return field_definition_dict
 
@@ -870,7 +847,7 @@ class PopulateModel(BasePopulate):
     def __getFieldNameList(self) -> list[str]:
         return [
             field.name for field in self.model._meta.get_fields()
-            if field.type not in [ManyToOneRel, ManyToManyRel, OneToOneRel]
+            if type(field) not in [ManyToOneRel, ManyToManyRel, OneToOneRel]
         ]
 
     def __checkValidationForModel(self):
@@ -878,11 +855,23 @@ class PopulateModel(BasePopulate):
             self.model_obj.full_clean()
             return []
         except ValidationError as e:
-            return [
-                key for key, value in e.error_dict.items()
-                if len(value) != 1
-                or value[0].message != 'This field cannot be blank.'
-            ]
+            error_field_name_list = []
+            for key, value in e.error_dict.items():
+                if len(value) == 1\
+                and value[0].message == 'This field cannot be blank.':
+                    continue
+
+                if key == '__all__':
+                    for constraint in self.model._meta.constraints:
+                        if isinstance(constraint, models.UniqueConstraint):
+                            error_field_name_list += constraint.fields
+                        else:
+                            # TODO: adjust error msg
+                            raise TypeError("Constraint is not supported yet!")
+                else:
+                    error_field_name_list.append(key)
+
+            return error_field_name_list
         except Exception as e:
             raise e
 
@@ -932,50 +921,94 @@ class PopulateManager(BasePopulate):
     def __init__(
         self,
         manager: GeneralManager,
-        __meta__chance_for_default: float = 0.25,
-        __meta__max_data_creation_attempts: int = 10,
-        __meta__max_history_points: int = 3,
-        __meta__chance_for_deactivation: float = 0.5,
-        __meta__max_data_extension_points:int = 10,
+        meta__chance_for_default: float = 0.25,
+        meta__max_data_creation_attempts: int = 10,
+        meta__max_history_points: int = 3,
+        meta__chance_for_deactivation: float = 0.5,
+        meta__max_data_extension_points:int = 10,
         **kwargs
     ) -> None:
-        # TODO: check attributes
-        self.manager = manager
+        # self._checkType(
+        #     manager,
+        #     GeneralManager,
+        #     "manager"
+        # )
+        self._checkType(
+            meta__max_history_points,
+            int,
+            "meta__max_history_points"
+        )
+        self._checkPercentageDefinition(
+            meta__chance_for_deactivation,
+            "meta__chance_for_deactivation"
+        )
+        self._checkType(
+            meta__max_data_extension_points,
+            int,
+            "meta__max_data_extension_points"
+        )
 
-        self.chance_for_default         = __meta__chance_for_default
-        self.max_data_creation_attempts = __meta__max_data_creation_attempts
-        self.max_history_points         = __meta__max_history_points
-        self.chance_for_deactivation    = __meta__chance_for_deactivation
+        self.__manager = manager
+
+        self.__chance_for_default         = meta__chance_for_default
+        self.__max_data_creation_attempts = meta__max_data_creation_attempts
+        self.__max_history_points         = meta__max_history_points
+        self.__chance_for_deactivation    = meta__chance_for_deactivation
         # NOTE: If it is necessary to specifically control the maximum data 
         # extension entries per table, an implementation must be found for this.
-        self.max_data_extension_points  = __meta__max_data_extension_points
+        self.__max_data_extension_points  = meta__max_data_extension_points
 
-        self._createCustomAttrs(
-            self.__createAllowedMetaAttributeList(),
+        self._createCustomAndMetaAttrs(
+            [
+                self._createMetaAttrName(model_obj.__name__) for model_obj in
+                [
+                    self.manager.group_model,
+                    self.manager.data_model,
+                    *self.manager.data_extension_model_list
+                ]
+            ],
             **kwargs
         )
 
-    def __createAllowedMetaAttributeList(self) -> list[str]:
-        return [
-            self._createMetaAttributeName(model_obj.__name__) for model_obj in
-            [
-                self.manager.group_model,
-                self.manager.data_model,
-                *self.manager.data_extension_list
-            ]
-        ]
+    @property
+    def manager(self) -> GeneralManager:
+        return self.__manager
 
-    @classmethod
+    @property
+    def chance_for_default(self) -> float:
+        return self.__chance_for_default
+
+    @property
+    def max_data_creation_attempts(self) -> int:
+        return self.__max_data_creation_attempts
+
+    @property
+    def max_history_points(self) -> int:
+        return self.__max_history_points
+
+    @property
+    def chance_for_deactivation(self) -> float:
+        return self.__chance_for_deactivation
+
+    @property
+    def max_data_extension_points(self) -> int:
+        return self.__max_data_extension_points
+
     def _populateModelDataWithMetaAttribute(
-        cls,
+        self,
         model: models.Model,
         custom_kwargs: dict = {}
     ) -> models.Model:
-        return cls._populateDataWithMetaAttribute(
-            PopulateModel,
+        return PopulateModel(
             model,
-            custom_kwargs
-        )
+            **{
+                "meta__chance_for_default": self.chance_for_default,
+                "meta__max_data_creation_attempts":
+                    self.max_data_creation_attempts,
+                **self._createCustomAttrDict(model),
+                **custom_kwargs
+            }
+        ).populate()
     
     @staticmethod
     def _createCustomKwargsWithForeignKeyRelation(
@@ -990,7 +1023,7 @@ class PopulateManager(BasePopulate):
         group_obj = self._populateModelDataWithMetaAttribute(
             self.manager.group_model
         )
-        random_history_point_count = BasePopulate.createRandomInteger(
+        random_history_point_count = self.createRandomInt(
             1,
             self.max_history_points
         )
@@ -1019,7 +1052,7 @@ class PopulateManager(BasePopulate):
                 )
 
             for data_extension_model in self.manager.data_extension_model_list:
-                random_data_extension_count = BasePopulate.createRandomInteger(
+                random_data_extension_count = self.createRandomInt(
                     1,
                     self.max_data_extension_points
                 )
@@ -1029,33 +1062,4 @@ class PopulateManager(BasePopulate):
                         data_extension_kwargs
                     )
 
-        # TODO: return manager obj!
-
-
-    # def populateData(self, min_data: int, max_data: int):
-    #     pass
-
-
-################################################################################
-##### test section #############################################################
-################################################################################
-if __name__ == '__main__':
-    from backend.models import AssetItem, AssetItemGroup
-
-    # new_model = PopulateModel(AssetItemGroup).populate()
-    new_model = PopulateModel(AssetItem).populate()
-
-    print("new_model: ", new_model)
-
-    # test_pop = PopulateField(AssetItem._meta.get_field("max_width")).populate()
-    # print("test_pop: ", test_pop)
-# PopulateField(AssetItem._meta.get_field("max_width"), custom_populate=lambda: 10).populate()
-
-# new_model = PopulateModel(
-#     AssetItem,
-#     max_width: Any | Callable | kwargs,
-# )
-
-# -> Any: Fixer Wert der dem Typen sowie den Rahmenbedingungen des Feldes entsprechen muss.
-# -> Callable: Funktion die einen Wert zurückgibt der dem Typen sowie den Rahmenbedingungen des Feldes entsprechen muss.
-# -> kwargs: Die der PopulateField klasse übergeben werden. (ausgeschlossen ist field)
+        return self.manager(group_obj.id)
