@@ -12,7 +12,12 @@ class ProjectUserGroup(GroupTable):
     project_group = models.ForeignKey('ProjectGroup', on_delete=models.DO_NOTHING)
 
     class Meta:
-        unique_together = ('user', 'project_group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'project_group'],
+                name='unique_project_user_group'
+            )
+        ]
 
     def __str__(self):
         return f"{self.user} - {self.project_group}"

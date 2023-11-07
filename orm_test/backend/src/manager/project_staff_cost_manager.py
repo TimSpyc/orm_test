@@ -13,7 +13,17 @@ class ProjectStaffCostGroup(GroupTable):
     work_date = models.DateField()
 
     class Meta:
-       unique_together = ('project_group','user','project_staff_cost_task','work_date')
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'project_group',
+                    'user',
+                    'project_staff_cost_task',
+                    'work_date'
+                ],
+                name='unique_project_staff_cost_group'
+            )
+        ]
 
     def __str__(self):
         return f'Project_staff_cost_group {self.id}'
@@ -50,4 +60,4 @@ class ProjectStaffCostManager(GeneralManager):
     """
     group_model = ProjectStaffCostGroup
     data_model = ProjectStaffCost
-    data_extension_models = []
+    data_extension_model_list = []

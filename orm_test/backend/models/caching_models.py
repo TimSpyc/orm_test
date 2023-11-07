@@ -15,7 +15,12 @@ class CacheManager(models.Model):
     data = models.BinaryField()
 
     class Meta:
-        unique_together = ('manager_name', 'group_id', 'date')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['manager_name', 'group_id', 'date'],
+                name='unique_cache_manager'
+            )
+        ]
 
     @classmethod
     def getCacheData(
@@ -118,12 +123,18 @@ class CacheIntermediate(models.Model):
     data = models.BinaryField()
 
     class Meta:
-        unique_together = (
-            'intermediate_name',
-            'identification',
-            'start_date',
-            'end_date'
-        )
+        # TODO: Adjust the unique constraint name?
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'intermediate_name',
+                    'identification',
+                    'start_date',
+                    'end_date'
+                ],
+                name='unique_cache_intermediate'
+            )
+        ]
 
     @classmethod
     def getCacheData(

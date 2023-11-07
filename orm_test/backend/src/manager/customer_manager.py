@@ -10,7 +10,12 @@ class CustomerGroup(GroupTable):
         return f"{self.company_name} ({self.group_name})"
     
     class meta:
-        unique_together = ('company_name', 'group_name')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['company_name', 'group_name'],
+                name='unique_customer_group'
+            )
+        ]
 
     @property
     def manager(self):

@@ -7,7 +7,12 @@ class MaterialAlloyTreatmentGroup(GroupTable):
     duration = models.FloatField()
 
     class meta:
-        unique_together = ('temperature', 'duration')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['temperature', 'duration'],
+                name='unique_material_alloy_treatment_group'
+            )
+        ]
 
     @property
     def manager(self):

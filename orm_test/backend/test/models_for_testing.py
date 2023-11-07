@@ -71,7 +71,12 @@ class TestProjectGroup2(TestGroupTable):
         return f'{self.id}'
 
     class Meta:
-        unique_together = ('unique1', 'unique2')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['unique1', 'unique2'],
+                name='unique_test_project_group2'
+            )
+        ]
         app_label = 'backend'
 
 class TestProject3(TestDataTable):
@@ -85,7 +90,12 @@ class TestProject3(TestDataTable):
 
 
     class Meta:
-        unique_together = ('project_number', 'ap_no')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project_number', 'ap_no'],
+                name='unique_test_project3'
+            )
+        ]
         app_label = 'backend'           
 
     def __str__(self):
@@ -103,7 +113,12 @@ class TestProject(TestDataTable):
     active = models.BooleanField(default = True)
 
     class Meta:
-        unique_together = ('project_number', 'test_project_group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project_number', 'test_project_group'],
+                name='unique_test_project'
+            )
+        ]
         app_label = 'backend'           
 
     def __str__(self):
@@ -119,7 +134,12 @@ class TestProject2(TestDataTable):
     active = models.BooleanField(default = True)
 
     class Meta:
-        unique_together = ('project_number', 'ap_no')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project_number', 'ap_no'],
+                name='unique_test_project2'
+            )
+        ]
         app_label = 'backend'           
 
     def __str__(self):
@@ -186,7 +206,12 @@ class TestProjectUserGroup2(TestGroupTable):
     def __str__(self):
       return f'{self.id}'
     class Meta:
-        unique_together = ('unique1ProjectUserGroup', 'unique1ProjectUserGroup')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['unique1ProjectUserGroup', 'unique2ProjectUserGroup'],
+                name='unique_test_project_user_group2'
+            )
+        ]
         app_label = 'backend'
 
 class TestProjectUser2(models.Model):

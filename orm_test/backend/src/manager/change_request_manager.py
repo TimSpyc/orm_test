@@ -18,9 +18,12 @@ class ChangeRequestGroup(GroupTable):
         return ChangeRequestManager
     
     class Meta:
-        unique_together = (
-            'project_group', 'change_request_number'
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project_group', 'change_request_number'],
+                name='unique_change_request_group'
+            )
+        ]
 
     def __str__(self):
         return f'ChangeRequest Group with id {self.id}'

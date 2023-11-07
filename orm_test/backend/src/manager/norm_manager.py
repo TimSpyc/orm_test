@@ -3,10 +3,7 @@ from backend.models import GroupTable, DataTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class NormGroup(GroupTable):
-    number = models.CharField(max_length=255)
-
-    class meta:
-        unique_together = ('number')
+    number = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return f"NormGroup {self.number}"
@@ -34,6 +31,6 @@ class Norm(DataTable):
         return f"Norm {self.norm_group}-{self.description}"
     
 class NormManager(GeneralManager):
-    GroupTable = NormGroup
-    DataTable = Norm
-    DataExtensionTableList = []
+    group_model = NormGroup
+    data_model = Norm
+    data_extension_model_list = []

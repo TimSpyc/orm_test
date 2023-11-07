@@ -10,9 +10,6 @@ class PatentGroup(GroupTable):
 
     patent_number = models.CharField(max_length=100, unique=True)
 
-    class meta:
-        unique_together = ('patent_number')
-
     @property
     def manager(self):
         return PatentManager
@@ -46,7 +43,12 @@ class PatentClaim(DataExtensionTable):
         return self.patent
     
     class Meta:
-        unique_together = ['patent', 'claim_number']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['patent', 'claim_number'],
+                name='unique_patent_claim'
+            )
+        ]
 
 
 class PatentManager(GeneralManager):

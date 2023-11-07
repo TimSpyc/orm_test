@@ -18,7 +18,7 @@ class LogAutomatedScriptGroup(GroupTable):
         return LogAutomatedScriptManager
 
 class LogAutomatedScript(DataTable):
-    script_group = models.ForeignKey('LogAutomatedScriptGroup', on_delete=models.DO_NOTHING)
+    log_automated_script_group = models.ForeignKey('LogAutomatedScriptGroup', on_delete=models.DO_NOTHING)
     notification = models.TextField()
     success = models.BooleanField()
 
@@ -27,7 +27,7 @@ class LogAutomatedScript(DataTable):
     
     @property
     def group_object(self):
-        return self.script_group
+        return self.log_automated_script_group
 
 
 class LogAutomatedScriptManager(GeneralManager):

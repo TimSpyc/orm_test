@@ -22,7 +22,12 @@ class PermissionUserGroup(GroupTable):
         return PermissionUserManager
 
     class Meta:
-        unique_together = ('asset_item_site_connection_group', 'user')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['asset_item_site_connection_group', 'user'],
+                name='unique_permission_user_group'
+            )
+        ]
 
     def __str__(self):
         return f'Permission User Group with id {self.id}'

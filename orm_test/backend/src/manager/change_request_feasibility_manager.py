@@ -21,9 +21,12 @@ class ChangeRequestFeasibilityGroup(GroupTable):
         return ChangeRequestFeasibilityManager
     
     class Meta:
-        unique_together = (
-            'change_request_group', 'project_user_role'
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=['change_request_group', 'project_user_role'],
+                name='unique_change_request_feasibility_group'
+            )
+        ]
 
     def __str__(self):
         return f'ChangeRequestFeasibility Group with id {self.id}'
