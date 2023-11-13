@@ -1,12 +1,17 @@
 from django.db import models
 from backend.models import GroupTable, DataTable, ExternalDataTable
 from backend.src.auxiliary.manager import GeneralManager, ExternalDataManager
+from backend.models.validators.regex_validators import RegexValidator
 
 class ProjectNumberGroup(GroupTable):
     """
     A Django model representing a project number group.
     """
-    project_number = models.CharField(max_length=255, unique=True, null=True)
+    project_number = models.CharField(max_length=255, unique=True)
+
+    validator_list = [
+        RegexValidator("project_number", r"AP\d{5}"),
+    ]
 
     def __str__(self):
         return f'Project_number_group {self.id}'
