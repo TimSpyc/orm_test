@@ -82,7 +82,7 @@ def createTempAttrs(*attr_name_list: list[str]) -> Any:
 class BasePopulate:
     FAKE = Faker()
 
-    # TODO: Implement following types dict, list, json, ...
+    # TODO: Implement following types dict, list, ...
     SUPPORTED_TYPE_LIST = [
         int,
         float,
@@ -277,17 +277,14 @@ class BasePopulate:
     @classmethod
     def createRandomDict(
         cls,
-        max_elements: int = 10,
         min_elements: int = 1,
-        # max_depth: int = 3,
-        # custom_structure = None
+        max_elements: int = 10,
     ) -> dict:
-        # TODO: Do we need the possibility to define a custom structure?
         random_data_dict = {}
 
-        for i in range(cls.createRandomInt(max_elements, min_elements)):
-            _, populateValue = cls.randomChoice(cls.possible_populate_methods)
-            random_data_dict[f'key_{i}'] = populateValue()
+        for i in range(cls.createRandomInt(min_elements, max_elements)):
+            type_to_populate = cls.randomChoice(cls.SUPPORTED_TYPE_LIST)
+            random_data_dict[f'key_{i}'] = cls(type_to_populate).populate()
 
         return random_data_dict
     
@@ -399,7 +396,7 @@ class BasePopulate:
     def populateMany(
         self,
         min_data: int = 1,
-        max_data: int = 10
+        max_data: int = 100
     ) -> list:
         # TODO: check attributes!
         created_obj_list = []
@@ -445,7 +442,7 @@ class PopulateField(BasePopulate):
         TextField,
         EmailField,
         BooleanField,
-        # JSONField,
+        JSONField,
         ForeignKey,
         # OneToOneField,
         ManyToManyField
@@ -480,6 +477,22 @@ class PopulateField(BasePopulate):
     @property
     def chance_for_default(self) -> float:
         return self.__chance_for_default
+
+    @classmethod
+    def createRandomDict(
+        cls,
+        min_elements: int = 1,
+        max_elements: int = 10,
+    ) -> dict:
+        random_data_dict = {}
+
+        for i in range(cls.createRandomInt(min_elements, max_elements)):
+            type_to_populate = cls.randomChoice(super().SUPPORTED_TYPE_LIST)
+            random_data_dict[f'key_{i}'] = BasePopulate(
+                type_to_populate
+            ).populate()
+
+        return random_data_dict
 
     # ---- Handle data population ----------------------------------------------
     def populate(self) -> Any:
@@ -740,7 +753,7 @@ class PopulateModel(BasePopulate):
         self,
         model: models.Model,
         meta__chance_for_default: float = 0.25,
-        meta__max_data_creation_attempts: int = 10,
+        meta__max_data_creation_attempts: int = 25,
         **kwargs
     ) -> None:
         self._checkType(
@@ -922,7 +935,7 @@ class PopulateManager(BasePopulate):
         self,
         manager: GeneralManager,
         meta__chance_for_default: float = 0.25,
-        meta__max_data_creation_attempts: int = 10,
+        meta__max_data_creation_attempts: int = 25,
         meta__max_history_points: int = 3,
         meta__chance_for_deactivation: float = 0.5,
         meta__max_data_extension_points:int = 10,
