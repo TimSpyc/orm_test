@@ -169,6 +169,13 @@ class GeneralManager:
             deactivate (object method): Deactivate an existing object.
                 Create a new data object with the same group data and active set
                 to False. Every other attribute will be set to the latest value.
+            #TODO: implement validation methods:
+            validate_update (object method): Validate if an object can be updated
+                with the given data. Returns True if the object can be updated
+                and False otherwise.
+            validate_create (classmethod): Validate if an object can be created
+                with the given data. Returns True if the object can be created
+                and False otherwise.
         
         Simple Example:
             class ExampleManager(GeneralManager):
@@ -2390,3 +2397,9 @@ class GeneralManager:
             return data_obj.date
         except ObjectDoesNotExist:
             return None
+
+    def validate_update(self):
+        return True
+    
+    def validate_create(self):
+        return True

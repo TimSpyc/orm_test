@@ -131,6 +131,7 @@ class GeneralInfo:
             page_size: int to select the page size (default: all results)
             filter: dict to filter on db level (e.g. {"key": "value"})
             group_by: list of keys to group by (e.g. ["key1", "key2"])
+            validate_only: bool to only validate the request (default: False)
 
         Attributes:
             base_url: str => url to be used in urls.py (e.g. 'example')
@@ -235,25 +236,23 @@ class GeneralInfo:
     def put(self) -> None:
         self.__checkConfiguration()
 
-        # manager_obj = self.manager(
-        #     self.identifier['group_id'],
-        #     self.request_info_dict['request_data']['creation_date']
-        # )
-        
-        # manager_obj.update(
-        #         creator_id = self.request_info_dict["request_user_id"],
-        #         **self.request_info_dict['request_data']
-        #     )
-
-
         manager_obj = self.manager(
             self.identifier['group_id'],
+            self.request_info_dict['request_data']['creation_date']
         )
         
-        manager_obj.update(
-                creator_id = 1,
+        if self.validate_only:
+            return manager_obj.validate_update(
+                creator_id = self.request_info_dict["request_user_id"],
                 **self.request_info_dict['request_data']
             )
+
+        manager_obj.update(
+                creator_id = self.request_info_dict["request_user_id"],
+                **self.request_info_dict['request_data']
+            )
+
+        return manager_obj.group_id
 
     def delete(self) -> None:
         self.__checkConfiguration()
@@ -282,13 +281,14 @@ class GeneralInfo:
     def post(self) -> int:
         self.__checkConfiguration()
 
-        #manager_obj = self.manager.create(
-        #    creator_id = self.request_info_dict["request_user_id"],
-        #    **self.request_info_dict['request_data']
-        #)
-
+        if self.validate_only:
+            return self.manager.validate_create(
+                creator_id = self.request_info_dict["request_user_id"],
+                **self.request_info_dict['request_data']
+            )
+        
         manager_obj = self.manager.create(
-            creator_id = 1,
+            creator_id = self.request_info_dict["request_user_id"],
             **self.request_info_dict['request_data']
         )
 
@@ -342,7 +342,23 @@ class GeneralInfo:
         result_list_dict = self.__search(result_list_dict)
         result_list_dict = self.__groupBy(result_list_dict)
         result_list_dict = self.__sort(result_list_dict)
-        return self.__paginate(result_list_dict)
+        result_list_dict, page_info_dict = self.__paginate(result_list_dict)
+        return self.__buildMetaInformation(result_list_dict, page_info_dict)
+
+    def __buildMetaInformation(
+        result_data: list[dict] | dict,
+        page_info_dict: dict | None
+    ) -> dict:
+        return {
+            "data": result_data,
+            "meta": {
+                "page": page_info_dict,
+                "permission": {
+                    "view": True,
+                    "edit": True,
+                }, #TODO: implement permission check
+            }
+        }
 
     def __groupBy(self, result_list_dict: list[dict]) -> list[dict]:
         group_by_list = self.request_info_dict['query_params'].get(
@@ -419,7 +435,9 @@ class GeneralInfo:
         if page_size is None:
             return {
                 "data": result_list_dict,
-                "page":{'current': 1, 'max': 1}
+                "meta": {
+                    "page":{'current': 1, 'max': 1}
+                }
             }
         
         start_index = (page - 1) * page_size
@@ -430,13 +448,16 @@ class GeneralInfo:
 
         return ({
             "data": result_list_dict[start_index:end_index], 
-            "page": {'current': page, 'max': page_count}
+            "meta": {
+                "page": {'current': page, 'max': page_count}
+            }
         })
 
     def __handleGetDetail(self) -> dict:
         manager_obj = self.getDetail()
         result_dict = self.__serializeData(manager_obj)
-        return self.__reduceGetResult(result_dict)
+        result_dict = self.__reduceGetResult(result_dict)
+        return self.__buildMetaInformation(result_dict, None)
 
     def __reduceGetResult(
         self,
@@ -596,13 +617,14 @@ class GeneralInfo:
         query_params = self.queryParamsIntoDict(self.request)
         request_data = self.request.data
         request_user_id = self.request.user.id
+        self.validate_only = query_params.pop('validate_only', False)
 
         return {
             "query_params": query_params,
             "request_data": request_data,
-            "request_user_id": request_user_id
+            "request_user_id": request_user_id,
         }
-    
+
     @classmethod
     def __checkGeneralInfoIsProperlyConfigured(cls):
         if not (
