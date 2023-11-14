@@ -262,7 +262,6 @@ class TestGetColumnNameList(TestCase):
         self.assertEqual(result,column_list)      
         
 class TestFilter(TestCase):
-    
     def setUp(self):
         self.test_project_group = TestProjectGroup.objects.create()
         self.user = User.objects.create()
@@ -279,7 +278,6 @@ class TestFilter(TestCase):
     def test_filter_with_search_date(self):
         search_date = date(2023, 5, 16)
         result = self.manager.filter(search_date=search_date)
-
         expected_result = [
             TestProjectManager(group_id= self.test_project_group.id, search_date= search_date)
         ]
@@ -965,6 +963,7 @@ class TestCreate(TestCase):
             self.assertEqual(group_entries,2)
             self.assertEqual(data_entries,2)
 
+
             created_data = TestProject3.objects.latest('id')
             self.assertEqual(created_data.name, 'TestProjectNew')
             self.assertEqual(created_data.project_number, '123456New')
@@ -1124,7 +1123,6 @@ class TestGetRefAndTableType(TestCase):
     def test_many_to_one_field(self):
         pass
 
-
 class TestCheckIfColumnReferencesDataExtensionModel(TestCase):
   
     def setUp(self):   
@@ -1151,7 +1149,6 @@ class TestCheckIfColumnReferencesDataExtensionModel(TestCase):
         result = GeneralManager._GeneralManager__checkIfColumnReferencesDataExtensionModel('project_id_list', self.possible_models)
         self.assertEqual(result, ('project_id_list', False))
 
-
 class TestErrorForInsufficientUploadData(TestCase):
     def setUp(self):
         GeneralManager.group_model = TestProjectGroup
@@ -1168,7 +1165,6 @@ class TestErrorForInsufficientUploadData(TestCase):
     def test_error_with_error(self):
         with self.assertRaises(ValueError):
             self.manager._GeneralManager__errorForInsufficientUploadData(self.model_type, self.is_data_uploadable_without_error)
-
 
 class TestIsDataTableDataUploadable(TestCase):
     def setUp(self):
@@ -1216,7 +1212,6 @@ class TestIsDataTableDataUploadable(TestCase):
         with self.assertRaises(ValueError):
              self.manager._GeneralManager__isDataTableDataUploadable(data_data_dict)
 
-
 class TestIsGroupTableDataUploadable(TestCase):
     def setUp(self):
         GeneralManager.group_model = TestProjectGroup2
@@ -1250,7 +1245,6 @@ class TestIsGroupTableDataUploadable(TestCase):
         }
         with self.assertRaises(ValueError):
             self.manager._GeneralManager__isGroupTableDataUploadable(group_data_dict)
-
 
 class TestGetEndDate(TestCase):
     def setUp(self):
@@ -1287,7 +1281,6 @@ class TestGetEndDate(TestCase):
         )
         # Check if __getEndDate returns None when there is no newer entry
         self.assertIsNone(self.manager._GeneralManager__getEndDate())
-
 
 class TestGetOrCreateGroupModel(TestCase):
     def setUp(self):
@@ -1335,7 +1328,6 @@ class TestGetOrCreateGroupModel(TestCase):
         self.assertEqual(group_obj.id, existing_group.id)
         self.assertEqual(group_obj.unique1, 'u1')
         self.assertEqual(group_obj.unique2, 'u2')
-
 
 class TestGetDataExtensionData(TestCase):
     def setUp(self):
@@ -1873,10 +1865,6 @@ class TestCreateSearchKeys(TestCase):
 
 
 
-
-
-###### NEW ######################
-
 class TestGetDataSourceAndColumnBaseName(TestCase):
 
     def setUp(self):
@@ -2092,7 +2080,6 @@ class TestCreateDirectAttribute(TestCase):
             },])
 
 
-
 class TestCreateProperty(TestCase):
     def setUp(self):
         self.manager = GeneralManager.__new__(GeneralManager)
@@ -2104,7 +2091,6 @@ class TestCreateProperty(TestCase):
 
         self.assertTrue(hasattr(self.manager, 'test_property'))
         self.assertEqual(self.manager.test_property, "Test Django")
-
 
 
 class TestGetManagerFromGroupModel(TestCase):
