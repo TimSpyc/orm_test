@@ -875,4 +875,74 @@ class TestGetBillOfMaterialDetails(TestCase):
                    ]
         self.assertEqual(result, expected_result)
 
- 
+
+class  TestGetBillOfMaterialStructure(TestCase):
+    def setUp(self):
+        self.project_group = ProjectGroup.objects.create()
+        self.derivative_constellium_group = DerivativeConstelliumGroup.objects.create(
+            project_group=self.project_group)
+        self.bill_of_material_group = BillOfMaterialGroup.objects.create(
+            derivative_constellium_group=self.derivative_constellium_group
+        )
+        self.manager = BillOfMaterialManager.__new__(BillOfMaterialManager)
+        self.manager.group_id = self.bill_of_material_group.id
+        
+
+    def test_get_bill_of_material_structure_with_bom_type_pd(self):
+        self.manager.bill_of_material_structure_dict_list = [
+        {'part_group': {'id': 1},'left_value_product_development': 1,"right_value_product_development" : 4,'cumulated_quantity': 100, 'left': 1, 'right':4,'group_id': 4},
+        {'part_group': {'id': 2},'left_value_product_development': 2,"right_value_product_development" : 3,'cumulated_quantity': 20, 'left': 2, 'right':3,'group_id': 3},
+        {'part_group': {'id': 3},'left_value_product_development': 5,"right_value_product_development" : 8,'cumulated_quantity': 30, 'left': 5, 'right':8,'group_id': 2},
+        {'part_group': {'id': 4},'left_value_product_development': 6,"right_value_product_development" : 7,'cumulated_quantity': 40, 'left': 6, 'right':7,'group_id': 1},
+     ] 
+        result = self.manager.getBillOfMaterialStructure(bom_type='pd', head_part_group_id= 1)
+        expected_result = [{'pos': '1', 'group_id': 4}, {'pos': '1.1', 'group_id': 3}]
+        self.assertEqual(result,expected_result)
+
+    def test_get_bill_of_material_structure_with_bom_type_pd_with_other_part_group(self):
+        self.manager.bill_of_material_structure_dict_list = [
+        {'part_group': {'id': 1},'left_value_product_development': 1,"right_value_product_development" : 4,'cumulated_quantity': 100, 'left': 1, 'right':4,'group_id': 4},
+        {'part_group': {'id': 2},'left_value_product_development': 2,"right_value_product_development" : 3,'cumulated_quantity': 20, 'left': 2, 'right':3,'group_id': 3},
+        {'part_group': {'id': 3},'left_value_product_development': 5,"right_value_product_development" : 8,'cumulated_quantity': 30, 'left': 5, 'right':8,'group_id': 2},
+        {'part_group': {'id': 4},'left_value_product_development': 6,"right_value_product_development" : 7,'cumulated_quantity': 40, 'left': 6, 'right':7,'group_id': 1},
+     ] 
+        result = self.manager.getBillOfMaterialStructure(bom_type='pd', head_part_group_id= 3)
+        expected_result = [{'pos': '1', 'group_id': 2}, {'pos': '1.1', 'group_id': 1}]
+        self.assertEqual(result,expected_result)
+
+    def test_get_bill_of_material_structure_with_bom_type_ai(self):
+        self.manager.bill_of_material_structure_dict_list = [
+        {'part_group': {'id': 1},'left_value_process_development': 1,"right_value_process_development" : 4,'cumulated_quantity': 100, 'left': 1, 'right':4,'group_id': 4},
+        {'part_group': {'id': 2},'left_value_process_development': 2,"right_value_process_development" : 3,'cumulated_quantity': 20, 'left': 2, 'right':3,'group_id': 3},
+        {'part_group': {'id': 3},'left_value_process_development': 3,"right_value_process_development" : 10,'cumulated_quantity': 30, 'left': 5, 'right':8,'group_id': 2},
+        {'part_group': {'id': 4},'left_value_process_development': 4,"right_value_process_development" : 9,'cumulated_quantity': 40, 'left': 6, 'right':7,'group_id': 1},
+     ]
+        result = self.manager.getBillOfMaterialStructure(bom_type='ai', head_part_group_id= 1)
+        expected_result = [{'pos': '1', 'group_id': 4}, {'pos': '1.1', 'group_id': 3}]
+        self.assertEqual(result,expected_result)
+
+
+        
+        
+    def test_get_bill_of_material_structure_with_bom_type_lg(self):
+        self.manager.bill_of_material_structure_dict_list = [
+        {'part_group': {'id': 1},'left_value_logistics': 1,"right_value_logistics" : 4,'cumulated_quantity': 100, 'left': 1, 'right':4,'group_id': 4},
+        {'part_group': {'id': 2},'left_value_logistics': 2,"right_value_logistics" : 3,'cumulated_quantity': 20, 'left': 2, 'right':3,'group_id': 3},
+        {'part_group': {'id': 3},'left_value_logistics': 5,"right_value_logistics" : 10,'cumulated_quantity': 30, 'left': 5, 'right':10,'group_id': 2},
+        {'part_group': {'id': 4},'left_value_logistics': 6,"right_value_logistics" : 9,'cumulated_quantity': 40, 'left': 6, 'right':9,'group_id': 1},
+        {'part_group': {'id': 4},'left_value_logistics': 7,"right_value_logistics" : 8,'cumulated_quantity': 40, 'left': 7, 'right':8,'group_id': 10},
+     ]
+        result = self.manager.getBillOfMaterialStructure(bom_type='lg', head_part_group_id= 1)
+        expected_result = [{'pos': '1', 'group_id': 4}, {'pos': '1.1', 'group_id': 3}]
+        self.assertEqual(result,expected_result)
+
+    def test_get_bill_of_material_structure_with_bom_type_lg_invalid_left_right_keys(self):
+        self.manager.bill_of_material_structure_dict_list = [
+        {'part_group': {'id': 1},'left_value_logistics': 1,"right_value_logistics" : 4,'cumulated_quantity': 100, 'left': 1, 'right':4,'group_id': 4},
+        {'part_group': {'id': 2},'left_value_logistics': 2,"right_value_logistics" : 3,'cumulated_quantity': 20, 'left': 2, 'right':3,'group_id': 3},
+        {'part_group': {'id': 3},'left_value_logistics': 5,"right_value_logistics" : 10,'cumulated_quantity': 30, 'left': 5, 'right':9,'group_id': 2},
+        {'part_group': {'id': 4},'left_value_logistics': 7,"right_value_logistics" : 8,'cumulated_quantity': 40, 'left': 6, 'right':7,'group_id': 10},
+     ]
+        with self.assertRaises(ValueError): 
+            result = self.manager.getBillOfMaterialStructure(bom_type='lg', head_part_group_id= 3)
+
