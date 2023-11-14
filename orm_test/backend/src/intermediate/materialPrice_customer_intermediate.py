@@ -1,5 +1,5 @@
 from backend.src.manager.customer_manager import CustomerManager
-from backend.src.manager.stock_exchange_manager import StockExchangeDataManager
+from backend.src.manager.stock_exchange_data_manager import StockExchangeDataManager
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta

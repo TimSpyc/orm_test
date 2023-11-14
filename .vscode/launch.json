@@ -14,6 +14,21 @@
             ],
             "django": true,
             "justMyCode": true
+        },
+        {
+            "name": "Django Testcase Debugger",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/orm_test/manage.py",
+            "args": [
+                "test",
+                "backend.test.test_volume_customer_derivative_constellium_intermediate",
+                "--noinput",
+                "--verbosity=2"
+            ],
+            "django": true,
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

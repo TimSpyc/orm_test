@@ -1,5 +1,9 @@
 {
-  "cSpell.words": ["Constellium"],
+  "cSpell.words": [
+    "Constellium",
+    "Createability",
+    "Unconfigured"
+  ],
   "editor.rulers": [80],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
@@ -12,6 +16,4 @@
     "-p",
     "test_*.py"
   ],
-  "python.testing.pytestEnabled": false,
-  "python.testing.unittestEnabled": true
 }

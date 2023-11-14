@@ -26,11 +26,16 @@ class AssetLayoutGroup(GroupTable):
         return AssetLayoutManager
 
     class Meta:
-        unique_together = (
-            'asset_item_site_connection_group', 
-            'user', 
-            'grid_size'
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'asset_item_site_connection_group',
+                    'user',
+                    'grid_size'
+                ],
+                name='unique_asset_layout_group'
+            )
+        ]
 
     def __str__(self):
         return f'Asset Layout Group with id {self.id}'

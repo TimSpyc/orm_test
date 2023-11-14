@@ -17,7 +17,13 @@ class DatabaseCache(models.Model):
     data = models.BinaryField()
 
     class Meta:
-        unique_together = ('id_string', 'start_date', 'end_date')
+        # TODO: Adjust the unique constraint name?
+        constraints = [
+            models.UniqueConstraint(
+                fields=['id_string', 'start_date', 'end_date'],
+                name='unique_database_cache'
+            )
+        ]
 
     @classmethod
     def getCacheData(

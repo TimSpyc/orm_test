@@ -483,11 +483,16 @@ def createPartReleaseStatus():
 def createProjectStatus():
     project_status_list = [
         'nomination',
-        'series',
-        'acquisition',
         'pre development',
         'internal',
         'lost',
+        'rfi',
+        'rfq',
+        'production line release',
+        'tool release',
+        'sop',
+        'eop',
+        'spare parts',
     ]
 
     for project_status in project_status_list:
@@ -1208,6 +1213,18 @@ def createPatentTags():
         )
         patent_tag.save()
 
+def createPatentStatus():
+    patent_status_dict_list = [
+        {'name': 'released'},
+        {'name': 'expired'},
+    ]
+
+    for patent_status_dict in patent_status_dict_list:
+        patent_status = PatentStatus(
+            **patent_status_dict
+        )
+        patent_status.save()
+
 def createAbsenceType():
     absence_type_list = [
         'home office',
@@ -1265,6 +1282,46 @@ def createTimeCorrectionType():
         )
         time_correction_type.save()
 
+def createProjectPhaseType():
+    project_phase_type_dict_list = [
+        {
+        'name': 'RFI',
+        'description': 'Represents the point in time, when a project was assigned to Constellium. Financial as well as technical issues are agreed on both sides.',
+        },
+        {
+        'name': 'RFQ',
+        'description': 'start of production.',
+        },
+        {
+        'name': 'Nomination',
+        'description': 'released data for tooling .',
+        },
+        {
+        'name': 'Production Line Release',
+        'description': 'released data for production lines.',
+        },
+        {
+        'name': 'Tool Release',
+        'description': None,
+        },
+        {
+        'name': 'SOP',
+        'description': None,
+        },
+        {
+        'name': 'EOP',
+        'description': None,
+        },
+        {
+        'name': 'Spare Parts',
+        'description': None,
+        },
+    ]
+    for project_phase_dict in project_phase_type_dict_list:
+        project_phase_type = ProjectPhaseType(
+            **project_phase_dict
+        )
+        project_phase_type.save()
 
 def fillReferenceTables():
     createCurrencies()
@@ -1295,7 +1352,8 @@ def fillReferenceTables():
     createTechnology()
     createSapAbbreviationDictionary()
     createPatentTags()
+    createPatentStatus()
     createAbsenceType()
     createTimeCorrectionType()
     createPermissionType()
-
+    createProjectPhaseType()

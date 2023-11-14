@@ -1,5 +1,5 @@
 from django.db import models
-from backend.models import GroupTable, DataTable, ReferenceTable, DataExtensionTable
+from backend.models import GroupTable, DataTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
 from datetime import datetime
 
@@ -33,11 +33,12 @@ class DerivativeConstellium(DataTable):
         'DerivativeType',
         on_delete=models.DO_NOTHING
     )
-    estimated_price = models.FloatField()
-    estimated_weight = models.FloatField()
+    estimated_price = models.FloatField(null=True)
+    estimated_weight = models.FloatField(null=True)
     prediction_accuracy = models.ForeignKey(
         'PredictionAccuracy',
-        on_delete=models.DO_NOTHING
+        on_delete=models.DO_NOTHING,
+        null=True
     )
 
     def __str__(self):
@@ -58,11 +59,19 @@ class DerivativeConstelliumDerivativeLmcConnection(DataExtensionTable):
         DerivativeConstellium,
         on_delete=models.DO_NOTHING
     )
-    derivative_lmc = models.ForeignKey(
+    derivative_lmc_group = models.ForeignKey(
         'DerivativeLmcGroup',
         on_delete=models.DO_NOTHING
     )
     take_rate = models.FloatField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['derivative_constellium', 'derivative_lmc_group'],
+                name='unique_derivative_constellium_derivative_lmc_connection'
+            )
+        ]
 
     @property
     def data_object(self):
@@ -76,4 +85,4 @@ class DerivativeConstelliumManager(GeneralManager):
 
     group_model = DerivativeConstelliumGroup
     data_model = DerivativeConstellium
-    data_extension_model_list = []
+    data_extension_model_list = [DerivativeConstelliumDerivativeLmcConnection]

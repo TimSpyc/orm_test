@@ -15,13 +15,22 @@ class PartSoldCustomerPriceGroup(GroupTable):
         return PartSoldCustomerPriceManager
     
     class Meta:
-        unique_together = ('part_sold_group', 'price_date')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['part_sold_group', 'price_date'],
+                name='unique_part_sold_customer_price_group'
+            )
+        ]
 
     def __str__(self):
         return f"PartSoldCustomerPriceGroup {self.part_sold_group} {self.price_date}"
     
 class PartSoldCustomerPrice(DataTable):
     part_sold_customer_price_group = models.ForeignKey(PartSoldCustomerPriceGroup, on_delete= models.DO_NOTHING)
+
+    @property
+    def group_object(self):
+        return self.part_sold_customer_price_group
 
 class PartSoldCustomerPriceComponent(DataExtensionTable):
     part_sold_customer_price = models.ForeignKey(PartSoldCustomerPrice, on_delete= models.DO_NOTHING)
@@ -36,4 +45,4 @@ class PartSoldCustomerPriceComponent(DataExtensionTable):
 class PartSoldCustomerPriceManager(GeneralManager):
     group_model = PartSoldCustomerPriceGroup
     data_model = PartSoldCustomerPrice
-    data_extension_models = [PartSoldCustomerPriceComponent]
+    data_extension_model_list = [PartSoldCustomerPriceComponent]

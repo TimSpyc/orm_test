@@ -7,5 +7,23 @@ class NotUpdatableError(Exception):
 class NotValidIdError(Exception):
     pass
 
+class NotValidConfigurationError(Exception):
+    pass
+
 class MissingAttributeError(Exception):
+    pass
+
+################################################################################
+##### populate exceptions ######################################################
+################################################################################
+class IncompatibleValidatorList(Exception):
+    pass
+
+class NotImplementedYet(Exception):
+    pass
+
+class NotConfigured(Exception):
+    pass
+
+class ResultContradictsConfiguration(Exception):
     pass

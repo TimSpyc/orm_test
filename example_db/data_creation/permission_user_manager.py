@@ -24,7 +24,10 @@ def createPermissionUserGroupDict(cls):
     }
 
 def createPermissionUserDataDict(cls):
-    return {"permission_type": cls.getRandomForeignKeyRelation(PermissionType)}
+    return {
+        "permission_type": cls.getRandomForeignKeyRelation(PermissionType),
+        "is_accepted": cls.getRandomBoolean(can_be_none=True)
+    }
 
 class PopulatePermissionUser(GeneralPopulate):
     group_definition = (PermissionUserGroup, createPermissionUserGroupDict)

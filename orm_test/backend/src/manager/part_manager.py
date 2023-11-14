@@ -7,7 +7,12 @@ class PartGroup(GroupTable):
     drawing_revision = models.IntegerField()
 
     class meta:
-        unique_together = ('drawing_no', 'drawing_rev')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['drawing_no', 'drawing_rev'],
+                name='unique_part_group'
+            )
+        ]
 
     @property
     def manager(self):

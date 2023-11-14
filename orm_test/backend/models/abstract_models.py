@@ -2,10 +2,12 @@ from django.db import models
 from django.utils import timezone
 from datetime import datetime
 
+from backend.models.base_model import BaseModel
+
 if __name__ == '__main__':
     from backend.src.auxiliary.manager import GeneralManager
 
-class GroupTable(models.Model):
+class GroupTable(BaseModel):
     """
     An abstract Django model for representing group tables. These tables
     are used to group data, so its possible to have a history of the data in
@@ -25,7 +27,7 @@ class GroupTable(models.Model):
     class Meta:
         abstract = True
 
-class ReferenceTable(models.Model):
+class ReferenceTable(BaseModel):
     """
     An abstract Django model for representing reference tables. These tables
     are meant to be used for reference data aka. data that is not expected to
@@ -36,7 +38,7 @@ class ReferenceTable(models.Model):
     class Meta:
         abstract = True
 
-class DataTable(models.Model):
+class DataTable(BaseModel):
     """
     An abstract Django model for representing data tables. These tables
     are meant to be used for data that is expected to change. With the connected
@@ -55,7 +57,7 @@ class DataTable(models.Model):
         abstract = True
 
 
-class DataExtensionTable(models.Model):
+class DataExtensionTable(BaseModel):
     """
     An abstract Django model for representing data extension tables. These tables
     are meant to be used for data that is expected to change on the same date as
@@ -71,7 +73,7 @@ class DataExtensionTable(models.Model):
         abstract = True
 
 
-class ExternalDataTable(models.Model):
+class ExternalDataTable(BaseModel):
     """
     An abstract Django model for representing external data tables. These tables
     are meant to be used for data that is not handlebar by the Group, Data and

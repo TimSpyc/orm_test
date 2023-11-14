@@ -7,4 +7,7 @@ def truncate_all_tables():
 
 def clear_cache():
     DatabaseCache.objects.all().delete()
-    cache.clear()
+    cache.clear()  
+    
+def truncate_table(model):
+    model.objects.all().delete()

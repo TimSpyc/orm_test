@@ -22,7 +22,12 @@ class PermissionMasterGroup(GroupTable):
         return PermissionMasterManager
 
     class Meta:
-        unique_together = ('asset_item_site_connection_group', 'user')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['asset_item_site_connection_group', 'user'],
+                name='unique_permission_master_group'
+            )
+        ]
 
     def __str__(self):
         return f'Permission Master Group with id {self.id}'
