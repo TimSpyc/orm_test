@@ -2064,9 +2064,11 @@ class GeneralManager:
 
     @classmethod
     def __errorForInsufficientUploadData(
-        cls, model_type: str, 
+        cls,
+        model_type: str,
+        model: models.Model, 
         is_data_uploadable: list
-        ):
+    ):
         """
         Raise a ValueError if there is insufficient data to upload 
         for the specified model.
@@ -2088,15 +2090,11 @@ class GeneralManager:
         """
         if model_type == 'data_model':
             name = 'data table data'
-            model = cls.data_model
-
         elif model_type == 'group_model':
             name = 'group table data'
-            model = cls.group_model
-        ## TODO: Guck dir das data extension model nochmal an
         elif model_type == 'data_extension_model': 
             name = 'data extension table data'
-            model = cls.data_extension_model_list
+        model = model
           
         raise ValueError(
             f''' 
@@ -2133,7 +2131,9 @@ class GeneralManager:
         if all(is_data_data_uploadable):
             return True
         cls.__errorForInsufficientUploadData(
-            'data_model', is_data_data_uploadable
+            'data_model',
+            cls.data_model,
+            is_data_data_uploadable
         )
 
     @classmethod
@@ -2158,7 +2158,9 @@ class GeneralManager:
         if all(is_group_data_uploadable):
             return True
         cls.__errorForInsufficientUploadData(
-            'group_model', is_group_data_uploadable
+            'group_model',
+            cls.group_model,
+            is_group_data_uploadable
         )
         return False
 
@@ -2237,7 +2239,9 @@ class GeneralManager:
         if all(is_data_extension_data_uploadable):
             return True
         cls.__errorForInsufficientUploadData(
-            'data_extension_model', is_data_extension_data_uploadable 
+            'data_extension_model',
+            data_extension_model,
+            is_data_extension_data_uploadable 
         )
 
     @classmethod
