@@ -16,23 +16,35 @@ class Command(BaseCommand):
         parser.add_argument(
             "--debug",
             action="store_true",
-            help="Only populate one object for every manager",
+            help="Only populate a small number of objects for every manager",
+        )
+        parser.add_argument(
+            "--truncate",
+            action="store_true",
+            help="Truncate tables and update references",
+        )
+        parser.add_argument(
+            "--update-references",
+            action="store_true",
+            help="Update references to newest version",
         )
 
     def handle(self, *args, **options):
         self.debug = options['debug']
-        knowledgeHubLogoPrint()
-        self.stdout.write(
-            "This script will truncate all tables before filling it!",
-            ending="\n"
-        )
-        
-        command = input("Do you want to proceed? (y/N): ")
-        if command not in ['y', 'Y', 'yes', 'Yes']:
-            print('aborting...')
-            return
-        
-        truncate_all_tables()
+        self.truncate = options['truncate']
+        self.update_references = options['update_references']
+
+        if self.truncate and not self.update_references:
+            self.update_references = True
+
+        # TODO: Handle reference tables! -> Update references?
+
+        if self.truncate:
+            self.stdout.write(
+                f"Truncate all tables",
+                ending="\n"
+            )
+            truncate_all_tables()
 
         for manager_name in dir(manager):
             manager_class = getattr(manager, manager_name)
@@ -40,10 +52,9 @@ class Command(BaseCommand):
             if not isinstance(manager_class, type):
                 continue
 
-            if manager_class.__name__ in [
-                "BillOfMaterialManager",
-                "CrossSectionManager"
-            ]:
+            # NOTE: The populate function for bom is not defined correctly
+            # to work with the manager!
+            if manager_class.__name__ in ["BillOfMaterialManager"]:
                 continue
 
             is_external_data_manager = False
