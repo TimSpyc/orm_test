@@ -345,6 +345,7 @@ class GeneralInfo:
         result_list_dict, page_info_dict = self.__paginate(result_list_dict)
         return self.__buildMetaInformation(result_list_dict, page_info_dict)
 
+    @staticmethod
     def __buildMetaInformation(
         result_data: list[dict] | dict,
         page_info_dict: dict | None
@@ -423,7 +424,7 @@ class GeneralInfo:
 
         return list(filter(searchFunction, result_list_dict))
 
-    def __paginate(self, result_list_dict: list[dict]) -> list[dict]:
+    def __paginate(self, result_list_dict: list[dict]) -> tuple[list[dict], dict]:
         page = self.request_info_dict['query_params'].get(
             'page',
             1
@@ -433,12 +434,7 @@ class GeneralInfo:
             None
         )
         if page_size is None:
-            return {
-                "data": result_list_dict,
-                "meta": {
-                    "page":{'current': 1, 'max': 1}
-                }
-            }
+            return (result_list_dict, {'current': 1, 'max': 1})
         
         start_index = (page - 1) * page_size
         end_index = page * page_size
@@ -446,12 +442,8 @@ class GeneralInfo:
         if len(result_list_dict) % page_size != 0:
             page_count += 1
 
-        return ({
-            "data": result_list_dict[start_index:end_index], 
-            "meta": {
-                "page": {'current': page, 'max': page_count}
-            }
-        })
+        return (result_list_dict[start_index:end_index], {'current': page, 'max': page_count})
+
 
     def __handleGetDetail(self) -> dict:
         manager_obj = self.getDetail()
