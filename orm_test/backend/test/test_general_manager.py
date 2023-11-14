@@ -18,12 +18,10 @@ class TestProjectManager(GeneralManager):
     data_extension_model_list: list = []
 
 
-        
 class TestProjectUserManager(GeneralManager):
     group_model = TestProjectUserGroup
     data_model = TestProjectUser
     data_extension_model_list: list = []
-
 
 
 class TestSearchForColumn(TestCase):
@@ -702,6 +700,9 @@ class TestGetDataObject(TestCase):
 class TestIsDataUploadable(TestCase):
     def setUp(self):
         self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager.group_model = TestProjectGroup
+        self.manager.data_model = TestProject
+
  
     def test_is_data_uploadable(self):
         data_dict = {
@@ -1099,8 +1100,7 @@ class TestCreate(TestCase):
 
         with self.assertRaises(ValueError): 
             self.manager.create(creator_id, **group_data, **data_data)   
-    
-    
+        
 class TestGetRefAndTableType(TestCase):
 
     def test_related_model(self):
@@ -1401,7 +1401,6 @@ class TestGetDataExtensionData(TestCase):
         self.assertFalse(is_in_data_ext_model)
         self.assertEqual('NoneExistingModel', key)
         self.assertEqual(to_upload_dict, value)
-
 
 class TestCheckIfDataExtensionIsUploadable(TestCase):
     def setUp(self):
@@ -1865,7 +1864,6 @@ class TestCreateSearchKeys(TestCase):
             GeneralManager._GeneralManager__createSearchKeys(key, value)
 
 
-
 class TestGetDataSourceAndColumnBaseName(TestCase):
 
     def setUp(self):
@@ -2261,8 +2259,6 @@ class TestGetManagerListFromGroupModel(TestCase):
         self.assertEqual(result[0].group_id, self.new_project_user_group1.id)
         self.assertEqual(result[0].search_date, datetime(2023,7,28))
         self.assertEqual(result[1].group_id, self.new_project_user_group2.id)
-
-
 
 
 class TestGetManagerListFromDataModel(TestCase):
