@@ -12,6 +12,7 @@ from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
 from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller, CacheRefresher
 
+
 def updateCache(func):
     """
     Decorator function to update the cache after executing the wrapped function.
@@ -89,7 +90,10 @@ class ExternalDataManager:
     database_model: Model
 
     def __init__(self, search_date):
-        self.search_date = search_date
+        if search_date is None:
+            self.search_date = datetime.now()
+        else:
+            self.search_date = search_date
         self._start_date = self.__getStartDate()
         self._end_date = self.__getEndDate()
         self._identification_dict = {
@@ -97,7 +101,7 @@ class ExternalDataManager:
         }
 
     def getData(self, column_list: list, **kwargs: dict) -> QuerySet:
-        return self.database_model.objects.filter(**kwargs).values(*column_list)
+        return list(self.database_model.objects.filter(**kwargs).values(*column_list))
 
 
     def __getStartDate(self) -> datetime:
@@ -165,6 +169,13 @@ class GeneralManager:
             deactivate (object method): Deactivate an existing object.
                 Create a new data object with the same group data and active set
                 to False. Every other attribute will be set to the latest value.
+            #TODO: implement validation methods:
+            validate_update (object method): Validate if an object can be updated
+                with the given data. Returns True if the object can be updated
+                and False otherwise.
+            validate_create (classmethod): Validate if an object can be created
+                with the given data. Returns True if the object can be created
+                and False otherwise.
         
         Simple Example:
             class ExampleManager(GeneralManager):
@@ -182,6 +193,7 @@ class GeneralManager:
     GROUP_TABLE = 'GroupTable'
     DATA_TABLE = 'DataTable'
     DATA_EXTENSION_TABLE = 'DataExtensionTable'
+    EXTERNAL_DATA_TABLE = 'ExternalDataTable'
     REFERENCE_TABLE = 'ReferenceTable'
 
     group_model: Model
@@ -282,56 +294,146 @@ class GeneralManager:
             {self.__class__.__name__} with group_id:{self.group_id}
             and validity from {self._start_date} to {self._end_date}
         '''
+    
+    def __iter__(self) -> GeneratorExit(str, any):
+        """
+        Iterate over the attributes of the Manager object and change attribute
+        names according to name conventions. 
 
-    def __iter__(self):
-        def model_iterator(model_obj, prefix):
-            value_dict = model_obj.__dict__
-            for key, value in value_dict.items():
-                if key[0] == '_':
-                    continue
-                attribute_name = f'{prefix}__{key}'
-                if key == 'id':
-                    attribute_name = f'{prefix}_{key}'
-                yield attribute_name, value
-
-        def list_creator(list_obj):
-            output_list = []
-            for instance in list_obj:
-                if isinstance(instance, dict):
-                    output_dict = {}
-                    for key, value in instance.items():
-                        if key == 'id':
-                            continue
-                        if isinstance(value, Model):
-                            if value == self.__group_obj or value == self.__data_obj:
-                                continue
-                            if value.table_type == 'GroupTable':
-                                output_key = f'{key}_group_id'
-                            elif value.table_type == 'DataTable':
-                                output_key = f'{key}_id'
-                            output_value = value.id
-                            output_dict[output_key] = output_value
-                        else:
-                            output_value = value
-                            output_key = key
-                            output_dict[output_key] = output_value
-                    output_list.append(output_dict)
-            return output_list
-
-        for attribute_name, value in self.__dict__.items():
-            if attribute_name[0] == '_':
+        Yields:
+            GeneratorExit(str, any): Tuple containing the name of the attribute
+                and its value. If the attribute is a Model object, iterates over
+                its attributes. If the attribute is a list, creates a new list
+                with the output of the list_creator-function and yields the new
+                list and its corresponding id list.
+        """
+        for attr, value in self.__dict__.items():
+            if attr[0] == '_':
                 continue
             if isinstance(value, Model):
-                for attribute_name, value in model_iterator(
-                    value,
-                    attribute_name
-                ):
-                    yield attribute_name, value
+                yield from self.__modelIterator(value, attr)
             elif isinstance(value, list):
-                value = list_creator(value)
-                yield attribute_name, value
+                value, id_output_list = self.__listCreator(attr, value)
+                if id_output_list:
+                    yield f'{attr}__data_list', value
+                    yield f'{attr}_id_list', id_output_list
+                else:
+                    yield attr, value
             else:
-                yield attribute_name, value
+                yield attr, value
+
+    @staticmethod
+    def __modelIterator(model_obj: Model, prefix: str) -> GeneratorExit(str, any):
+        """
+        Iterate over the attributes of a model object and yield their
+        modified names with origin values.
+
+        Args:
+            model_obj: A model object to iterate over.
+            prefix: A string prefix to add to the attribute names, where
+                the prefix corresponds to the model name.
+
+        Yields:
+            GeneratorExit(str, any): A tuple containing the attribute name (with
+                prefix) and its value.
+        """
+        for key, value in model_obj.__dict__.items():
+            if key[0] == '_':
+                continue
+            attr = f'{prefix}__{key}' if key != 'id' else f'{prefix}_{key}'
+            yield attr, value
+
+    def __listCreator(self, attr: str, list_obj: any)-> tuple[list, list]:
+        """
+        Converts a list of objects to a list of dictionaries and a list of
+        ids.
+
+        Args:
+            attribute_name (str): The name of attribute to use as the id.
+            list_obj (any): The list of objects to convert.
+
+        Returns:
+            tuple[list, list]: A tuple containing the list of dictionaries
+                and the list of ids.
+        """
+        output_list = []
+        id_output_list = []
+        for instance in list_obj:
+            if isinstance(instance, dict):
+                output_dict = self.__createDictFromInstanceDict(instance)
+                output_list.append(output_dict)
+            elif isinstance(instance, Model):
+                data_dict = GeneralManager.__createDictFromModel(instance, attr)
+                id_output_list.append(data_dict[f'{attr}_id'])
+                output_list.append(data_dict)
+            else:
+                output_list.append(instance)
+        return output_list, id_output_list
+
+    def __createDictFromInstanceDict(self, instance: dict) -> dict:
+        """
+        Create a dictionary from an instance dictionary, excluding the id 
+        key and any Model objects that are equal to the group or data
+        objects.
+        Args:
+            instance (dict): The instance dictionary to create a dictionary
+                from.
+        Returns:
+            output_dict (dict): The created dictionary.
+        """
+        output_dict = {}
+        for key, value in instance.items():
+            if key == 'id':
+                continue
+            if isinstance(value, Model):
+                if value == self.__group_obj or value == self.__data_obj:
+                    continue
+                output_key = GeneralManager.__getOutputKeyFromModel(value, key)
+                output_value = value.id
+            else:
+                output_key = key
+                output_value = value
+            output_dict[output_key] = output_value
+        return output_dict
+    
+    @staticmethod
+    def __getOutputKeyFromModel(model: Model, key: str) -> str:
+        """
+        Returns the output key for a given model and key.
+
+        Args:
+            model (Model): The model to get the output key for.
+            key (str): The key to get the output key for.
+        Returns:
+
+            key (str): The output key for the given model and key.
+        """
+        if model.table_type == 'GroupTable':
+            return f'{key}_group_id'
+        elif model.table_type == 'DataTable':
+            return f'{key}_id'
+        else:
+            return key
+    
+    @staticmethod
+    def __createDictFromModel(model: Model, attribute_name: str) -> dict:
+        """
+        Given a model and an attribute name, returns a dictionary containing
+        the attribute names and their values. 
+
+        Args:
+            model (Model): The model to extract data from.
+            attribute_name (str): The name of the attribute to extract data
+            for.
+            
+        Returns:
+            dict: A dictionary containing the attribute names and their
+                values.
+        """
+        data_dict = {}
+        for attr, value in GeneralManager.__modelIterator(model, attribute_name):
+            data_dict[attr] = value
+        return data_dict
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -403,11 +505,13 @@ class GeneralManager:
             self.GROUP_TABLE: self.__assignIdAttribute,
             self.DATA_TABLE: self.__assignIdAttribute,
             self.DATA_EXTENSION_TABLE: self.__assignExtensionDataDictAttribute,
+            self.EXTERNAL_DATA_TABLE: self.__assignExtensionDataDictAttribute,
             None: self.__assignAttribute
         }
         try:
             methods[ref_table_type](column, model_obj, ref_type)
         except KeyError:
+            print("ref_table_type", ref_table_type)
             raise ValueError('this is not implemented yet')
 
     def __assignIdAttribute(
@@ -462,7 +566,14 @@ class GeneralManager:
         Returns:
             None
         """
-        setattr(self, column.name, getattr(model_obj, column.name))
+        if ref_type == self.MANY_TO_MANY:
+            setattr(
+                self,
+                f'{column.name}',
+                list(getattr(model_obj, column.name).all())
+            )
+        else:
+            setattr(self, column.name, getattr(model_obj, column.name))
 
     def __assignExtensionDataDictAttribute(
             self, 
@@ -534,9 +645,12 @@ class GeneralManager:
         Returns:
             tuple: A tuple containing the data source and column base name.
         """
-        if ref_type == self.MANY_TO_ONE:
-            data_source = f'{column.name}_set'
+        if ref_type == self.MANY_TO_ONE or ref_type == self.MANY_TO_MANY:
             column_name = transferToSnakeCase(column.related_model.__name__)
+            if column_name.replace('_', '') == transferToSnakeCase(column.name):
+                data_source = f'{column.name}_set'
+            else:
+                data_source = column.name
         else:
             data_source = column.name
             column_name = column.name
@@ -566,8 +680,10 @@ class GeneralManager:
             column,
             ref_type
             )
-
-        attribute_name = column_name.replace('group', 'manager_list')
+        if "group" in column_name:
+            attribute_name = column_name.replace('group', 'manager_list')
+        else:
+            attribute_name = f'{column_name}_manager_list'
         setattr(
             self,
             f'_{attribute_name}',
@@ -604,14 +720,14 @@ class GeneralManager:
             ref_type
             )
         attribute_name = f'{column_name}_manager_list'
-
+        already_set_list = getattr(self, f'_{attribute_name}', [])
         setattr(
             self,
             f'_{attribute_name}_data_dict',
-            [{
+            [*already_set_list, *[{
                 "data":data_data,
                 "group":data_data.group_object
-            } for data_data in getattr(model_obj, data_source).all()]
+            } for data_data in getattr(model_obj, data_source).all()]]
         )
 
         def method(self):
@@ -703,7 +819,7 @@ class GeneralManager:
         Args:
             column (Field): The field object containing column details.
             model_obj (Model): The model object containing the data.
-            ref_table_type (str): The type of the reference table.
+            ref_table_type (str): The type of the referenced table.
             ref_type (str): The type of the reference.
 
         Returns:
@@ -717,7 +833,8 @@ class GeneralManager:
             (self.FOREIGN_KEY, self.GROUP_TABLE): self.__getManagerFromGroupModel,
             (self.FOREIGN_KEY, self.DATA_TABLE): self.__getManagerFromDataModel,
         }
-
+        if ref_table_type == "ExternalDataTable":
+            return
         try:
             method, attribute_name = (
                 methods[(ref_type, ref_table_type)](column, model_obj, ref_type)
@@ -1891,8 +2008,9 @@ class GeneralManager:
                 unique constraints in the model.
         """
         unique_fields = []
-        for unique_field_tuple in model._meta.unique_together:
-            unique_fields = [*unique_field_tuple, *unique_fields]
+        for constraint in model._meta.constraints:
+            if isinstance(constraint, models.UniqueConstraint):
+                unique_fields += constraint.fields
         return unique_fields
 
     @classmethod
@@ -2135,7 +2253,7 @@ class GeneralManager:
             GroupModel: 
                 The group model instance that was either retrieved or created.
         """
-        unique_fields = cls.group_model._meta.unique_together
+        unique_fields = cls.__getUniqueFields(cls.group_model)
 
         if len(unique_fields) == 0:
             group_obj = cls.group_model.objects.create(
@@ -2279,3 +2397,9 @@ class GeneralManager:
             return data_obj.date
         except ObjectDoesNotExist:
             return None
+
+    def validate_update(self):
+        return True
+    
+    def validate_create(self):
+        return True

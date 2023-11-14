@@ -31,4 +31,4 @@ class PartSoldContract(DataTable):
 class PartSoldContractManager(GeneralManager):
     group_model = PartSoldContractGroup
     data_model = PartSoldContract
-    data_extension_models = []
+    data_extension_model_list = []

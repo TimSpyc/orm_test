@@ -59,7 +59,7 @@ class BillOfMaterialStructure(DataExtensionTable):
 class BillOfMaterialManager(GeneralManager):
     group_model = BillOfMaterialGroup
     data_model = BillOfMaterial
-    data_extension_model_list = []
+    data_extension_model_list = [BillOfMaterialStructure]
 
     def __init__(
         self,
@@ -77,15 +77,20 @@ class BillOfMaterialManager(GeneralManager):
 
         self.updateCache()
 
+    @property
+    def head_node_list(self):
+        key_tuple = self.__selectBomType('pd')
+        return self.__getHeadNodeList(key_tuple)
+        
     def getBillOfMaterialStructure(
         self,
         bom_type: str,
         head_part_group_id: int | None = None,
         
     ):
-        head_node = self.__getHeadNodeList()
         key_tuple = self.__selectBomType(bom_type)
 
+        head_node = self.__getHeadNodeList(key_tuple = key_tuple)
         bill_of_material_structure = self.__getBillOfMaterialStructure(
             head_node,
             key_tuple

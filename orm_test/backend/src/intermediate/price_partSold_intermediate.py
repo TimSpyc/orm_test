@@ -1,5 +1,5 @@
 from backend.src.manager.part_sold_manager import PartSoldManager
-from backend.src.intermediate.material_price_intermediate import MaterialPriceIntermediate
+from backend.src.intermediate.materialPrice_customer_intermediate import MaterialPriceIntermediate
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime, date
 

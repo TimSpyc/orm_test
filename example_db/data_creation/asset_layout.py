@@ -7,23 +7,24 @@ if __name__ == '__main__':
     django.setup()
 
 from example_db.populate import GeneralPopulate
-from backend.models import AssetLayoutGroup, AssetLayout, User
+from backend.models import AssetLayoutGroup, AssetLayout, User, AssetItemSiteConnectionGroup
 
 def createAssetLayoutGroupDict(cls):
     return {
+        "asset_item_site_connection_group": cls.getRandomForeignKeyRelation(
+            AssetItemSiteConnectionGroup
+        ),
         "user": cls.getRandomForeignKeyRelation(User),
         "grid_size": cls.getRandomInteger(1, 3)
     }
 
 def createAssetLayoutDataDict(cls):
     return {
-        "name": cls.getRandomText(),
         "height": cls.getRandomInteger(1, 3),
         "width": cls.getRandomInteger(1, 3),
         # TODO: Should the coordinates be realistic? YES!
         "x_coordinate": cls.getRandomInteger(1, 3),
         "y_coordinate": cls.getRandomInteger(1, 3),
-        "description": cls.getRandomDescription(),
     }
 
 class PopulateAssetLayout(GeneralPopulate):

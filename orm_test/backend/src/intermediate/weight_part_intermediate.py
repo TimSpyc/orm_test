@@ -2,10 +2,54 @@ from backend.src.manager import PartManager, BillOfMaterialManager, MaterialMana
 from backend.src.auxiliary.intermediate import GeneralIntermediate
 from datetime import datetime, date
 from statistics import mean
-from backend.models import CacheIntermediate
+from backend.src.auxiliary.new_cache import getIdStringFromDict
 
-class WeightIntermediate(GeneralIntermediate):
+def checkIfCacheNeedsToExpire(
+    dependency: object,
+    date: datetime
+) -> bool:
+    if isinstance(dependency, PartManager):
+        weight_changed = (
+            not dependency.weight == dependency.__init__(
+                dependency.group_id,
+                search_date=date,
+            ).weight
+        )
+        material_changed = (
+            not dependency.material_manager.material_type == \
+                dependency.__init__(
+                    dependency.group_id,
+                    search_date=date,
+                ).material_manager.material_type
+        )
+        return weight_changed or material_changed
+    elif isinstance(dependency, BillOfMaterialManager):
+        new_bom = dependency.__init__(
+            dependency.group_id,
+            search_date=date,
+        )
+        old_id = getIdStringFromDict(
+            dependency.bill_of_material_structure_dict_list
+        )
+        new_id = getIdStringFromDict(
+            new_bom.bill_of_material_structure_dict_list
+        )
+        return not old_id == new_id
+
+    elif isinstance(dependency, MaterialManager):
+        return not dependency.material_type == dependency.__init__(
+            dependency.group_id,
+            search_date=date,
+        ).material_type
+    else:
+        return True
+
+
+class WeightPartIntermediate(GeneralIntermediate):
     relevant_scenario_keys = []
+    cacheExpirationCheck = lambda self, dependency, date:(
+        checkIfCacheNeedsToExpire(dependency, date)
+    )
 
     def __init__(
         self,
@@ -19,19 +63,20 @@ class WeightIntermediate(GeneralIntermediate):
             search_date=search_date,
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
-        self.relevant_part_manager_list = []
-        self.relevant_material_manager_list = []
 
+        # weight_detail_dict_list is a list of dictionaries, each of which is a bom_manager
         self.weight_detail_dict_list = [
             self.__getWeightDetails(bom_manager)
             for bom_manager in self.bom_manager_list
         ]
 
+        # declare gross weights, mean of each bom_manager
         self.gross_weight = self.__getAverageWeight('gross_weight')
         self.alu_gross_weight = self.__getAverageWeight('alu_gross_weight')
         self.steel_gross_weight = self.__getAverageWeight('steel_gross_weight')
         self.other_gross_weight = self.__getAverageWeight('other_gross_weight')
 
+        # declare net weights, mean of each bom_manager
         self.net_weight = self.__getAverageWeight('net_weight')
         self.alu_net_weight = self.__getAverageWeight('alu_net_weight')
         self.steel_net_weight = self.__getAverageWeight('steel_net_weight')
@@ -41,12 +86,52 @@ class WeightIntermediate(GeneralIntermediate):
             search_date,
             scenario_dict,
         )
+
+    @property
+    def current_weight(self) -> dict:
+        """
+        Returns a dictionary containing the current weight values of the object.
+
+        Returns
+        -------
+        dict
+        """
+        return {
+            'gross_weight': self.gross_weight,
+            'alu_gross_weight': self.alu_gross_weight,
+            'steel_gross_weight': self.steel_gross_weight,
+            'other_gross_weight': self.other_gross_weight,
+            'net_weight': self.net_weight,
+            'alu_net_weight': self.alu_net_weight,
+            'steel_net_weight': self.steel_net_weight,
+            'other_net_weight': self.other_net_weight,
+        }
     
     def __getAverageWeight(
         self,
         weight_type: str,
-        bom_type: str = 'pd'
+        bom_type: str = 'product_development'
     ) -> float:
+        """
+        Returns the average weight of a specific type of material
+        in the object's weight detail list.
+
+        Parameters
+        ----------
+        weight_type : str
+            The type of weight to calculate the average for.
+            This should be one of the keys in the weight_detail_dict.
+        bom_type : str, optional
+            The type of bill of materials to use.
+            This should be one of the keys in the weight_detail_dict[bom_type].
+            ['product_development', 'industrial_engineering', 'logistic']
+
+        Returns
+        -------
+        float
+            The average weight of the specified type of material
+            in the weight detail list.
+        """
         weight_list = [
             weight_detail_dict[bom_type][weight_type]
             for weight_detail_dict in self.weight_detail_dict_list
@@ -67,13 +152,11 @@ class WeightIntermediate(GeneralIntermediate):
             'other_net_weight': 0,
         }
         weight_dict = {}
-        for key in ['pd', 'ai', 'lg']:
+        for key in ['product_development', 'industrial_engineering', 'logistic']:
             bom_data_dict = bom_manager.getBillOfMaterialDetails(
                 key,
                 head_part_group_id=self.part_manager.group_id
             )
-            
-            self.__addDependencies(bom_data_dict)
 
             weight_dict = {
                 **weight_dict,
@@ -157,55 +240,3 @@ class WeightIntermediate(GeneralIntermediate):
                     )
         
         return weight_dict
-
-    def __addDependencies(self, bom_data_dict: dict) -> None:
-        for bom_data in bom_data_dict['structure']:
-            part_manager = bom_data['part'].manager(
-                self.search_date,
-            )
-            if part_manager not in self.relevant_part_manager_list:
-                self.relevant_part_manager_list.append(part_manager)
-            material_manager = bom_data['part'].materiel_manager
-            if material_manager not in self.relevant_material_manager_list:
-                self.relevant_material_manager_list.append(material_manager)
-
-    def checkIfCacheNeedsToExpire(
-        self,
-        dependency: object,
-        date: datetime
-    ) -> bool:
-        if isinstance(dependency, PartManager):
-            weight_changed = (
-                not dependency.weight == dependency.__init__(
-                    dependency.group_id,
-                    search_date=date,
-                ).weight
-            )
-            material_changed = (
-                not dependency.material_manager.material_type == \
-                    dependency.__init__(
-                        dependency.group_id,
-                        search_date=date,
-                    ).material_manager.material_type
-            )
-            return weight_changed or material_changed
-        elif isinstance(dependency, BillOfMaterialManager):
-            new_bom = dependency.__init__(
-                dependency.group_id,
-                search_date=date,
-            )
-            old_id = CacheIntermediate.getIdString(
-                dependency.bill_of_material_structure_dict_list
-            )
-            new_id = CacheIntermediate.getIdString(
-                new_bom.bill_of_material_structure_dict_list
-            )
-            return not old_id == new_id
-
-        elif isinstance(dependency, MaterialManager):
-            return not dependency.material_type == dependency.__init__(
-                dependency.group_id,
-                search_date=date,
-            ).material_type
-        else:
-            return True

@@ -21,9 +21,12 @@ class ChangeRequestRiskGroup(GroupTable):
         return ChangeRequestRiskManager
     
     class Meta:
-        unique_together = (
-            'change_request_group', 'project_user_role'
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=['change_request_group', 'project_user_role'],
+                name='unique_change_request_risk_group'
+            )
+        ]
 
     def __str__(self):
         return f'ChangeRequestRisk Group with id {self.id}'

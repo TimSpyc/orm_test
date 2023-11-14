@@ -1,4 +1,5 @@
 import logging
+import types
 from unittest.mock import  Mock, patch
 from backend.models.caching_models import CacheManager
 from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
@@ -2331,4 +2332,237 @@ class TestGetManagerListFromDataModel(TestCase):
         self.assertEqual(result[0].group_id, self.new_project_user_group.id)
         self.assertEqual(result[0].search_date, datetime(2023,7,28))
 
+### test __iter__ ###
+
+class TestIter(TestCase):
+    def setUp(self):
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager.group_id = 1
+        self.manager.id = 1
+        self.manager.name = 'Test Manager'
+
+    def test_manager_with_basic_attributes(self):
+        result = self.manager.__iter__()
+        self.assertIsInstance(result, types.GeneratorType)
+        self.assertEqual(result.__next__(), ('group_id', self.manager.group_id))
+        self.assertEqual(result.__next__(), ('id', self.manager.id))
+        self.assertEqual(result.__next__(), ('name', self.manager.name))
+
+    def test_manager_with_model_attribute(self):
+        test_project_group = TestProjectGroup.objects.create()
+        test_project = TestProject.objects.create(
+            name='Test Project',
+            project_number='12345',
+            test_project_group=test_project_group,
+            creator=None,
+            active=True,
+        )
+        self.manager.project = test_project
+        result = self.manager.__iter__()
+        self.assertEqual(result.__next__(), ('group_id', self.manager.group_id))
+        self.assertEqual(result.__next__(), ('id', self.manager.id))
+        self.assertEqual(result.__next__(), ('name', self.manager.name))
+        self.assertEqual(result.__next__(), ('project_id', test_project.id))
+        self.assertEqual(result.__next__(), ('project__name', test_project.name))
+        self.assertEqual(result.__next__(), ('project__project_number', test_project.project_number))
+        self.assertEqual(result.__next__(), ('project__test_project_group_id', test_project_group.id))
+        self.assertEqual(result.__next__(), ('project__date', test_project.date))
+        self.assertEqual(result.__next__(), ('project__creator_id', test_project.creator))
+        self.assertEqual(result.__next__(), ('project__active', test_project.active))
     
+    def test_manager_with_list_attribute(self):
+        self.user = User.objects.create()
+        extension = [self.user]
+        result = self.manager.__iter__()
+        user_dict = {
+            'extension_id': self.user.id,
+            'extension__active': self.user.active,
+            'extension__microsoft_id': self.user.microsoft_id,
+            'extension__first_name': self.user.first_name,
+            'extension__last_name': self.user.last_name,
+            'extension__email': self.user.email,
+            'extension__last_login': self.user.last_login
+        }
+        self.manager.extension = extension
+        self.assertEqual(result.__next__(), ('group_id', self.manager.group_id))
+        self.assertEqual(result.__next__(), ('id', self.manager.id))
+        self.assertEqual(result.__next__(), ('name', self.manager.name))
+        self.assertEqual(result.__next__(), ("extension__data_list", [user_dict]))
+        self.assertEqual(result.__next__(), ('extension_id_list', [self.user.id]))
+
+class TestModelIterator(TestCase):
+    def setUp(self):
+        self.user = User.objects.create()
+    
+    def test_valid_model_and_prefix(self):
+        prefix = "user"
+        result = GeneralManager._GeneralManager__modelIterator(self.user, prefix)
+        self.assertIsInstance(result, types.GeneratorType)
+        self.assertEqual(result.__next__(), ('user_id', self.user.id))
+        self.assertEqual(result.__next__(), ('user__active', self.user.active))
+        self.assertEqual(result.__next__(), ('user__microsoft_id', self.user.microsoft_id))
+        self.assertEqual(result.__next__(), ('user__first_name', self.user.first_name))
+        self.assertEqual(result.__next__(), ('user__last_name', self.user.last_name))
+        self.assertEqual(result.__next__(), ('user__email', self.user.email))
+        self.assertEqual(result.__next__(), ('user__last_login', self.user.last_login))
+
+    def test_valid_model_and_private_attribute(self):
+        prefix = 'user'
+        self.user._password = 123
+        result = GeneralManager._GeneralManager__modelIterator(self.user, prefix)
+        self.assertIsInstance(result, types.GeneratorType)
+        self.assertEqual(list(result), [
+            ('user_id', self.user.id),
+            ('user__active', self.user.active),
+            ('user__microsoft_id', self.user.microsoft_id),
+            ('user__first_name', self.user.first_name),
+            ('user__last_name', self.user.last_name),
+            ('user__email', self.user.email),
+            ('user__last_login', self.user.last_login),
+        ])
+
+class TestListCreator(TestCase):
+    def setUp(self):
+        test_project_group = TestProjectGroup.objects.create()
+        test_project = TestProject.objects.create(
+            name='Test Project',
+            project_number='12345',
+            test_project_group=test_project_group,
+            creator=None,
+            active=True,
+        )
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager._GeneralManager__group_obj = test_project_group
+        self.manager._GeneralManager__data_obj = test_project
+        self.user = User.objects.create()
+        self.test_project_group2 = TestProjectGroup.objects.create()
+        self.instance_dict = {
+            "id":1,
+            "self_data": self.manager._GeneralManager__data_obj,
+            "self_group": self.manager._GeneralManager__group_obj,
+            "project":self.test_project_group2
+        }
+
+    def test_list_obj_instance_is_other(self):
+        list_obj = ["instance"]
+        attribute = "instance"
+        result = self.manager._GeneralManager__listCreator(attribute, list_obj)
+        self.assertEqual(result, (["instance"], []))
+    
+    def test_list_obj_instance_is_dict(self):
+        attribute = "data"
+        list_obj = [self.instance_dict]
+        result = self.manager._GeneralManager__listCreator(attribute, list_obj)
+        id = self.test_project_group2.id
+        self.assertEqual(result, ([{"project_group_id": id}],[]))
+    
+    def test_list_obj_instance_is_model(self):
+        attribute = "user"
+        list_obj = [self.user]
+        result = self.manager._GeneralManager__listCreator(attribute, list_obj)
+        user_dict = {
+            'user_id': self.user.id,
+            'user__active': self.user.active,
+            'user__microsoft_id': self.user.microsoft_id,
+            'user__first_name': self.user.first_name,
+            'user__last_name': self.user.last_name,
+            'user__email': self.user.email,
+            'user__last_login': self.user.last_login
+        }
+        self.assertEqual(result, ([user_dict],[self.user.id]))
+
+    def test_list_obj_with_different_instances(self):
+        attribute = "user"
+        list_obj = ["instance", self.instance_dict, self.user]
+        result = self.manager._GeneralManager__listCreator(attribute, list_obj)
+        user_dict = {
+            'user_id': self.user.id,
+            'user__active': self.user.active,
+            'user__microsoft_id': self.user.microsoft_id,
+            'user__first_name': self.user.first_name,
+            'user__last_name': self.user.last_name,
+            'user__email': self.user.email,
+            'user__last_login': self.user.last_login
+        }
+        result_dict = {"project_group_id": self.test_project_group2.id}
+        self.assertEqual(result, (["instance", result_dict, user_dict],[self.user.id]))
+
+class TestGetOutputKeyFromModel(TestCase):
+    def test_output_key_from_group_table(self):
+        key = 'project'
+        output_key = GeneralManager._GeneralManager__getOutputKeyFromModel(TestProjectGroup, key)
+        self.assertEqual(output_key, 'project_group_id')
+
+    def test_output_key_from_data_table(self):
+        key = 'project'
+        output_key = GeneralManager._GeneralManager__getOutputKeyFromModel(TestProject, key)
+        self.assertEqual(output_key, 'project_id')
+    
+    def test_output_key_from_data_extension_table(self):
+        key = 'project_extension'
+        output_key = GeneralManager._GeneralManager__getOutputKeyFromModel(TestProject2ExtensionTable, key)
+        self.assertEqual(output_key, 'project_extension')
+
+class TestCreateDictFromInstanceDict(TestCase):
+    def setUp(self):
+        test_project_group = TestProjectGroup.objects.create()
+        test_project = TestProject.objects.create(
+            name='Test Project',
+            project_number='12345',
+            test_project_group=test_project_group,
+            creator=None,
+            active=True,
+        )
+        self.manager = GeneralManager.__new__(GeneralManager)
+        self.manager._GeneralManager__group_obj = test_project_group
+        self.manager._GeneralManager__data_obj = test_project
+        self.user = User.objects.create()
+
+    def test_valid_dict_with_id_and_non_model_key(self):
+        instance_dict = {"id": 1, "key":"value"}
+        result = self.manager._GeneralManager__createDictFromInstanceDict(instance_dict)
+        self.assertEqual(result, {"key":"value"})
+
+    def test_valid_dict_and_self_models(self):
+        instance_dict = {
+            "project_data": self.manager._GeneralManager__data_obj,
+            "project_group": self.manager._GeneralManager__group_obj,
+        }
+        result = self.manager._GeneralManager__createDictFromInstanceDict(instance_dict)
+        self.assertEqual(result, {})
+    
+    def test_valid_dict_with_extern_models(self):
+        test_project_group2 = TestProjectGroup.objects.create()
+        test_project2 = TestProject.objects.create(
+            name='Test Project2',
+            project_number='22345',
+            test_project_group=test_project_group2,
+            creator=None,
+            active=True,
+        )
+        instance_dict = {
+            "project": test_project_group2,
+            "project_data": test_project2,
+            "user": self.user
+        }
+        result = self.manager._GeneralManager__createDictFromInstanceDict(instance_dict)
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, {"project_group_id": test_project_group2.id, "project_data_id": test_project2.id, "user": self.user.id})
+
+class TestCreateDictFromModel(TestCase):
+    def setUp(self):
+        self.user = User.objects.create()
+
+    def test_valid_model_to_dict(self):
+        prefix = "user"
+        result = GeneralManager._GeneralManager__createDictFromModel(self.user, prefix)
+        expected_result = {
+            'user_id': self.user.id,
+            'user__active': self.user.active,
+            'user__microsoft_id': self.user.microsoft_id,
+            'user__first_name': self.user.first_name,
+            'user__last_name': self.user.last_name,
+            'user__email': self.user.email,
+            'user__last_login': self.user.last_login
+        }
+        self.assertEqual(result, expected_result)

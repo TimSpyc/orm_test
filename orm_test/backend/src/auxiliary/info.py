@@ -10,6 +10,8 @@ from backend.src.auxiliary.exceptions import *
 import json
 from backend.src.auxiliary.timing import timeit
 from django.conf import settings
+from datetime import datetime
+import backend.src.auxiliary.list_of_dicts  as inter_lod
 
 from backend.src.auxiliary.new_cache import CacheHandler
 
@@ -129,7 +131,8 @@ class GeneralInfo:
             page_size: int to select the page size (default: all results)
             filter: dict to filter on db level (e.g. {"key": "value"})
             group_by: list of keys to group by (e.g. ["key1", "key2"])
-        
+            validate_only: bool to only validate the request (default: False)
+
         Attributes:
             base_url: str => url to be used in urls.py (e.g. 'example')
             allowed_method_list: list => list of allowed methods
@@ -173,7 +176,7 @@ class GeneralInfo:
     detail_key_dict: dict = {'group_id': 'int'}
 
     manager: "GeneralManager" # Optional
-    datasetPermissionFunction = lambda data_set_dict: True
+    datasetPermissionFunction = lambda request_info_dict, data_set_dict: True
     serializerFunction = lambda data_object : dict(data_object)
     use_cache = True
 
@@ -233,25 +236,23 @@ class GeneralInfo:
     def put(self) -> None:
         self.__checkConfiguration()
 
-        # manager_obj = self.manager(
-        #     self.identifier['group_id'],
-        #     self.request_info_dict['request_data']['creation_date']
-        # )
-        
-        # manager_obj.update(
-        #         creator_id = self.request_info_dict["request_user_id"],
-        #         **self.request_info_dict['request_data']
-        #     )
-
-
         manager_obj = self.manager(
             self.identifier['group_id'],
+            self.request_info_dict['request_data']['creation_date']
         )
         
-        manager_obj.update(
-                creator_id = 1,
+        if self.validate_only:
+            return manager_obj.validate_update(
+                creator_id = self.request_info_dict["request_user_id"],
                 **self.request_info_dict['request_data']
             )
+
+        manager_obj.update(
+                creator_id = self.request_info_dict["request_user_id"],
+                **self.request_info_dict['request_data']
+            )
+
+        return manager_obj.group_id
 
     def delete(self) -> None:
         self.__checkConfiguration()
@@ -280,6 +281,12 @@ class GeneralInfo:
     def post(self) -> int:
         self.__checkConfiguration()
 
+        if self.validate_only:
+            return self.manager.validate_create(
+                creator_id = self.request_info_dict["request_user_id"],
+                **self.request_info_dict['request_data']
+            )
+        
         manager_obj = self.manager.create(
             creator_id = self.request_info_dict["request_user_id"],
             **self.request_info_dict['request_data']
@@ -335,109 +342,35 @@ class GeneralInfo:
         result_list_dict = self.__search(result_list_dict)
         result_list_dict = self.__groupBy(result_list_dict)
         result_list_dict = self.__sort(result_list_dict)
-        return self.__paginate(result_list_dict)
+        result_list_dict, page_info_dict = self.__paginate(result_list_dict)
+        return self.__buildMetaInformation(result_list_dict, page_info_dict)
+
+    def __buildMetaInformation(
+        result_data: list[dict] | dict,
+        page_info_dict: dict | None
+    ) -> dict:
+        return {
+            "data": result_data,
+            "meta": {
+                "page": page_info_dict,
+                "permission": {
+                    "view": True,
+                    "edit": True,
+                }, #TODO: implement permission check
+            }
+        }
 
     def __groupBy(self, result_list_dict: list[dict]) -> list[dict]:
-        group_by = self.request_info_dict['query_params'].get(
-            'group_by',
+        group_by_list = self.request_info_dict['query_params'].get(
+            'group_by_list',
             None
         )
 
-        if group_by is None:
+        if group_by_list is None:
             return result_list_dict
-        self.__checkGroupByFormat(group_by, result_list_dict)
-        
-        level_1_list, level_2_dict = self.__getGroupLevelDict(group_by)
-        grouped_data = self.__buildGroups(result_list_dict, level_1_list)
-        return self.__combineData(grouped_data, level_1_list, level_2_dict)
-
-    def __checkGroupByFormat(
-        self,
-        group_by: list[str],
-        result_list_dict: list[dict]
-    ) -> None:
-        if type(group_by) is not list:
-            raise ValueError('group_by must be a list of strings')
-        for group in group_by:
-            if type(group) is not str:
-                raise ValueError('group_by must be a list of strings')
-            group_list = group.split('.')
-            if len(group_list) > 2:
-                raise Exception("Group by is not supported for more than 2 levels")
-            if group_list[0] not in result_list_dict[0].keys():
-                raise Exception(f"Group by key {group_list[0]} not found")
-
-    @staticmethod
-    def __getGroupLevelDict(group_by: list[str]) -> list[str]:
-        group_level_dict = {}
-        for group in group_by:
-            group_list = group.split('.')
-            if group_list[0] not in group_level_dict:
-                group_level_dict[group_list[0]] = []
-            if len(group_list) == 2:
-                group_level_dict[group_list[0]].append(group_list[1])
-        level_1_list = [
-            data for data, values in group_level_dict.items()
-            if len(values) == 0
-        ]
-        level_2_dict = {
-            data: values for data, values in group_level_dict.items()
-            if len(values) != 0
-        }
-        return level_1_list, level_2_dict
-
-    @staticmethod
-    def __buildGroups(data, group_by):
-        groups = {}
-        for item in data:
-            key = tuple([item[key] for key in group_by])
-            if key not in groups:
-                groups[key] = []
-            groups[key].append(item)
-        return groups
-
-    def __combineData(self, data, level_1_list, level_2_dict):
-        output_data = []
-        for group_data_list in data.values():    
-            list_for_combined_data = self.__buildListForToCombineData(group_data_list)
-            combined_data = self.__combineGroupedData(list_for_combined_data, level_1_list, level_2_dict)
-            output_data.append(combined_data)
-        return output_data
-
-    @staticmethod
-    def __buildListForToCombineData(group_data_list):
-        combined_data = {}
-        for data in group_data_list:
-            for key, value in data.items():
-                if key not in combined_data:
-                    combined_data[key] = []
-                combined_data[key].append(value)
-        return combined_data
-
-    def __combineGroupedData(self, combined_data, level_1_list, level_2_dict):
-        group_by = level_1_list
-        for key, value in combined_data.items():
-            if key in group_by:
-                combined_data[key] = value[0]
-            elif all(x is None for x in value):
-                combined_data[key] = None
-            elif any(x is None for x in value):
-                combined_data[key] = ", ".join([
-                    x for x in set(value) if x is not None
-                ])
-            elif all(isinstance(x, int) or isinstance(x, float) for x in value):
-                combined_data[key] = sum(value)
-            elif all(isinstance(x, str) for x in value):
-                combined_data[key] = ", ".join(set(value))
-            elif all(isinstance(x, list) for x in value):
-                combined_data[key] = [item for sublist in value for item in sublist]
-                if key in level_2_dict.keys():
-                    combined_data[key] = self.__combineData(
-                        self.__buildGroups(combined_data[key], level_2_dict[key]),
-                    level_2_dict[key], [])
-            else:
-                raise Exception(f"Cannot combine {key} with values {value}")
-        return combined_data
+        return inter_lod.groupListOfDictsByListOfStrings(
+            result_list_dict=result_list_dict,
+            group_by_list=group_by_list)
 
     def __sort(self, result_list_dict: list[dict]) -> list[dict]:
         sort_by = self.request_info_dict['query_params'].get(
@@ -502,7 +435,9 @@ class GeneralInfo:
         if page_size is None:
             return {
                 "data": result_list_dict,
-                "page":{'current': 1, 'max': 1}
+                "meta": {
+                    "page":{'current': 1, 'max': 1}
+                }
             }
         
         start_index = (page - 1) * page_size
@@ -513,13 +448,16 @@ class GeneralInfo:
 
         return ({
             "data": result_list_dict[start_index:end_index], 
-            "page": {'current': page, 'max': page_count}
+            "meta": {
+                "page": {'current': page, 'max': page_count}
+            }
         })
 
     def __handleGetDetail(self) -> dict:
         manager_obj = self.getDetail()
         result_dict = self.__serializeData(manager_obj)
-        return self.__reduceGetResult(result_dict)
+        result_dict = self.__reduceGetResult(result_dict)
+        return self.__buildMetaInformation(result_dict, None)
 
     def __reduceGetResult(
         self,
@@ -550,7 +488,10 @@ class GeneralInfo:
         return filtered_and_reduced_list
 
     def __couldBeSend(self, result_dict: dict) -> bool:
-        return self.__class__.datasetPermissionFunction(result_dict)
+        return self.__class__.datasetPermissionFunction(
+            self.request_info_dict,
+            result_dict
+        )
 
     @classmethod
     def __getAllowedMethodsList(cls, method_type: str) -> list:
@@ -676,13 +617,14 @@ class GeneralInfo:
         query_params = self.queryParamsIntoDict(self.request)
         request_data = self.request.data
         request_user_id = self.request.user.id
+        self.validate_only = query_params.pop('validate_only', False)
 
         return {
             "query_params": query_params,
             "request_data": request_data,
-            "request_user_id": request_user_id
+            "request_user_id": request_user_id,
         }
-    
+
     @classmethod
     def __checkGeneralInfoIsProperlyConfigured(cls):
         if not (

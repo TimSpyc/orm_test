@@ -18,7 +18,7 @@ def createAssetItemSiteConnectionGroupDict(cls):
     }
 
 def createAssetItemSiteConnectionDataDict(cls):
-    return {}
+    return {"is_released": cls.getRandomBoolean()}
 
 class PopulateAssetItemSiteConnection(GeneralPopulate):
     group_definition = (

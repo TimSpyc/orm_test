@@ -4,10 +4,10 @@ from backend.src.auxiliary.manager import GeneralManager
 from datetime import datetime
 
     
-class log__AutomatedScriptGroup(GroupTable):
+class LogAutomatedScriptGroup(GroupTable):
     script_name = models.CharField(max_length=255)
     script_description = models.TextField()
-    execution_interval = models.ForeignKey('log_AutomatedExecutionInterval', on_delete=models.DO_NOTHING)
+    execution_interval = models.ForeignKey('LogAutomatedScriptExecutionInterval', on_delete=models.DO_NOTHING)
     responsible_user = models.ForeignKey('User', on_delete=models.DO_NOTHING)
 
     def __str__(self):
@@ -15,10 +15,10 @@ class log__AutomatedScriptGroup(GroupTable):
 
     @property
     def manager(self):
-        return AutomatedScriptManager
+        return LogAutomatedScriptManager
 
-class log__AutomatedScript(DataTable):
-    script_group = models.ForeignKey('log__AutomatedScriptGroup', on_delete=models.DO_NOTHING)
+class LogAutomatedScript(DataTable):
+    log_automated_script_group = models.ForeignKey('LogAutomatedScriptGroup', on_delete=models.DO_NOTHING)
     notification = models.TextField()
     success = models.BooleanField()
 
@@ -27,11 +27,11 @@ class log__AutomatedScript(DataTable):
     
     @property
     def group_object(self):
-        return self.script_group
+        return self.log_automated_script_group
 
 
-class AutomatedScriptManager(GeneralManager):
+class LogAutomatedScriptManager(GeneralManager):
     
-    group_model = log__AutomatedScriptGroup
-    data_model = log__AutomatedScript
+    group_model = LogAutomatedScriptGroup
+    data_model = LogAutomatedScript
     data_extension_model_list = []
