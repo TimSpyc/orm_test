@@ -2,7 +2,8 @@ from datetime import datetime
 from backend.src.auxiliary.manager import GeneralManager
 from django.db import models
 from backend.models import User
-#from .models_for_testing import TestProjectGroup, TestProject, TestProjectUserGroup,TestProjectUser
+
+
 
 class TestGroupTable(models.Model):
     """
@@ -13,6 +14,7 @@ class TestGroupTable(models.Model):
         search_date: datetime, 
     ) -> GeneralManager:
         return self.manager(self.id, search_date)
+    
     
     table_type = 'GroupTable'
     class Meta:
@@ -53,6 +55,7 @@ class TestProjectGroup(TestGroupTable):
     """
     A Django model representing a TestProject group.
     """
+    
     def __str__(self):
         return f'{self.id}'
 
@@ -88,7 +91,10 @@ class TestProject3(TestDataTable):
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
-
+    @property
+    def group_object(self):
+        return self.test_project_group2
+    
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -137,6 +143,10 @@ class TestProject2(TestDataTable):
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
+    @property
+    def group_object(self):
+        return self.test_project_group
+    
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -155,6 +165,7 @@ class TestProjectGroup3(TestGroupTable):
     """
     unique3 = models.CharField(max_length=255)
     unique4 = models.CharField(max_length=255)
+
     def __str__(self):
         return f'{self.id}'
 
@@ -195,6 +206,9 @@ class TestProjectUser(TestDataTable):
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
+    @property
+    def group_object(self):
+        return self.test_project_user_group
 
     def __str__(self):
         return f'TestProjectUser {self.id}'
@@ -233,6 +247,19 @@ class TestProject2ExtensionTable(TestDataExtensionTable):
     name_extension = models.CharField(max_length=255)
     price = models.IntegerField()
     test_project2 = models.ForeignKey(TestProject2, on_delete=models.CASCADE)
+
+    @property
+    def data_object(self):
+        return self.test_project2
+
+
+# class TestProjectManager(GeneralManager):
+#     group_model = TestProjectGroup
+#     data_model = TestProject
+#     data_extension_model_list: list = []
+
+
+
 
 
 
