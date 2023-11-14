@@ -829,14 +829,19 @@ class PopulateModel(BasePopulate):
     def __getCustomPopulateForFieldName(self, field_name:str) -> Any:
         custom_populate = self._getAttr(field_name)
 
-        if custom_populate == NOT_PROVIDED:
-            return\
-                BaseCustomValidator.getValidatorFromValidatorListWithFieldName(
-                    field_name,
-                    self.model.validator_list
-                )
+        if custom_populate != NOT_PROVIDED:
+            return custom_populate
 
-        return custom_populate
+        custom_validator =\
+            BaseCustomValidator.getValidatorFromValidatorListWithFieldName(
+                field_name,
+                self.model.validator_list
+            )
+        
+        if custom_validator != NOT_PROVIDED:
+            return custom_validator(self.model).populate
+
+        return NOT_PROVIDED
 
     def __createFieldDefinitionDict(self, field_name:str) -> Dict[str, Any]:
         custom_populate = self.__getCustomPopulateForFieldName(field_name)
