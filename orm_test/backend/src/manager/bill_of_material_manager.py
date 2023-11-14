@@ -53,7 +53,7 @@ class BillOfMaterialStructure(DataExtensionTable):
 
     @property
     def data_object(self):
-        return self.BillOfMaterial
+        return self.bill_of_material
 
 
 class BillOfMaterialManager(GeneralManager):
@@ -86,16 +86,33 @@ class BillOfMaterialManager(GeneralManager):
         self,
         bom_type: str,
         head_part_group_id: int | None = None,
-        
-    ):
+    ) -> list:
+        """
+        Retrieve the bill of material structure based on the specified 
+        BOM type and optional head part group ID.
+
+        Args:
+            bom_type (str): The type of bill of material
+            head_part_group_id (int, optional): 
+                The ID of the head part group. Defaults to None.
+
+        Returns:
+            list: A list containing the bill of material structure.
+        """
+        total_bill_of_material_structure = []
         key_tuple = self.__selectBomType(bom_type)
 
-        head_node = self.__getHeadNodeList(key_tuple = key_tuple)
-        bill_of_material_structure = self.__getBillOfMaterialStructure(
-            head_node,
-            key_tuple
-        )
-        return bill_of_material_structure
+        head_node_list = self.__getHeadNodeList(
+            head_part_group_id,
+              key_tuple = key_tuple
+              )
+        for head_node in head_node_list:
+            bill_of_material_structure = self.__getBillOfMaterialStructure(
+                head_node,
+                key_tuple
+            )
+            total_bill_of_material_structure += bill_of_material_structure
+        return total_bill_of_material_structure
 
     def getBillOfMaterialDetails(
         self,
