@@ -3,18 +3,26 @@ from backend.models import GroupTable, DataTable, DataExtensionTable
 from backend.src.auxiliary.manager import GeneralManager
 
 class BillOfMaterialGroup(GroupTable):
-    derivative_constellium_group = models.ForeignKey('DerivativeConstelliumGroup', on_delete= models.DO_NOTHING)
+    derivative_constellium_group = models.ForeignKey(
+        'DerivativeConstelliumGroup',
+          on_delete= models.DO_NOTHING
+          )
 
     @property
     def manager(self):
         return BillOfMaterialManager
     
     def __str__(self):
-        return f"BillOfMaterialGroup {self.derivative_constellium_group}"
+        return f"BillOfMaterialGroup {
+            self.derivative_constellium_group
+            }"
 
 
 class BillOfMaterial(DataTable):
-    bill_of_material_group = models.ForeignKey(BillOfMaterialGroup, on_delete= models.DO_NOTHING)
+    bill_of_material_group = models.ForeignKey(
+        BillOfMaterialGroup,
+          on_delete= models.DO_NOTHING
+          )
     start_of_production_date = models.DateTimeField(null=True, default=None)
     end_of_production_date = models.DateTimeField(null=True, default=None)
     description = models.CharField(max_length=255)
@@ -24,11 +32,15 @@ class BillOfMaterial(DataTable):
         return self.bill_of_material_group
     
     def __str__(self):
-        return f"BillOfMaterial {self.bill_of_material_group}-{self.description}"
+        return f"BillOfMaterial {
+            self.bill_of_material_group}-{self.description}"
 
 
 class BillOfMaterialStructure(DataExtensionTable):
-    bill_of_material = models.ForeignKey(BillOfMaterial, on_delete= models.DO_NOTHING)
+    bill_of_material = models.ForeignKey(
+        BillOfMaterial,
+          on_delete= models.DO_NOTHING
+          )
     part_group = models.ForeignKey('PartGroup', on_delete= models.DO_NOTHING)
     part_position = models.ManyToManyField('PartPosition', blank=True)
     cumulated_quantity = models.FloatField()
@@ -68,9 +80,12 @@ class BillOfMaterialManager(GeneralManager):
     def getBillOfMaterialStructure(
         self,
         bom_type: str,
+        head_part_group_id: int | None = None,
+        
     ):
         head_node = self.__getHeadNodeList()
         key_tuple = self.__selectBomType(bom_type)
+
         bill_of_material_structure = self.__getBillOfMaterialStructure(
             head_node,
             key_tuple
@@ -82,6 +97,26 @@ class BillOfMaterialManager(GeneralManager):
         bom_type: str,
         head_part_group_id: int | None = None
     ) -> list[dict]:
+        """
+        Retrieves details of the Bill of Material based on the specified 
+        BOM type and optional head part group ID.
+
+        Args:
+            bom_type (str): 
+                The type of Bill of Material to retrieve details for.
+            head_part_group_id (int | None, optional): 
+                The group ID of the head part. Default = None.
+
+        Returns:
+            list[dict]: 
+                A list of dictionaries with details of the Bill of Material.
+                Each dictionary includes information about the head node,
+                direct child nodes, leaf nodes, and the hierarchical structure.
+        Raises:
+            ValueError: 
+                If an invalid BOM type is provided or an empty 
+                head part group ID is given.
+        """
         key_tuple = self.__selectBomType(bom_type)
         head_node_list = self.__getHeadNodeList(head_part_group_id, key_tuple)
         bill_of_material_detail_dict_list = []
@@ -175,7 +210,6 @@ class BillOfMaterialManager(GeneralManager):
                     """
                     )
          
-        
         return existing_id
 
     def __getNodeHeadNodeList(self, key_tuple: tuple[str, str]) -> list[dict]:
@@ -199,7 +233,8 @@ class BillOfMaterialManager(GeneralManager):
             if left is not None and right is not None:
                 is_head = True
                 for range_data in open_ranges:
-                    if left > range_data[left_value] and right < range_data[right_value]:
+                    if left > range_data[left_value] and \
+                        right < range_data[right_value]:
                         is_head = False
                         break
                 if is_head:
@@ -225,10 +260,10 @@ class BillOfMaterialManager(GeneralManager):
             key_tuple (tuple): 
                 A tuple of keys representing the 'left' and 'right' values
                 in the nodes.
-            must_be_leaf (bool, optional): If True, only leaf nodes are included
-                 in the result. Default is False.
-            must_be_direct_child (bool, optional): If True, only direct child nodes
-                 are included in the result. Default is False.
+            must_be_leaf (bool, optional): If True, only leaf nodes are 
+                included in the result. Default is False.
+            must_be_direct_child (bool, optional): If True, only direct 
+                child nodes are included in the result. Default is False.
 
         Returns:
             list: A list of child nodes.
@@ -366,6 +401,20 @@ class BillOfMaterialManager(GeneralManager):
         head_node: dict,
         key_tuple: tuple
     ) -> list:
+        """
+        Generates a Bill of Material structure based on a given 
+        head node and key tuple.
+
+        Args:
+            head_node (dict): 
+                The head node for which the structure is generated.
+            key_tuple (tuple): 
+                A tuple containing the left and right key names.
+
+        Returns:
+            list: A list of dictionaries representing the 
+                hierarchical Bill of Material structure.
+        """
         relevant_node_list = self.__getChildNodeList(
             head_node,
             key_tuple,
@@ -426,14 +475,17 @@ class BillOfMaterialManager(GeneralManager):
                 or has missing key 'pos' and 'group_id' keys.
         """
         if bill_of_material_dict == []:
+
             raise ValueError("bill_of_material_dict cannot be empty.")
         
         if not isinstance(bill_of_material_dict, list) \
                 and not isinstance(bill_of_material_dict, dict):
+            
             raise ValueError("Please provide a list of dictionaries.")
 
         for item in bill_of_material_dict:
             if 'pos' not in item or 'group_id' not in item:
+
                 raise ValueError(
                     f"""
                     "Invalid input format. Expected a list of dictionaries 
@@ -603,14 +655,17 @@ class BillOfMaterialManager(GeneralManager):
                  or has missing keys 'group_id', 'left' and 'right'.
         """
         if bill_of_material_dict == []:
+
             raise ValueError("bill_of_material_dict cannot be empty.")
         
         if not isinstance(bill_of_material_dict, list) \
                 and not isinstance(bill_of_material_dict, dict):
+            
             raise ValueError("Please provide a list of dictionaries.")
 
         for item in bill_of_material_dict:
             if not all(key in item for key in ['group_id', 'left', 'right']):
+
                 raise ValueError(
                     f"""
                     "Invalid input format. Expected a list of dictionaries 
@@ -662,7 +717,8 @@ class BillOfMaterialManager(GeneralManager):
 
             stack.append(node)
 
-        if min(left_values) != 1 or max(right_values) \
+        offset = min(left_values) -1
+        if min(left_values) - offset != 1 or max(right_values) - offset \
             != len(bill_of_material_dict) * 2:
             raise ValueError("invalid root set")
         
@@ -711,6 +767,8 @@ class BillOfMaterialManager(GeneralManager):
         return BillOfMaterialManager._createPositionStructure(
             validated_input
             )
+
+        
         
     @staticmethod
     def _createPositionStructure(nested_set_data: list) -> list:
@@ -726,41 +784,65 @@ class BillOfMaterialManager(GeneralManager):
             list[dict]: List of dictionaries representing the 
                 hierarchical position structure.
         """
+        sorted_output = BillOfMaterialManager._sortNestedSet(nested_set_data)
         bom_structure_dict = []
         hierarchy = []
         current_pos = {}
-        parent_pos = ""
-
-        sorted_output = BillOfMaterialManager._sortNestedSet(nested_set_data)
 
         for node in sorted_output:
             group_id = node['group_id']
             left = node['left']
             right = node['right']
 
-            while hierarchy and hierarchy[-1]['right'] < left:
-                hierarchy.pop()
+            hierarchy = BillOfMaterialManager._updateHierarchy(hierarchy, left)
 
-            if not hierarchy:
-                parent_pos = ""
-            else:
-                parent_pos = hierarchy[-1]['pos']
-            
+            parent_pos = "" if not hierarchy else hierarchy[-1]['pos']
+            current_pos = BillOfMaterialManager._updateCurrentPosition(current_pos, parent_pos)
 
-            if parent_pos in current_pos:
-                current_pos[parent_pos] += 1
-            else:
-                current_pos[parent_pos] = 1
-
-            pos = parent_pos + '.' + str(current_pos[parent_pos]) \
-                    if parent_pos else str(current_pos[parent_pos])
-            
+            pos = f"{parent_pos}.{current_pos[parent_pos]}" if parent_pos else str(current_pos[parent_pos])
             bom_structure_dict.append({'pos': pos, 'group_id': group_id})
             hierarchy.append({'pos': pos, 'right': right})
 
         return bom_structure_dict
-        
-        
-       
-     
-    
+
+    @staticmethod
+    def _updateHierarchy(hierarchy: list, left: int) -> list:
+        """
+        Update the hierarchy by removing elements that end to the right of left.
+
+        Args:
+            hierarchy (list): Current hierarchy.
+            left (int): Left value of the current node.
+
+        Returns:
+            list: Updated hierarchy.
+        """
+        while hierarchy and hierarchy[-1]['right'] < left:
+            hierarchy.pop()
+        return hierarchy #Gibt aktualisierte Hierarchie zurück, wobei alle Elemente entfernt wurden, die rechts von left enden.
+
+    @staticmethod
+    def _updateCurrentPosition(current_pos: dict, parent_pos: str) -> dict:
+        """
+        Update the current position dictionary by incrementing 
+        the counter for the current parent position.
+
+        Args:
+            current_pos (dict): 
+                Dictionary with counters for each parent position.
+            parent_pos (str): 
+                Position of the parent element.
+
+        Returns:
+            dict: Updated current position dictionary.
+        """
+        #current_pos - ein Dictionary, das die Anzahl der Elemente für jede Elternposition enthält, parent_pos - die Position des übergeordneten Elements.
+        #Output: Gibt das aktualisierte current_pos-Dictionary zurück, wobei der Zähler für die aktuelle parent_pos-Position erhöht wurde.
+        if parent_pos in current_pos:
+            current_pos[parent_pos] += 1
+        else:
+            current_pos[parent_pos] = 1
+        return current_pos
+
+
+
