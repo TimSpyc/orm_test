@@ -2274,7 +2274,7 @@ class TestGetManagerListFromDataModel(TestCase):
         self.new_kunden_group = newKundenGroup.objects.create()
         self.new_kunden = newKunden.objects.create(
             name= 'test1',
-            new_kunden_group = self.new_kunden_group,
+            new_kunden_group = self.new_kunden_group,    
             date= datetime(2020, 1, 1),
             creator_id = self.creator.id
             )

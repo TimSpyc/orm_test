@@ -102,6 +102,10 @@ class TestProject(TestDataTable):
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, null= True)
     active = models.BooleanField(default = True)
 
+    @property
+    def group_object(self):
+        return self.test_project_group
+
     class Meta:
         unique_together = ('project_number', 'test_project_group')
         app_label = 'backend'           
