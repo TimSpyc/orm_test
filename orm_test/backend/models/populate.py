@@ -66,10 +66,10 @@ def createTempAttrs(*attr_name_list: list[str]) -> Any:
                 setattr(self, attr_name, NOT_CONFIGURED)
 
             result = func(self, *args, **kwargs)
-            
+
             for attr_name in attr_name_list:
                 delattr(self, attr_name)
-                
+
             return result
         return innerWrapper
     return outerWrapper
@@ -81,8 +81,6 @@ def createTempAttrs(*attr_name_list: list[str]) -> Any:
 
 class BasePopulate:
     FAKE = Faker()
-
-    # TODO: Implement following types dict, list, ...
     SUPPORTED_TYPE_LIST = [
         int,
         float,
@@ -92,17 +90,16 @@ class BasePopulate:
         datetime,
         date,
         time,
+        dict,
+        list
     ]
 
     def __init__(self, type_to_populate: type, **kwargs) -> None:
         self._checkType(type_to_populate, type, "type_to_populate")
         if type_to_populate not in self.SUPPORTED_TYPE_LIST:
-            # TODO: adjust error msg
-            raise NotImplementedYet(f'''
-                The type to populate "{type_to_populate}" is not supported yet!
-                To show all supported types call:
-                -> BasePopulate.SUPPORTED_TYPE_LIST
-            ''')
+            raise NotImplementedYet(
+                f'The type "{type_to_populate}" is not supported! -> see {self.__class__.__name__}.SUPPORTED_TYPE_LIST'
+            )
 
         self.__type_to_populate = type_to_populate
         self.__populateData = self._getPopulateFuncWithTypeName(
@@ -119,45 +116,47 @@ class BasePopulate:
     @staticmethod
     def _checkType(attr: Any, attr_type: type, attr_name: str) -> None:
         if not isinstance(attr, attr_type):
-            raise TypeError(f'''
-                The attr "{attr_name}" must be of type "{attr_type}"!
-                -> not "{type(attr)}"
-            ''')
+            raise TypeError(
+                f'The attr "{attr_name}" must be of type "{attr_type}"! -> not "{type(attr)}"'
+            )
 
-    @classmethod
-    def _checkPercentageDefinition(cls, attr: float, attr_name: str) -> None:
-        cls._checkType(attr, float, attr_name)
+    @staticmethod
+    def _checkPercentageDefinition(attr: float, attr_name: str) -> None:
+        BasePopulate._checkType(attr, float, attr_name)
 
         if attr < 0 or attr > 1:
-            raise ValueError(f'''
-                Definition for "{attr_name}" data 
-                is not a percentage!
-            ''')
+            raise ValueError(
+                f'Definition for "{attr_name}" must be a percentage! -> not "{attr}"'
+            )
 
-    # ---- ? -------------------------------------------------------------------
+    @staticmethod
+    def _checkMinMaxValue(min_value: int, max_value: int) -> None:
+        if min_value > max_value:
+            raise ValueError(
+                f'The min_value must be smaller than the max_value! -> not not "{min_value}" < "{max_value}"'
+            )
+
+        if min_value < 0 or max_value < 0:
+            raise ValueError(
+                f'The min_value and max_value must be positive! -> not "{min_value}" / "{max_value}"'
+            )
+
+    # ---- Making decisions randomly -------------------------------------------
     @staticmethod
     def randomTrue(chance_for_true: float) -> bool:
         return chance_for_true > BasePopulate.createRandomFloat(0.0, 1.0)
-    
-    @staticmethod
-    def randomChoice(list_to_select_from: list) -> Any:
-        return random.choice(list_to_select_from)
 
     # ---- Select data creation methods ----------------------------------------
-    def _getPopulateFuncWithTypeName(self, type_name: str) -> Any:
+    def _getPopulateFuncWithTypeName(self, type_name: str) -> callable:
         function_name =\
             f"createRandom{type_name[:1].capitalize() + type_name[1:]}"
 
         try:
             return getattr(self, function_name)
         except AttributeError as e:
-            raise NotImplementedYet(f'''
-                Can't found a corresponding populate function with the name:
-                -> {function_name}
-
-                Please check the class configuration for:
-                -> {self.__class__.__name__}
-            ''')
+            raise NotImplementedYet(
+                f'Can not found function for name "{function_name}" -> check {self.__class__.__name__}'
+            )
         except Exception as e:
             raise e
 
@@ -168,8 +167,7 @@ class BasePopulate:
         min_value: int = 0,
         max_value: int = 999999
     ) -> int:
-        fake_int: int = cls.FAKE.random_int(min_value, max_value)
-        return fake_int
+        return cls.FAKE.random_int(min_value, max_value)
 
     @staticmethod
     def createRandomFloat(
@@ -177,13 +175,13 @@ class BasePopulate:
         max_value: float = 999999.0
     ) -> float:
         return random.uniform(min_value, max_value)
-    
+
     @staticmethod
     def _createUpperBorderForMaximalDigits(max_digits: int) -> int:
         if max_digits < 0:
             raise ValueError('must be positive')
-        test: int = (10 ** max_digits) - 1
-        return test
+
+        return (10 ** max_digits) - 1
 
     @staticmethod
     def createRandomDecimal(
@@ -227,39 +225,49 @@ class BasePopulate:
         cls,
         start_date:datetime = datetime(1970, 1, 1),
         end_date:datetime = datetime.now()
-    ) -> datetime:
+    ) -> date:
         return cls.FAKE.date_between(start_date, end_date)
 
     @classmethod
     def createRandomTime(cls) -> time:
         return cls.FAKE.time_object()
 
-    @classmethod
-    def createRandomStr(cls, min_length: int = 0, max_length: int = 50) -> str:
-        if min_length > max_length:
-            # TODO adjust error msg
-            raise ValueError(f'''
-                The min_length "{min_length}" is greater than the max_length
-            ''')
+    @staticmethod
+    def _shortenStringToMaxLength(
+        string_to_shorten: str,
+        max_length: int
+    ) -> str:
+        # NOTE: parameters are not checked because this function is private!
+        if len(string_to_shorten) > max_length:
+            return string_to_shorten[:-(len(string_to_shorten)-max_length)]
 
+        return string_to_shorten
+
+    @classmethod
+    def _createRandomString(cls, max_length: int = 50) -> str:
+        # NOTE: parameters are not checked because this function is private!
         temp_max_length = max_length
         if max_length < 5:
-            # TODO: Adjust logic (max_length-min_length)
             temp_max_length = 5
-        random_text: str = cls.FAKE.text(temp_max_length)
+
+        random_string = cls.FAKE.text(temp_max_length)
+        return BasePopulate._shortenStringToMaxLength(random_string, max_length)
+
+    @staticmethod
+    def createRandomStr(min_length: int = 0, max_length: int = 50) -> str:
+        BasePopulate._checkMinMaxValue(min_length, max_length)
+        random_text = BasePopulate._createRandomString(max_length)
 
         while len(random_text) < min_length:
-            random_text += cls.FAKE.text(max_length-len(random_text))
-
-        if len(random_text) > max_length:
-            random_text = random_text[:-(len(random_text)-max_length)]
+            random_text += BasePopulate._createRandomString(
+                max_length-len(random_text)
+            )
 
         return random_text
 
     @classmethod
     def createRandomEmail(cls) -> str:
-        fake_email: str = cls.FAKE.email()
-        return fake_email
+        return cls.FAKE.email()
 
     @classmethod
     def createRandomBool(
@@ -269,27 +277,60 @@ class BasePopulate:
     ) -> bool | None:
         fake_boolean: bool = cls.FAKE.boolean()
 
-        if can_be_none and cls.randomTrue(chance_for_none):
+        if can_be_none and BasePopulate.randomTrue(chance_for_none):
             return None
 
         return fake_boolean
-    
+
     @classmethod
-    def createRandomDict(
-        cls,
+    def createRandomData(cls) -> Any:
+        random_type_to_populate = random.choice(cls.SUPPORTED_TYPE_LIST)
+        return cls(random_type_to_populate).populate()
+
+    @staticmethod
+    def _createRandomListAndDict(
+        min_elements: int = 1,
+        max_elements: int = 10,
+    ) -> tuple[list, dict]:
+        BasePopulate._checkMinMaxValue(min_elements, max_elements)
+        random_data_list = []
+        random_data_dict = {}
+
+        for i in range(BasePopulate.createRandomInt(min_elements,max_elements)):
+            # NOTE: There is a potential permanent loop if type dict or list!
+            random_data = BasePopulate.createRandomData()
+
+            random_data_list.append(random_data)
+            random_data_dict[f'key_{i+1}'] = random_data
+
+        return (random_data_list, random_data_dict)
+
+    @staticmethod
+    def createRandomList(
         min_elements: int = 1,
         max_elements: int = 10,
     ) -> dict:
-        random_data_dict = {}
+        random_data_list, _ = BasePopulate._createRandomListAndDict(
+            min_elements,
+            max_elements
+        )
 
-        for i in range(cls.createRandomInt(min_elements, max_elements)):
-            type_to_populate = cls.randomChoice(cls.SUPPORTED_TYPE_LIST)
-            random_data_dict[f'key_{i}'] = cls(type_to_populate).populate()
+        return random_data_list
+
+    @staticmethod
+    def createRandomDict(
+        min_elements: int = 1,
+        max_elements: int = 10,
+    ) -> dict:
+        _, random_data_dict = BasePopulate._createRandomListAndDict(
+            min_elements,
+            max_elements
+        )
 
         return random_data_dict
-    
-    @classmethod
-    def createRandomJSON(cls) -> str:
+
+    @staticmethod
+    def createRandomJSON() -> json:
         class MyEncoder(json.JSONEncoder):
             def default(self, obj):
                 if isinstance(obj, (datetime, date, time)):
@@ -298,18 +339,20 @@ class BasePopulate:
                     return str(obj)
                 return super().default(obj)
 
-        return json.dumps(cls.createRandomDict(), cls=MyEncoder)
+        # NOTE: There is a potential permanent loop if type_to_populate = json!
+        return json.dumps(BasePopulate.createRandomData(), cls=MyEncoder)
 
     # ---- handle meta attributes ----------------------------------------------
     @staticmethod
     def _createMetaAttrName(custom_attr_name: str) -> str:
         return f"meta__{custom_attr_name}"
 
-    @classmethod
-    def _createMetaAttrListForFunc(cls, func: callable) -> list:
+    @staticmethod
+    def _createMetaAttrListForFunc(func: callable) -> list:
         return [
-            cls._createMetaAttrName(attr_name) 
+            BasePopulate._createMetaAttrName(attr_name)
             for attr_name in inspect.signature(func).parameters.keys()
+            if attr_name not in ("self", "cls", "args", "kwargs")
         ]
 
     def _checkAndCreateMetaAttrs(self, func: callable, **kwargs) -> None:
@@ -317,14 +360,12 @@ class BasePopulate:
 
         for meta_attr, custom_attr in kwargs.items():
             if meta_attr not in possible_meta_attr_list:
-                # TODO: adjust error msg
-                raise ValueError(f'''
-                    The meta attribute with the name "{meta_attr}" is not 
-                    allowed!
-                ''')
-            
+                raise ValueError(
+                    f'The meta attr "{meta_attr}" is not a possible option!'
+                )
+
             setattr(self, meta_attr, custom_attr)
-            
+
     def _createCustomAttrDict(self, func: callable) -> dict:
         possible_meta_attr_list = self._createMetaAttrListForFunc(func)
 
@@ -333,7 +374,7 @@ class BasePopulate:
             for meta_attr_name in possible_meta_attr_list
             if hasattr(self, meta_attr_name)
         }
-    
+
     def _checkCustomAndMetaAttrs(
         self,
         allowed_attr_name_list: list[str],
@@ -347,20 +388,19 @@ class BasePopulate:
         for attr_name, attr in kwargs.items():
             if attr_name not in allowed_attr_name_list\
             and attr_name not in allowed_meta_attr_name_list:
-                # TODO: adjust error and msg
-                print("attr_name", attr_name)
-                raise ValueError("Attribute is not allowed")
+                raise ValueError(
+                    f'The meta attr "{attr_name}" is not a possible option!'
+                )
 
-            # NOTE: If attr_name exists as an attribute will be checked when 
+            # NOTE: If attr_name exists as an attribute will be checked when
             # creating the custom attribute
 
-            # NOTE: If attr_name in allowed_attr_name_list the type will be 
+            # NOTE: If attr_name in allowed_attr_name_list the type will be
             # checked when calling the corresponding class
 
             if attr_name in allowed_meta_attr_name_list\
             and not isinstance(attr, dict):
-                # TODO: adjust error msg
-                raise TypeError("Meta attribute must be of type dict")
+                raise TypeError("The meta attr must be of type dict!")
 
     def _createCustomAndMetaAttrs(
         self,
@@ -371,21 +411,15 @@ class BasePopulate:
 
         def createAttr(attr_name: str, **kwargs) -> None:
             if hasattr(self, attr_name):
-                # TODO: adjust error and msg
-                raise ValueError("Attribute existing")
+                raise ValueError(
+                    f'The attr "{attr_name}" already exists for class "{self.__class__.__name__}"!'
+                )
 
             setattr(self, attr_name, kwargs.get(attr_name, NOT_PROVIDED))
 
         for attr_name in allowed_attr_name_list:
             createAttr(attr_name, **kwargs)
             createAttr(self._createMetaAttrName(attr_name), **kwargs)
-
-    # def _getMetaAttrDictForClassInstance(self, class_instance) -> dict | None:
-    #     meta_attr_name = self._createMetaAttrName(class_instance.__name__)
-    #     if hasattr(self, meta_attr_name):
-    #         return getattr(self, meta_attr_name)
-        
-    #     return {}
 
     # ---- handle populate methods ---------------------------------------------
     def populate(self) -> Any:
@@ -398,7 +432,7 @@ class BasePopulate:
         min_data: int = 1,
         max_data: int = 100
     ) -> list:
-        # TODO: check attributes!
+        self._checkMinMaxValue(min_data, max_data)
         created_obj_list = []
 
         for _ in range(0, self.createRandomInt(min_data, max_data)):
@@ -412,7 +446,6 @@ class BasePopulate:
         obj_to_populate,
         data_list: list[dict]
     ) -> list:
-        # TODO: check attributes!
         created_obj_list = []
 
         for data in data_list:
@@ -487,7 +520,7 @@ class PopulateField(BasePopulate):
         random_data_dict = {}
 
         for i in range(cls.createRandomInt(min_elements, max_elements)):
-            type_to_populate = cls.randomChoice(super().SUPPORTED_TYPE_LIST)
+            type_to_populate = random.choice(super().SUPPORTED_TYPE_LIST)
             random_data_dict[f'key_{i}'] = BasePopulate(
                 type_to_populate
             ).populate()
@@ -691,7 +724,7 @@ class PopulateField(BasePopulate):
         relationship_model_list: list[models.Model]
     ) -> models.Model:
         if len(relationship_model_list) != 0 and self.randomTrue(0.75):
-            return self.randomChoice(relationship_model_list)
+            return random.choice(relationship_model_list)
 
         return PopulateModel(self.field.related_model).populate()
 
