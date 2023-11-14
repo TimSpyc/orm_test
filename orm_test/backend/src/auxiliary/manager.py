@@ -2398,8 +2398,9 @@ class GeneralManager:
         except ObjectDoesNotExist:
             return None
 
-    def validate_update(self):
+    def validate_update(self, creator_id, **kwargs):
         return True
     
-    def validate_create(self):
+    @classmethod
+    def validate_create(cls, creator_id, **kwargs):
         return True
