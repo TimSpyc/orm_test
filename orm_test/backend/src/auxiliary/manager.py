@@ -1978,6 +1978,7 @@ class GeneralManager:
 
     @staticmethod
     def __getNotNullFields(model: models.Model) -> list:
+
         """
         Get a list of fields of the model that are marked as NOT NULL.
 
@@ -2064,7 +2065,8 @@ class GeneralManager:
 
     @classmethod
     def __errorForInsufficientUploadData(
-        cls, model_type: str, 
+        cls,
+        model_type: str, 
         is_data_uploadable: list
         ):
         """
@@ -2097,7 +2099,7 @@ class GeneralManager:
         elif model_type == 'data_extension_model': 
             name = 'data extension table data'
             model = cls.data_extension_model_list
-          
+
         raise ValueError(
             f''' 
             The given **kwargs are not sufficient.
@@ -2228,7 +2230,6 @@ class GeneralManager:
 
         if not data_columns.issubset(extension_model_fields):
             return False
-
         is_data_extension_data_uploadable = cls.__isDataUploadable(
             data_to_check, 
             data_extension_model
