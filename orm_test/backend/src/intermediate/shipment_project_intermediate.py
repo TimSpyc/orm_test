@@ -31,7 +31,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             ]
         )
         self.search_date = search_date
-        self.derivative_constellium_group_dict_list = \
+        self.derivative_constellium_group_list_of_dict = \
             list(DerivativeConstelliumGroup.objects.filter(
                 project_group_id=project_group_id
             ).values())
@@ -48,7 +48,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         total_shipment = []
         total_shipment_derivative = []
 
-        for data in self.derivative_constellium_group_dict_list:
+        for data in self.derivative_constellium_group_list_of_dict:
             derivative_constellium_group_id = data['id']
             inter_obj = ShipmentDerivativeIntermediate(
                 derivative_constellium_group_id=derivative_constellium_group_id,

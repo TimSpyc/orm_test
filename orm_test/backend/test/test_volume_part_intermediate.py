@@ -7,7 +7,7 @@ class TestGetVolume(unittest.TestCase):
     def test_simpleBomStructure(self, mock_update_total_volume):
         # Mocking the dependencies
         bom_manager = Mock()
-        bom_manager.bill_of_material_structure_dict_list = [{'part_group_id': 1, 'cumulated_quantity': 10}]
+        bom_manager.bill_of_material_structure_list_of_dict = [{'part_group_id': 1, 'cumulated_quantity': 10}]
         bom_manager.derivative_constellium_group_id = 1
 
         part_manager = Mock()
@@ -32,7 +32,7 @@ class TestGetVolume(unittest.TestCase):
     def test_complexBomStructure(self):
         # Mocking the dependencies
         bom_manager = Mock()
-        bom_manager.bill_of_material_structure_dict_list = [
+        bom_manager.bill_of_material_structure_list_of_dict = [
             {'part_group_id': 1, 'cumulated_quantity': 10},
             {'part_group_id': 2, 'cumulated_quantity': 10},
             {'part_group_id': 3, 'cumulated_quantity': 10},

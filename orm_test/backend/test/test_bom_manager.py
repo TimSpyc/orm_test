@@ -560,12 +560,12 @@ class TestGetChildNodeList(TestCase):
         self.manager = BillOfMaterialManager.__new__(BillOfMaterialManager)
         self.manager.group_id = self.bill_of_material_group.id
        
-        self.bill_of_material_structure_dict_list = [
+        self.bill_of_material_structure_list_of_dict = [
             {'left': 1, 'right': 6, 'cumulated_quantity': 100},
             {'left': 2, 'right': 3, 'cumulated_quantity': 20},
             {'left': 4, 'right': 5, 'cumulated_quantity': 30},
         ]
-        self.manager.bill_of_material_structure_dict_list = self.bill_of_material_structure_dict_list
+        self.manager.bill_of_material_structure_list_of_dict = self.bill_of_material_structure_list_of_dict
 
     def test_get_child_node_list_must_not_be_a_direct_child(self):
 
@@ -637,7 +637,7 @@ class TestGetNodeHeadNodeList(TestCase):
         )
         self.manager = BillOfMaterialManager.__new__(BillOfMaterialManager)
         self.manager.group_id = self.bill_of_material_group.id  
-        self.manager.bill_of_material_structure_dict_list = [
+        self.manager.bill_of_material_structure_list_of_dict = [
         {'part_group': {'id': 1},'left_value_product_development': 1,'left': 1, 'right':4,},
         {'part_group': {'id': 2},'left_value_product_development': 1,'left': 2, 'right':3,},
         {'part_group': {'id': 3},'left_value_product_development': 1,'left': 5, 'right':10,},
@@ -671,7 +671,7 @@ class TestGetHeadNodeList(TestCase):
         )
         self.manager = BillOfMaterialManager.__new__(BillOfMaterialManager)
         self.manager.group_id = self.bill_of_material_group.id
-        self.manager.bill_of_material_structure_dict_list = [
+        self.manager.bill_of_material_structure_list_of_dict = [
         {'part_group': {'id': 1},'left_value_product_development': 1,'left': 1, 'right':4,},
         {'part_group': {'id': 2},'left_value_product_development': 2,'left': 2, 'right':3,},
         {'part_group': {'id': 3},'left_value_product_development': 3,'left': 5, 'right':10,},
@@ -714,7 +714,7 @@ class TestGetBillOfMaterialStructure(TestCase):
         )
         self.manager = BillOfMaterialManager.__new__(BillOfMaterialManager)
         self.manager.group_id = self.bill_of_material_group.id
-        self.manager.bill_of_material_structure_dict_list = [
+        self.manager.bill_of_material_structure_list_of_dict = [
             {'group_id': 1, 'left': 1, 'right': 6, 'cumulated_quantity': 100},
             {'group_id': 2, 'left': 2, 'right': 3, 'cumulated_quantity': 20},
             {'group_id': 3,'left': 4, 'right': 5, 'cumulated_quantity': 30},

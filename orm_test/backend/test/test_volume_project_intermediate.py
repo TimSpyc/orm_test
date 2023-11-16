@@ -32,7 +32,7 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
         intermediate = TestVolumeLmcProjectIntermediate()
         intermediate.VolumeDerivativeIntermediateClass = VolumeLmcDerivativeConstelliumIntermediate
         intermediate.search_date = datetime.date(2022, 1, 1)
-        intermediate.derivative_constellium_group_dict_list = [{
+        intermediate.derivative_constellium_group_list_of_dict = [{
             'id': 1
         }, {
             'id': 2
@@ -59,7 +59,7 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
         intermediate = TestVolumeLmcProjectIntermediate()
         intermediate.VolumeDerivativeIntermediateClass = VolumeLmcDerivativeConstelliumIntermediate
         intermediate.search_date = datetime.date(2022, 1, 1)
-        intermediate.derivative_constellium_group_dict_list = [{
+        intermediate.derivative_constellium_group_list_of_dict = [{
             'id': 1
         }, {
             'id': 2
@@ -87,7 +87,7 @@ class TestGetVolumeWithVolumeLmcDerivativeConstelliumIntermediate(unittest.TestC
         intermediate = TestVolumeLmcProjectIntermediate()
         intermediate.VolumeDerivativeIntermediateClass = VolumeLmcDerivativeConstelliumIntermediate
         intermediate.search_date = datetime.date(2022, 1, 1)
-        intermediate.derivative_constellium_group_dict_list = [{
+        intermediate.derivative_constellium_group_list_of_dict = [{
             'id': 1
         }, {
             'id': 2
@@ -118,7 +118,7 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
         intermediate = TestVolumeLmcProjectIntermediate()
         intermediate.VolumeDerivativeIntermediateClass = VolumeCustomerDerivativeConstelliumIntermediate
         intermediate.search_date = datetime.date(2022, 1, 1)
-        intermediate.derivative_constellium_group_dict_list = [{
+        intermediate.derivative_constellium_group_list_of_dict = [{
             'id': 1
         }, {
             'id': 2
@@ -145,7 +145,7 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
         intermediate = TestVolumeLmcProjectIntermediate()
         intermediate.VolumeDerivativeIntermediateClass = VolumeCustomerDerivativeConstelliumIntermediate
         intermediate.search_date = datetime.date(2022, 1, 1)
-        intermediate.derivative_constellium_group_dict_list = [{
+        intermediate.derivative_constellium_group_list_of_dict = [{
             'id': 1
         }, {
             'id': 2
@@ -173,7 +173,7 @@ class TestGetVolumeWithVolumeCustomerDerivativeConstelliumIntermediate(unittest.
         intermediate = TestVolumeLmcProjectIntermediate()
         intermediate.VolumeDerivativeIntermediateClass = VolumeCustomerDerivativeConstelliumIntermediate
         intermediate.search_date = datetime.date(2022, 1, 1)
-        intermediate.derivative_constellium_group_dict_list = [{
+        intermediate.derivative_constellium_group_list_of_dict = [{
             'id': 1
         }, {
             'id': 2

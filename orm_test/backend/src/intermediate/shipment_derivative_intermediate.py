@@ -65,6 +65,6 @@ class ShipmentDerivativeIntermediate(GeneralIntermediate):
                 })
         
         return inter_lod.groupListOfDictsByListOfStrings(
-            result_list_dict=total_shipment,
+            result_list_of_dict=total_shipment,
             group_by_key_list=['date']
         ), shipment_head_parts

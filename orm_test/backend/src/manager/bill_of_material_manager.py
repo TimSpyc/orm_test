@@ -89,7 +89,7 @@ class BillOfMaterialManager(GeneralManager):
     ) -> list[dict]:
         key_tuple = self.__selectBomType(bom_type)
         head_node_list = self.__getHeadNodeList(head_part_group_id, key_tuple)
-        bill_of_material_detail_dict_list = []
+        bill_of_material_detail_list_of_dict = []
 
         for head_node in head_node_list:
             direct_child_node_list = self.__getChildNodeList(
@@ -107,14 +107,14 @@ class BillOfMaterialManager(GeneralManager):
                 key_tuple
             )
 
-            bill_of_material_detail_dict_list.append({
+            bill_of_material_detail_list_of_dict.append({
                 'head_node': head_node,
                 'direct_child_node_list': direct_child_node_list,
                 'leaf_node_list': leaf_node_list,
                 'structure': bill_of_material_structure
             })
         
-        return bill_of_material_detail_dict_list
+        return bill_of_material_detail_list_of_dict
 
     def __selectBomType(self, bom_type: str) -> tuple:
         """
@@ -170,7 +170,7 @@ class BillOfMaterialManager(GeneralManager):
                     lambda dict_data: (
                         dict_data['part_group']['id'] == head_part_group_id
                     ),
-                    self.bill_of_material_structure_dict_list
+                    self.bill_of_material_structure_list_of_dict
                 ))
             if not existing_id:
                 raise ValueError(
@@ -196,7 +196,7 @@ class BillOfMaterialManager(GeneralManager):
         left_value, right_value = key_tuple
         head_nodes = []
         open_ranges = []
-        for node in self.bill_of_material_structure_dict_list:
+        for node in self.bill_of_material_structure_list_of_dict:
 
             left = node.get(left_value)
             right = node.get(right_value)
@@ -242,7 +242,7 @@ class BillOfMaterialManager(GeneralManager):
         left_value, right_value = key_tuple
         node_list = []
         found_direct_child = False
-        for node in self.bill_of_material_structure_dict_list:
+        for node in self.bill_of_material_structure_list_of_dict:
 
             left_node_value = node[left_value] if left_value in node else 0
             right_node_value = node[right_value] if right_value in node else 0
@@ -269,7 +269,7 @@ class BillOfMaterialManager(GeneralManager):
             ):
                 
                 is_direct_child = self.__checkIfIsDirectChildNode(
-                    self.bill_of_material_structure_dict_list,
+                    self.bill_of_material_structure_list_of_dict,
                     head_node_left_value,
                     head_node_right_value,
                     left_node_value,
@@ -508,25 +508,25 @@ class BillOfMaterialManager(GeneralManager):
 
     @staticmethod
     def formatBillOfMaterialPositionStructureToNestedSet(
-        bill_of_material_list_dict: list[dict]
+        bill_of_material_list_of_dict: list[dict]
     ) -> list[dict]:
         """
         Converts a bill of material from a position structure 
         to a nested set structure.
 
         Args:
-            bill_of_material_list_dict (list[dict]): 
+            bill_of_material_list_of_dict (list[dict]): 
                 List of dictionaries representing the position structure.
 
         Returns:
             list[dict]: List of dictionaries in the nested set structure.
         """    
         BillOfMaterialManager._checkBillOfMaterialPositionStructure(
-            bill_of_material_list_dict
+            bill_of_material_list_of_dict
             )
         sorted_and_validated_input = BillOfMaterialManager.\
             _headCheckOfBillOfMaterialPositionStructure(
-            bill_of_material_list_dict
+            bill_of_material_list_of_dict
             )
         return BillOfMaterialManager._createNestedSet(
             sorted_and_validated_input
@@ -534,14 +534,14 @@ class BillOfMaterialManager(GeneralManager):
 
     @staticmethod
     def _createNestedSet(
-        sorted_bill_of_material_list_dict: list[dict]
+        sorted_bill_of_material_list_of_dict: list[dict]
         ) -> list:
         """
         Creates a nested set structure from a sorted list of 
         dictionaries from a position structure.
 
         Args:
-            sorted_bill_of_material_list_dict (list[dict]): 
+            sorted_bill_of_material_list_of_dict (list[dict]): 
                 Sorted list of dictionaries representing the bill of
                 material list in a position structure.
 
@@ -554,7 +554,7 @@ class BillOfMaterialManager(GeneralManager):
         group_index = {}
         right_counter = 1
 
-        for node in sorted_bill_of_material_list_dict:
+        for node in sorted_bill_of_material_list_of_dict:
             pos = node['pos']
 
             while open_nodes and not pos.startswith(
@@ -693,13 +693,13 @@ class BillOfMaterialManager(GeneralManager):
     
     @staticmethod
     def formatBillOfMaterialNestedSetToPositionStructure(
-            bill_of_material_list_dict: list[dict]
+            bill_of_material_list_of_dict: list[dict]
         ) -> list[dict]:
         """
         Converts a nested set structure to a position structure.
 
         Args:
-            bill_of_material_list_dict (list[dict]): 
+            bill_of_material_list_of_dict (list[dict]): 
                 List of dictionaries representing the nested set structure.
 
         Returns:
@@ -707,11 +707,11 @@ class BillOfMaterialManager(GeneralManager):
                 List of dictionaries in the position structure.
         """    
         BillOfMaterialManager._checkBillOfMaterialNestedSet(
-            bill_of_material_list_dict
+            bill_of_material_list_of_dict
             )
         validated_input = BillOfMaterialManager.\
             _checkValuesBillOfMaterialNestedSet(
-            bill_of_material_list_dict
+            bill_of_material_list_of_dict
             )
         return BillOfMaterialManager._createPositionStructure(
             validated_input

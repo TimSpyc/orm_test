@@ -97,12 +97,12 @@ class StockExchangeDataManager(ExternalDataManager):
         if type not in types:
             raise ValueError(f"Invalid type '{type}'")
         
-        metal_price_dict_list = self.getData(
+        metal_price_list_of_dict = self.getData(
             columns=[types[type], exchange_rate, 'stock_exchange_date']
         )
         monthly_metal_price_dict = {}
 
-        for metal_price_dict in metal_price_dict_list:
+        for metal_price_dict in metal_price_list_of_dict:
             year = metal_price_dict['stock_exchange_date'].year
             month = metal_price_dict['stock_exchange_date'].month
             year_month = year * 100 + month

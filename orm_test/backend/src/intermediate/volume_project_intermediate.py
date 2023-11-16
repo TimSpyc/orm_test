@@ -31,7 +31,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             ]
         )
         self.search_date = search_date
-        self.derivative_constellium_group_dict_list = \
+        self.derivative_constellium_group_list_of_dict = \
             list(DerivativeConstelliumGroup.objects.filter(
                 project_group_id=project_group_id
             ).values())
@@ -48,7 +48,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         Description:
         --------
         Get the total volume of all derivative constellium groups
-        based on the derivative_constellium_group_dict_list.
+        based on the derivative_constellium_group_list_of_dict.
 
         Returns:
         --------
@@ -58,7 +58,7 @@ class VolumeProjectIntermediate(GeneralIntermediate):
         total_volume = []
         total_volume_derivative = []
 
-        for data in self.derivative_constellium_group_dict_list:
+        for data in self.derivative_constellium_group_list_of_dict:
             derivative_constellium_group_id = data['id']
             inter_obj = self.VolumeDerivativeIntermediateClass(
                 derivative_constellium_group_id=derivative_constellium_group_id,
@@ -73,6 +73,6 @@ class VolumeProjectIntermediate(GeneralIntermediate):
             total_volume += inter_obj.volume
         
         return inter_lod.groupListOfDictsByListOfStrings(
-            result_list_dict=total_volume,
+            result_list_of_dict=total_volume,
             group_by_key_list=['date']
         )

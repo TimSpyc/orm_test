@@ -599,7 +599,7 @@ class GeneralManager:
         else:
             column_name = column.name
             column_data = f'{column.name}_set'
-        attribute_name = f'{column_name}_dict_list'
+        attribute_name = f'{column_name}_list_of_dict'
         values = [
             self.__getFieldsAndValues(instance)
             for instance in getattr(model_obj, column_data).all()
@@ -965,14 +965,14 @@ class GeneralManager:
                 It's not possible to search for data in data extension tables
                 yet. You have searched for {data_extension_data_dict}.
             ''')
-        found_group_id_date_combination_dict_list = cls.\
+        found_group_id_date_combination_list_of_dict = cls.\
             __getFilteredManagerList(
             data_data_dict,
             group_data_dict, 
             search_date
             )
         return cls.__createManagerObjectsFromDictList(
-            found_group_id_date_combination_dict_list,
+            found_group_id_date_combination_list_of_dict,
             )
 
     @classmethod
@@ -1254,13 +1254,13 @@ class GeneralManager:
     @classmethod
     def __createManagerObjectsFromDictList(
         cls, 
-        creation_dict_list: list,
+        creation_list_of_dict: list,
     ) -> list:
         """
         Creates a list of manager objects from a list of dictionaries.
 
         Args:
-            creation_dict_list (list): 
+            creation_list_of_dict (list): 
                 A list of dictionaries representing the data 
                 for manager object creation.
 
@@ -1269,7 +1269,7 @@ class GeneralManager:
                 A list of manager objects created 
                 from the provided dictionary data.
         """
-        return [cls(**data) for data in creation_dict_list]
+        return [cls(**data) for data in creation_list_of_dict]
 
     def __errorIfNotUpdatable(self) -> None:
         """
@@ -1379,7 +1379,7 @@ class GeneralManager:
         """
         Check if the given column name references a DataTable Model in
         the provided possible models list. DataExtensions relationship columns
-        must end with '_dict_list'.
+        must end with '_list_of_dict'.
 
         Args:
             column_name (str): The name of the column to check.
@@ -1392,7 +1392,7 @@ class GeneralManager:
         return  GeneralManager.__checkIfColumnReferenceBaseExists(
             column_name, 
             possible_models,
-            "_dict_list"
+            "_list_of_dict"
         )
 
     @staticmethod
