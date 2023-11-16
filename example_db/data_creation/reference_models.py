@@ -1192,14 +1192,14 @@ def createSapAbbreviationDictionary():
 
 
 def createPatentTags():
-    patent_tag_dict_list = [
+    patent_tag_list_of_dict = [
         {'id': 1, 'name': 'crash can', 'alternative_name1': 'crash box', 'alternative_name2': 'absorber'},
         {'id': 2, 'name': 'cross member'},
         {'id': 3, 'name': 'adapter'},
         {'id': 4, 'name': 'crash management system', 'alternative_name1': 'cms'},
         {'id': 5, 'name': 'method'},
     ]
-    # patent_tag_dict_list = [
+    # patent_tag_list_of_dict = [
     #     {'name': 'crash can', 'alternative_name1': 'crash box', 'alternative_name2': 'absorber'},
     #     {'name': 'cross member'},
     #     {'name': 'adapter'},
@@ -1207,19 +1207,19 @@ def createPatentTags():
     #     {'name': 'method'},
     # ]
 
-    for patent_tag_dict in patent_tag_dict_list:
+    for patent_tag_dict in patent_tag_list_of_dict:
         patent_tag = PatentTag(
             **patent_tag_dict
         )
         patent_tag.save()
 
 def createPatentStatus():
-    patent_status_dict_list = [
+    patent_status_list_of_dict = [
         {'name': 'released'},
         {'name': 'expired'},
     ]
 
-    for patent_status_dict in patent_status_dict_list:
+    for patent_status_dict in patent_status_list_of_dict:
         patent_status = PatentStatus(
             **patent_status_dict
         )
@@ -1283,7 +1283,7 @@ def createTimeCorrectionType():
         time_correction_type.save()
 
 def createProjectPhaseType():
-    project_phase_type_dict_list = [
+    project_phase_type_list_of_dict = [
         {
         'name': 'RFI',
         'description': 'Represents the point in time, when a project was assigned to Constellium. Financial as well as technical issues are agreed on both sides.',
@@ -1317,7 +1317,7 @@ def createProjectPhaseType():
         'description': None,
         },
     ]
-    for project_phase_dict in project_phase_type_dict_list:
+    for project_phase_dict in project_phase_type_list_of_dict:
         project_phase_type = ProjectPhaseType(
             **project_phase_dict
         )

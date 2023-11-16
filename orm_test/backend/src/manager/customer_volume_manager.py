@@ -76,5 +76,5 @@ class CustomerVolumeManager(GeneralManager):
     
     @property
     def current_volume(self) -> list[dict]:
-        volume_list_of_dict = self.customer_volume_volume_dict_list
+        volume_list_of_dict = self.customer_volume_volume_list_of_dict
         return {volume_list_of_dict["volume_date"]: volume_list_of_dict["volume"]}

@@ -12,7 +12,7 @@ class TestGetVolume(unittest.TestCase):
 
         extension_data = {'derivative_lmc_group': derivative_lmc_group, 'take_rate': 0.5}
         derivative_constellium_manager = Mock()
-        derivative_constellium_manager.derivative_constellium_derivative_lmc_connection_dict_list = [extension_data]
+        derivative_constellium_manager.derivative_constellium_derivative_lmc_connection_list_of_dict = [extension_data]
 
         current_volume = [{'volume_date': '2022-01-01', 'volume': 100}, {'volume_date': '2022-01-02', 'volume': 200}]
         mock_derivative_lmc_volume_manager.return_value.current_volume = current_volume
@@ -38,7 +38,7 @@ class TestGetVolume(unittest.TestCase):
         extension_data_1 = {'derivative_lmc_group': derivative_lmc_group_1, 'take_rate': 0.5}
         extension_data_2 = {'derivative_lmc_group': derivative_lmc_group_2, 'take_rate': 0.25}
         derivative_constellium_manager = Mock()
-        derivative_constellium_manager.derivative_constellium_derivative_lmc_connection_dict_list = [extension_data_1, extension_data_2]
+        derivative_constellium_manager.derivative_constellium_derivative_lmc_connection_list_of_dict = [extension_data_1, extension_data_2]
 
         current_volume = [{'volume_date': '2022-01-01', 'volume': 100}, {'volume_date': '2022-01-02', 'volume': 200}]
         mock_derivative_lmc_volume_manager.return_value.current_volume = current_volume

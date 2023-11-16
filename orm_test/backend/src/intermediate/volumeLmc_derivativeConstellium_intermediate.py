@@ -33,7 +33,7 @@ class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
         Description:
         --------
         Get the total volume of all derivative LMC groups based on the
-        derivative_constellium_derivative_lmc_connection_dict_list.
+        derivative_constellium_derivative_lmc_connection_list_of_dict.
 
         Declare:
         --------
@@ -63,7 +63,7 @@ class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
         """
         total_volume = []
         for extension_data in self.derivative_constellium_manager.\
-            derivative_constellium_derivative_lmc_connection_dict_list:
+            derivative_constellium_derivative_lmc_connection_list_of_dict:
             derivative_lmc_group_id = extension_data['derivative_lmc_group'].id
             der_lmc_volume = DerivativeLmcVolumeManager(
                 group_id=derivative_lmc_group_id,

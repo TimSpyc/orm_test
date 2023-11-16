@@ -1129,7 +1129,7 @@ class TestGetRefAndTableType(TestCase):
 class TestCheckIfColumnReferencesDataExtensionModel(TestCase):
   
     def setUp(self):   
-        self.column_name = 'project_dict_list'
+        self.column_name = 'project_list_of_dict'
         self.possible_models = {'TestProject', 'TestProjectGroup','project', 'Patent'}
 
     def test_check_if_column_references_data_extension_model(self):                                      
@@ -1141,8 +1141,8 @@ class TestCheckIfColumnReferencesDataExtensionModel(TestCase):
         self.assertEqual(result,('nonexistent_column',False))
 
     def test_column_name_not_in_possible_models(self):
-        result = GeneralManager._GeneralManager__checkIfColumnReferencesDataExtensionModel('project_dict_list', [])
-        self.assertEqual(result, ('project_dict_list', False))
+        result = GeneralManager._GeneralManager__checkIfColumnReferencesDataExtensionModel('project_list_of_dict', [])
+        self.assertEqual(result, ('project_list_of_dict', False))
 
     def test_column_name_empty(self):
         result = GeneralManager._GeneralManager__checkIfColumnReferencesDataExtensionModel('', self.possible_models)
@@ -1356,14 +1356,14 @@ class TestGetDataExtensionData(TestCase):
         )
 
     def test_with_non_list_value(self):
-        key = 'TestProject2ExtensionTable_dict_list'
+        key = 'TestProject2ExtensionTable_list_of_dict'
         value = 'TestProject'
         result = self.manager._GeneralManager__getDataExtensionData(key, value)
         self.assertEqual(result, (False, key, value))
 
   
     def test_get_data_extension_data_with_non_list_value(self):
-        key = 'TestProject2ExtensionTable_dict_list'
+        key = 'TestProject2ExtensionTable_list_of_dict'
         value = 1
         is_in_data_ext_model, model_name, to_upload_dict = self.manager._GeneralManager__getDataExtensionData(key, value)
         
@@ -1373,7 +1373,7 @@ class TestGetDataExtensionData(TestCase):
 
 
     def test_getDataExtensionData_with_data_extension_model(self):
-        key = 'TestProject2ExtensionTable_dict_list'
+        key = 'TestProject2ExtensionTable_list_of_dict'
         value = [
             {'name_extension' : 'extension1'},
             {'name_extension' : 'extension2'}
@@ -1390,7 +1390,7 @@ class TestGetDataExtensionData(TestCase):
 
 
     def test_with_invalid_column_in_value(self):
-        key = 'TestProject2ExtensionTable_dict_list'
+        key = 'TestProject2ExtensionTable_list_of_dict'
         value = [
             {'invalid_column': 'Invalid'}
         ]
@@ -2011,7 +2011,7 @@ class TestAssignExtensionDataDictAttribute(TestCase):
             GeneralManager.MANY_TO_ONE
         )
 
-        attribute_name = 'test_project2_extension_table_dict_list'
+        attribute_name = 'test_project2_extension_table_list_of_dict'
         self.assertTrue(hasattr(self.manager, attribute_name))
         self.assertEqual(
             getattr(self.manager, attribute_name),
@@ -2085,7 +2085,7 @@ class TestCreateDirectAttribute(TestCase):
             column,
             self.test_model_obj
         )
-        self.assertEqual(self.manager.test_project2_extension_table_dict_list,  [{
+        self.assertEqual(self.manager.test_project2_extension_table_list_of_dict,  [{
                 'id': self.data_extension.id,
                 'name_extension': 'Extension1', 
                 'price': 100,

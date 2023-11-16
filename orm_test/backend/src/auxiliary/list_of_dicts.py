@@ -2,18 +2,18 @@ from datetime import datetime
 
 
 def groupListOfDictsByListOfStrings(
-    result_list_dict: list[dict],
+    result_list_of_dict: list[dict],
     group_by_list: list[str]
 ) -> list[dict]:
-    _checkGroupByFormat(group_by_list, result_list_dict)
+    _checkGroupByFormat(group_by_list, result_list_of_dict)
     
     level_1_list, level_2_dict = _getGroupLevelDict(group_by_list)
-    grouped_data = _buildGroups(result_list_dict, level_1_list)
+    grouped_data = _buildGroups(result_list_of_dict, level_1_list)
     return _combineData(grouped_data, level_1_list, level_2_dict)
 
 def _checkGroupByFormat(
     group_by_list: list[str],
-    result_list_dict: list[dict]
+    result_list_of_dict: list[dict]
 ) -> None:
     if type(group_by_list) is not list:
         raise ValueError('group_by_list must be a list of strings')     
@@ -25,7 +25,7 @@ def _checkGroupByFormat(
         if len(group_list) > 2:
             raise Exception("Group by is not supported for more than 2 levels")
 
-        if group_list[0] not in result_list_dict[0].keys():
+        if group_list[0] not in result_list_of_dict[0].keys():
             raise Exception(f"Group by key {group_list[0]} not found")
 
 def _getGroupLevelDict(group_by_list: list[str]) -> list[str]:

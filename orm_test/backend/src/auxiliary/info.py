@@ -304,7 +304,7 @@ class GeneralInfo:
         CacheHandler.addDependentObjectToCache(
             self._dependencies,
             self,
-            self.result_list_dict
+            self.result_list_of_dict
         )
 
     def _updateCache(self) -> None:
@@ -313,12 +313,12 @@ class GeneralInfo:
 
     def __getNewResultDict(self) -> dict:
         object_list = self.getList()
-        self.result_list_dict = list(map(
+        self.result_list_of_dict = list(map(
             lambda manager_obj: self.__serializeData(manager_obj),
             object_list
         ))
         self.__setCacheData()
-        return self.result_list_dict
+        return self.result_list_of_dict
 
     def __checkConfiguration(self) -> None:
         has_manager = hasattr(self, 'manager')
@@ -335,15 +335,15 @@ class GeneralInfo:
 
     @timeit
     def __handleGetList(self) -> list[dict]:
-        result_list_dict = self.__getCacheData()
-        if not result_list_dict:
-            result_list_dict = self.__getNewResultDict()
-        result_list_dict = self.__reduceGetResultList(result_list_dict)
-        result_list_dict = self.__search(result_list_dict)
-        result_list_dict = self.__groupBy(result_list_dict)
-        result_list_dict = self.__sort(result_list_dict)
-        result_list_dict, page_info_dict = self.__paginate(result_list_dict)
-        return self.__buildMetaInformation(result_list_dict, page_info_dict)
+        result_list_of_dict = self.__getCacheData()
+        if not result_list_of_dict:
+            result_list_of_dict = self.__getNewResultDict()
+        result_list_of_dict = self.__reduceGetResultList(result_list_of_dict)
+        result_list_of_dict = self.__search(result_list_of_dict)
+        result_list_of_dict = self.__groupBy(result_list_of_dict)
+        result_list_of_dict = self.__sort(result_list_of_dict)
+        result_list_of_dict, page_info_dict = self.__paginate(result_list_of_dict)
+        return self.__buildMetaInformation(result_list_of_dict, page_info_dict)
 
     @staticmethod
     def __buildMetaInformation(
@@ -361,28 +361,28 @@ class GeneralInfo:
             }
         }
 
-    def __groupBy(self, result_list_dict: list[dict]) -> list[dict]:
+    def __groupBy(self, result_list_of_dict: list[dict]) -> list[dict]:
         group_by_list = self.request_info_dict['query_params'].get(
             'group_by_list',
             None
         )
 
         if group_by_list is None:
-            return result_list_dict
+            return result_list_of_dict
         return inter_lod.groupListOfDictsByListOfStrings(
-            result_list_dict=result_list_dict,
+            result_list_of_dict=result_list_of_dict,
             group_by_list=group_by_list)
 
-    def __sort(self, result_list_dict: list[dict]) -> list[dict]:
+    def __sort(self, result_list_of_dict: list[dict]) -> list[dict]:
         sort_by = self.request_info_dict['query_params'].get(
             'sort_by',
             None
         )
         if sort_by is None:
-            return result_list_dict
+            return result_list_of_dict
 
         sort_key, sort_order = sort_by.split(':')
-        if sort_key not in result_list_dict[0].keys():
+        if sort_key not in result_list_of_dict[0].keys():
             raise ValueError(f'key "{sort_key}" not found')
         if sort_order == 'asc':
             reverse = False
@@ -393,21 +393,21 @@ class GeneralInfo:
         
         def sortFunction(dict_item: dict) -> any:
             return str(dict_item[sort_key])
-        return sorted(result_list_dict, key=sortFunction, reverse=reverse)
+        return sorted(result_list_of_dict, key=sortFunction, reverse=reverse)
 
-    def __search(self, result_list_dict: list[dict]) -> list[dict]:
+    def __search(self, result_list_of_dict: list[dict]) -> list[dict]:
         search_string = self.request_info_dict['query_params'].get(
             'search',
             None
         )
         if search_string is None:
-            return result_list_dict
+            return result_list_of_dict
         search_string = search_string.lower()
         search_word_list = search_string.split(' ')
 
         search_keys = self.request_info_dict['query_params'].get(
             'search_keys',
-            result_list_dict[0].keys()
+            result_list_of_dict[0].keys()
         )
 
         def searchFunction(dict_item: dict) -> bool:
@@ -422,9 +422,9 @@ class GeneralInfo:
                     break
             return is_found
 
-        return list(filter(searchFunction, result_list_dict))
+        return list(filter(searchFunction, result_list_of_dict))
 
-    def __paginate(self, result_list_dict: list[dict]) -> tuple[list[dict], dict]:
+    def __paginate(self, result_list_of_dict: list[dict]) -> tuple[list[dict], dict]:
         page = self.request_info_dict['query_params'].get(
             'page',
             1
@@ -434,15 +434,15 @@ class GeneralInfo:
             None
         )
         if page_size is None:
-            return (result_list_dict, {'current': 1, 'max': 1})
+            return (result_list_of_dict, {'current': 1, 'max': 1})
         
         start_index = (page - 1) * page_size
         end_index = page * page_size
-        page_count = len(result_list_dict) // page_size
-        if len(result_list_dict) % page_size != 0:
+        page_count = len(result_list_of_dict) // page_size
+        if len(result_list_of_dict) % page_size != 0:
             page_count += 1
 
-        return (result_list_dict[start_index:end_index], {'current': page, 'max': page_count})
+        return (result_list_of_dict[start_index:end_index], {'current': page, 'max': page_count})
 
 
     def __handleGetDetail(self) -> dict:

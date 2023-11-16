@@ -29,16 +29,16 @@ class TestGroupListOfDictsByListOfStrings(unittest.TestCase):
 
     # def testCheckGroupByFormat(self):
     #     group_by_list = ["name.age"]
-    #     result_list_dict = [{"name": {"age": 30}}, {"name": {"age": 25}}]
-    #     self.assertIsNone(groupListOfDictsByListOfStrings(group_by_list, result_list_dict))
+    #     result_list_of_dict = [{"name": {"age": 30}}, {"name": {"age": 25}}]
+    #     self.assertIsNone(groupListOfDictsByListOfStrings(group_by_list, result_list_of_dict))
 
     #     group_by_list = ["name.age", "name.city"]
     #     with self.assertRaises(Exception):
-    #         groupListOfDictsByListOfStrings(group_by_list, result_list_dict)
+    #         groupListOfDictsByListOfStrings(group_by_list, result_list_of_dict)
 
     #     group_by_list = ["name"]
     #     with self.assertRaises(Exception):
-    #         groupListOfDictsByListOfStrings(group_by_list, result_list_dict)
+    #         groupListOfDictsByListOfStrings(group_by_list, result_list_of_dict)
 
     # def testGetGroupLevelDict(self):
     #     group_by_list = ["name.age", "city"]

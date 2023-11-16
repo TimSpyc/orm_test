@@ -29,10 +29,10 @@ def checkIfCacheNeedsToExpire(
             search_date=date,
         )
         old_id = getIdStringFromDict(
-            dependency.bill_of_material_structure_dict_list
+            dependency.bill_of_material_structure_list_of_dict
         )
         new_id = getIdStringFromDict(
-            new_bom.bill_of_material_structure_dict_list
+            new_bom.bill_of_material_structure_list_of_dict
         )
         return not old_id == new_id
 
@@ -64,8 +64,8 @@ class WeightPartIntermediate(GeneralIntermediate):
         )
         self.bom_manager_list = self.part_manager.bill_of_material_manager_list
 
-        # weight_detail_dict_list is a list of dictionaries, each of which is a bom_manager
-        self.weight_detail_dict_list = [
+        # weight_detail_list_of_dict is a list of dictionaries, each of which is a bom_manager
+        self.weight_detail_list_of_dict = [
             self.__getWeightDetails(bom_manager)
             for bom_manager in self.bom_manager_list
         ]
@@ -134,7 +134,7 @@ class WeightPartIntermediate(GeneralIntermediate):
         """
         weight_list = [
             weight_detail_dict[bom_type][weight_type]
-            for weight_detail_dict in self.weight_detail_dict_list
+            for weight_detail_dict in self.weight_detail_list_of_dict
         ]
         return mean(weight_list)
     

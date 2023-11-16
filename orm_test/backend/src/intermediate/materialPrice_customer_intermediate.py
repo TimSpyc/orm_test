@@ -111,7 +111,7 @@ class MaterialPriceIntermediate(GeneralIntermediate):
                 (x['validity_end_date'] >= lookup_date or 
                  x['validity_end_date'] is None)
             ),
-            self.customer_manager.customer_material_condition_dict_list
+            self.customer_manager.customer_material_condition_list_of_dict
         )
         if len(formula) == 0:
             return None

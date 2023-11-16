@@ -49,7 +49,7 @@ class VolumePartIntermediate(GeneralIntermediate):
         for bom_manager in self.bom_manager_list:
 
             cumulated_quantity = 0
-            for data in bom_manager.bill_of_material_structure_dict_list:
+            for data in bom_manager.bill_of_material_structure_list_of_dict:
                 if data['part_group_id'] == self.part_manager.group_id:
                     cumulated_quantity += data['cumulated_quantity']
 
