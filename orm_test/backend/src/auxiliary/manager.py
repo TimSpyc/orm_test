@@ -1,5 +1,9 @@
 from backend import models
-from backend.src.auxiliary.exceptions import NonExistentGroupError, NotUpdatableError, NotValidIdError
+from backend.src.auxiliary.exceptions import (
+    NonExistentGroupError,
+    NotUpdatableError,
+    NotValidIdError
+)
 import re
 from django.core.exceptions import ObjectDoesNotExist
 from backend.models import User
@@ -10,7 +14,12 @@ from django.db import models
 from django.db.models.fields.reverse_related import ManyToOneRel
 from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
-from backend.src.auxiliary.new_cache import CacheHandler, addDependencyToFunctionCaller, CacheRefresher
+from backend.src.auxiliary.new_cache import (
+    CacheHandler,
+    addDependencyToFunctionCaller,
+    CacheRefresher,
+    getIdStringFromDict
+)
 
 
 def updateCache(func):
@@ -1670,14 +1679,20 @@ class GeneralManager:
         latest_data_data = self.__getLatestDataData()
         latest_extension_data = self.__getLatestDataExtensionData()
 
-        self.__writeData(
+        if self.__hasAnythingChanged(
             latest_data_data,
             data_data_dict,
-            creator_id, 
-            self.__group_obj,
             latest_extension_data,
-            data_extension_data_dict,
-        )
+            data_extension_data_dict
+        ):
+            self.__writeData(
+                latest_data_data,
+                data_data_dict,
+                creator_id, 
+                self.__group_obj,
+                latest_extension_data,
+                data_extension_data_dict,
+            )
 
         self.__init__(self.group_id)
 
@@ -1762,6 +1777,8 @@ class GeneralManager:
             latest_data = self.data_model.objects.filter(
                 **{group_model_name: group_model_obj}
                 ).values().latest('date')
+            del latest_data['id']
+            del latest_data['date']
         except self.data_model.DoesNotExist:
             latest_data = {}
 
@@ -1790,6 +1807,8 @@ class GeneralManager:
             latest_extension_data[data_extension_model_name] = []
             for entry in latest_data:
                 data_dict = self.__getFieldsAndValues(entry)
+                del entry['id']
+                del entry[data_model_name]
                 latest_extension_data[
                     data_extension_model_name
                     ].append(data_dict)
@@ -2267,12 +2286,13 @@ class GeneralManager:
             group_obj = cls.group_model.objects.create(
                 **group_data_dict
             )
+            found_existing_group = False
         else:
-            group_obj, _ = cls.group_model.objects.get_or_create(
+            group_obj, found_existing_group = cls.group_model.objects.get_or_create(
                 **group_data_dict
             )
 
-        return group_obj
+        return group_obj, found_existing_group
 
     @classmethod
     @createCache
@@ -2318,19 +2338,59 @@ class GeneralManager:
             is_data_data_uploadable,
             is_data_extension_data_uploadable
         ]):
-            group_obj = cls.__getOrCreateGroupModel(group_data_dict)
-
-            cls.__writeData(
-                {},
-                data_data_dict,
-                creator_id, 
-                group_obj,
-                #datetime.now(),
-                {},
-                data_extension_data_dict,
+            group_obj, found_existing_group = cls.__getOrCreateGroupModel(
+                group_data_dict
             )
+            if found_existing_group:
+                group_obj.manager.update(creator_id, **kwargs)
+            else:
+                cls.__writeData(
+                    {},
+                    data_data_dict,
+                    creator_id, 
+                    group_obj,
+                    {},
+                    data_extension_data_dict,
+                )
 
             return cls(group_obj.id)
+
+    def __hasAnythingChanged(
+        self,
+        data_data: dict,
+        latest_data_data: dict,
+        data_extension_data: dict,
+        latest_data_extension_data: dict
+    ) -> bool:
+        """
+        Check if the data has changed since the last update.
+
+        Args:
+            data_data (dict): 
+                Dictionary containing the data for the data model instance.
+            latest_data_data (dict): 
+                Dictionary containing the previous data data.
+            data_extension_data (dict): 
+                Dictionary containing the data for the data extension model 
+                instances.
+            latest_data_extension_data (dict): 
+                Dictionary containing the previous data extension data.
+
+        Returns:
+            bool: True if the data has changed, False otherwise.
+        """
+        has_changed = False
+        data_id_string = getIdStringFromDict(data_data)
+        latest_data_id_string = getIdStringFromDict(latest_data_data)
+        data_extension_id_string = getIdStringFromDict(data_extension_data)
+        latest_data_extension_id_string = getIdStringFromDict(
+            latest_data_extension_data
+        )
+        if data_id_string != latest_data_id_string:
+            has_changed = True
+        elif data_extension_id_string != latest_data_extension_id_string:
+            has_changed = True
+        return has_changed
 
     def __getGroupObject(self) -> models.Model:
         """
