@@ -1997,7 +1997,8 @@ class GeneralManager:
     @staticmethod
     def __getUniqueFields(model: models.Model) -> list:
         """
-        Get a list of fields of the model that are part of a unique constraint.
+        Get a list of fields of the model that are part of a unique constraint,
+        or fields that are marked as unique on field level.
 
         Args:
             model (Model): The model for which to retrieve the fields 
@@ -2010,7 +2011,10 @@ class GeneralManager:
         unique_fields = []
         for constraint in model._meta.constraints:
             if isinstance(constraint, models.UniqueConstraint):
-                unique_fields += constraint.fields
+                unique_fields += [field.name for field in constraint.fields]
+        for field in model._meta.get_fields():
+            if field._unique:
+                unique_fields.append(field.name)
         return unique_fields
 
     @classmethod
