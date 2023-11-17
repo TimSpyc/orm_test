@@ -2059,7 +2059,7 @@ class GeneralManager:
         all_not_null_fields_contain_data = not noneValueInNotNullField(
             not_null_fields, 
             data_dict
-            )
+        )
         return (
             contains_all_unique_fields,
             contains_all_not_null_fields,
@@ -2221,7 +2221,7 @@ class GeneralManager:
 
         data_extension_model_name = data_extension_model.__name__
         if not data_extension_data_dict:
-            return False
+            return True
        
         if data_extension_model_name not in data_extension_data_dict.keys():
             return True
