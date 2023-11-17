@@ -69,6 +69,7 @@ class VolumeLmcDerivativeConstelliumIntermediate(GeneralIntermediate):
                 group_id=derivative_lmc_group_id,
                 search_date=self.search_date
             )
+            print('der_lmc_volume.current_volume', der_lmc_volume.current_volume)
             current_lmc_volume = der_lmc_volume.current_volume
 
             for volume_data in current_lmc_volume:
