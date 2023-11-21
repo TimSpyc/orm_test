@@ -24,6 +24,7 @@ class TestProjectUserManager(GeneralManager):
     data_extension_model_list: list = []
 
 
+
 class TestSearchForColumn(TestCase):
     def setUp(self):
         self.column_list = ['name', 'description', 'start_date', 'end_date',  'owner', 'member']
@@ -623,13 +624,15 @@ class TestErrorIfNotUpdatable(TestCase):
              self.manager._GeneralManager__errorIfNotUpdatable()
 
 class TestGetGroupModelName(TestCase):
-      def setUp(self):
+      
+    def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
 
-        self.manager = GeneralManager.__new__(GeneralManager) 
-        self.manager.group_model = TestProjectGroup
-        self.manager.data_model = TestProject
+        self.manager = GeneralManager.__new__(GeneralManager)
+            
         
-      def test_get_group_model_name(self):
+    def test_get_group_model_name(self):
             project_group1 = TestProjectGroup.objects.create()
             test_project1 = TestProject.objects.create(
                          name='TestProject1',
@@ -697,11 +700,32 @@ class TestGetDataObject(TestCase):
         result = self.manager._GeneralManager__getDataObject(self.group_obj, search_date)
         self.assertEqual(result, data_obj1)
 
+# ####test#####
+
+# class test:
+#     abc123 = 123
+
+#     def __init__(self):
+#         print(self.abc123) # -> 123
+#         self.abc123 = 456
+#         print(self.abc123) # -> 456
+
+# a = test() # -> 123 # -> 456
+# print(a.abc) # -> 456
+# print(test.abc) # -> 123
+# test.abc = 789
+# test() # -> 789 -> 456
+# print(test.abc) # -> 789
+
+# ####test####
+
+
 class TestIsDataUploadable(TestCase):
     def setUp(self):
+        GeneralManager.group_model = TestProjectGroup
+        GeneralManager.data_model = TestProject
+
         self.manager = GeneralManager.__new__(GeneralManager)
-        self.manager.group_model = TestProjectGroup
-        self.manager.data_model = TestProject
 
  
     def test_is_data_uploadable(self):
@@ -711,7 +735,8 @@ class TestIsDataUploadable(TestCase):
             'date': datetime(2023, 5, 22),
             'test_project_group': 1
         }
-        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = self.manager._GeneralManager__isDataUploadable(data_dict, TestProject)
+        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = \
+        self.manager._GeneralManager__isDataUploadable(data_dict, TestProject)
  
         self.assertTrue(contains_all_unique_fields)
         self.assertTrue(contains_all_not_null_fields)
@@ -725,7 +750,8 @@ class TestIsDataUploadable(TestCase):
             'test_project_group': 1,
             #'ap_no': 12
         }
-        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = self.manager._GeneralManager__isDataUploadable(data_dict, TestProject2)
+        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = \
+        self.manager._GeneralManager__isDataUploadable(data_dict, TestProject2)
  
         self.assertFalse(contains_all_unique_fields)
         self.assertTrue(contains_all_not_null_fields)
@@ -737,7 +763,8 @@ class TestIsDataUploadable(TestCase):
             'date': datetime(2023, 5, 22),
             'test_project_group': 1
         }
-        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = self.manager._GeneralManager__isDataUploadable(data_dict, TestProject)
+        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = \
+        self.manager._GeneralManager__isDataUploadable(data_dict, TestProject)
  
         self.assertFalse(contains_all_unique_fields)
         self.assertFalse(contains_all_not_null_fields)
@@ -750,7 +777,8 @@ class TestIsDataUploadable(TestCase):
             'date': datetime(2023, 5, 22),
             'test_project_group': 1
         }
-        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = self.manager._GeneralManager__isDataUploadable(data_dict, TestProject)
+        contains_all_unique_fields, contains_all_not_null_fields, all_not_null_fields_contain_data = \
+        self.manager._GeneralManager__isDataUploadable(data_dict, TestProject)
  
         self.assertTrue(contains_all_unique_fields)
         self.assertTrue(contains_all_not_null_fields)
@@ -914,10 +942,11 @@ class TestDeactivate(TestCase):
 
 class TestCreate(TestCase):
     def setUp(self):
-        self.manager = GeneralManager.__new__(GeneralManager)
+    
         GeneralManager.group_model = TestProjectGroup2
         GeneralManager.data_model = TestProject3
         GeneralManager.data_extension_model_list = []
+        self.manager = GeneralManager.__new__(GeneralManager)
 
         self.user = User.objects.create(microsoft_id= 'a')
         self.creator_id = self.user.id
@@ -1472,6 +1501,9 @@ class TestCheckIfDataExtensionIsUploadable(TestCase):
 class TestIsDataExtensionTableDataUploadable(TestCase):
     def setUp(self):
         self.manager = GeneralManager.__new__(GeneralManager)
+        GeneralManager.data_extension_model_list = [TestProject2ExtensionTable]
+        GeneralManager.data_model = TestProject2
+        GeneralManager.group_model = TestProjectGroup
 
     def test_data_extension_table_data_uploadable(self):
         data_extension_data_dict = {
@@ -2562,3 +2594,7 @@ class TestCreateDictFromModel(TestCase):
             'user__last_login': self.user.last_login
         }
         self.assertEqual(result, expected_result)
+
+
+
+        # TestCheckIfDataExtensionIsUploadable
