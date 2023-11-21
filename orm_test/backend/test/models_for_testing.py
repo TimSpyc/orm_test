@@ -55,6 +55,7 @@ class TestProjectGroup(TestGroupTable):
     """
     A Django model representing a TestProject group.
     """
+
     
     def __str__(self):
         return f'{self.id}'
@@ -252,11 +253,6 @@ class TestProject2ExtensionTable(TestDataExtensionTable):
     def data_object(self):
         return self.test_project2
 
-
-# class TestProjectManager(GeneralManager):
-#     group_model = TestProjectGroup
-#     data_model = TestProject
-#     data_extension_model_list: list = []
 
 
 

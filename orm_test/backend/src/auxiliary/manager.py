@@ -2041,6 +2041,7 @@ class GeneralManager:
         unique_fields = cls.__getUniqueFields(model)
         
         data_dict_extended_list = list(data_dict.keys())
+        
         data_dict_extended_list.extend([
             'date', 
             'creator', 
